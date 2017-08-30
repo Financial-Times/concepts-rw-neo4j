@@ -5,6 +5,8 @@ import (
 	_ "net/http/pprof"
 	"os"
 
+	"time"
+
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	"github.com/Financial-Times/go-fthealth"
@@ -61,6 +63,12 @@ func main() {
 		Desc:   "Level of logging to be shown",
 		EnvVar: "LOG_LEVEL",
 	})
+	healthcheckInterval := app.String(cli.StringOpt{
+		Name:   "healthcheckInterval",
+		Desc:   "How often the Neo healthcheck should refresh.",
+		EnvVar: "HEALTHCHECK_INTERVAL",
+		Value:  "30s",
+	})
 
 	log.SetFormatter(&log.JSONFormatter{})
 	lvl, err := log.ParseLevel(*logLevel)
@@ -80,7 +88,15 @@ func main() {
 			log.Errorf("Could not connect to neo4j, error=[%s]\n", err)
 		}
 
-		conceptsDriver := concepts.NewConceptService(db)
+		duration, err := time.ParseDuration(*healthcheckInterval)
+		if err != nil {
+			log.Warnf("Could not parse healthcheck duration, defaulting to 30s.")
+			duration = time.Duration(30 * time.Second)
+		}
+
+		asyncHealthcheck := neoutils.NewAsyncHealthcheck(duration)
+
+		conceptsDriver := concepts.NewConceptService(db, asyncHealthcheck)
 		conceptsDriver.Initialise()
 
 		baseftrwapp.OutputMetricsIfRequired(*graphiteTCPAddress, *graphitePrefix, *logMetrics)

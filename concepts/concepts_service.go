@@ -19,15 +19,19 @@ import (
 //Service - CypherDriver - CypherDriver
 type Service struct {
 	conn neoutils.NeoConnection
+	hc   *neoutils.AsyncHealthcheck
 }
 
 //NewConceptService instantiate driver
-func NewConceptService(cypherRunner neoutils.NeoConnection) Service {
-	return Service{cypherRunner}
+func NewConceptService(cypherRunner neoutils.NeoConnection, healthcheck *neoutils.AsyncHealthcheck) Service {
+	return Service{cypherRunner, healthcheck}
 }
 
 //Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
 func (s Service) Initialise() error {
+
+	s.hc.Initialise(s.conn)
+
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
 		"Thing":      "prefUUID",
@@ -651,7 +655,8 @@ func (s Service) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
 
 //Check - checker
 func (s Service) Check() error {
-	return neoutils.Check(s.conn)
+	err, _ := s.hc.Check()
+	return err
 }
 
 //Count - Count of concepts
