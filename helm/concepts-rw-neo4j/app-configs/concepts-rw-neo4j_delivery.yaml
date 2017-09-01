@@ -1,0 +1,6 @@
+# Values used for the deployed application.
+replicaCount: 2
+service:
+  name: concepts-rw-neo4j
+env:
+  BATCH_SIZE: 5000
