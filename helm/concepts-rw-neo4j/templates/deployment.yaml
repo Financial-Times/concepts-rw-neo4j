@@ -36,7 +36,11 @@ spec:
               name: global-config 
               key: graphite.address 
         - name: GRAPHITE_PREFIX 
-          value: "coco.services.k8s.{{ .Values.service.name }}" 
+          value: "coco.services.k8s.{{ .Values.service.name }}"
+        - name: LOG_LEVEL
+          value: "{{ .Values.env.LOG_LEVEL }}"
+        - name: REQUEST_LOGGING_ON
+          value: "{{ .Values.env.REQUEST_LOGGING_ON }}"
         ports: 
         - containerPort: 8080 
         livenessProbe: 
