@@ -67,12 +67,13 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	enc := json.NewEncoder(w)
-	if err = enc.Encode(updatedIds); err != nil {
+	updateIDsBody, err := json.Marshal(updatedIds)
+	if err != nil {
 		writeJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	} else {
 		w.WriteHeader(http.StatusOK)
+		w.Write(updateIDsBody)
 		return
 	}
 }
