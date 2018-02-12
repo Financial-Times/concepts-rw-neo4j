@@ -537,7 +537,7 @@ func (s ConceptService) handleTransferConcordance(updatedSourceIds []string, pre
 func deleteLonePrefUuid(prefUUID string) *neoism.CypherQuery {
 	logger.WithField("UUID", prefUUID).Debug("Deleting orphaned prefUUID node")
 	equivQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {prefUUID:{id}}) DELETE t`,
+		Statement: `MATCH (t:Thing {prefUUID:{id}}) DETACH DELETE t`,
 		Parameters: map[string]interface{}{
 			"id": prefUUID,
 		},
