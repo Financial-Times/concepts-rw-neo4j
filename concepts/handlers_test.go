@@ -26,11 +26,11 @@ func TestPutHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{\"updatedIDs\":null}"},
-		{"ParseError", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failParse: true}, http.StatusBadRequest, "", errorMessage("TEST failing to DECODE")},
-		{"UUIDMisMatch", newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999")), mockConceptService{uuid: knownUUID}, http.StatusBadRequest, "", errorMessage("Uuids from payload and request, respectively, do not match: '12345' '99999'")},
-		{"WriteFailed", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failWrite: true}, http.StatusServiceUnavailable, "", errorMessage("TEST failing to WRITE")},
-		{"WriteFailedDueToConflict", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failConflict: true}, http.StatusConflict, "", errorMessage("")},
+		{"Success", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{\"updatedIDs\":null}"},
+		{"ParseError", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID, failParse: true}, http.StatusBadRequest, "", errorMessage("TEST failing to DECODE")},
+		{"UUIDMisMatch", newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999")), &mockConceptService{uuid: knownUUID}, http.StatusBadRequest, "", errorMessage("Uuids from payload and request, respectively, do not match: '12345' '99999'")},
+		{"WriteFailed", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID, failWrite: true}, http.StatusServiceUnavailable, "", errorMessage("TEST failing to WRITE")},
+		{"WriteFailedDueToConflict", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID, failConflict: true}, http.StatusConflict, "", errorMessage("")},
 	}
 
 	for _, test := range tests {
@@ -54,9 +54,9 @@ func TestGetHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{}\n"},
-		{"NotFound", newRequest("GET", fmt.Sprintf("/dummies/%s", "99999")), mockConceptService{uuid: knownUUID}, http.StatusNotFound, "", "{\"message\":\"Concept with prefUUID 99999 not found in db.\"}"},
-		{"ReadError", newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failRead: true}, http.StatusServiceUnavailable, "", errorMessage("TEST failing to READ")},
+		{"Success", newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{}\n"},
+		{"NotFound", newRequest("GET", fmt.Sprintf("/dummies/%s", "99999")), &mockConceptService{uuid: knownUUID}, http.StatusNotFound, "", "{\"message\":\"Concept with prefUUID 99999 not found in db.\"}"},
+		{"ReadError", newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID)), &mockConceptService{uuid: knownUUID, failRead: true}, http.StatusServiceUnavailable, "", errorMessage("TEST failing to READ")},
 	}
 
 	for _, test := range tests {
@@ -80,8 +80,8 @@ func TestGtgHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("GET", "/__gtg"), mockConceptService{failCheck: false}, http.StatusOK, "", "OK"},
-		{"GTGError", newRequest("GET", "/__gtg"), mockConceptService{failCheck: true}, http.StatusServiceUnavailable, "", "TEST failing to CHECK"},
+		{"Success", newRequest("GET", "/__gtg"), &mockConceptService{failCheck: false}, http.StatusOK, "", "OK"},
+		{"GTGError", newRequest("GET", "/__gtg"), &mockConceptService{failCheck: true}, http.StatusServiceUnavailable, "", "TEST failing to CHECK"},
 	}
 
 	for _, test := range tests {
@@ -110,13 +110,11 @@ func errorMessage(errMsg string) string {
 type mockConceptService struct {
 	mock.Mock
 	uuid         string
-	transId      string
+	transID      string
 	uuidList     []string
 	failParse    bool
 	failWrite    bool
 	failRead     bool
-	failDelete   bool
-	failCount    bool
 	failConflict bool
 	failCheck    bool
 }
@@ -124,7 +122,7 @@ type mockConceptService struct {
 type mockServiceData struct {
 }
 
-func (dS mockConceptService) Write(thing interface{}, transId string) (interface{}, error) {
+func (dS *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
 	mockList := UpdatedConcepts{}
 	if dS.failWrite {
 		return mockList, errors.New("TEST failing to WRITE")
@@ -135,35 +133,35 @@ func (dS mockConceptService) Write(thing interface{}, transId string) (interface
 	if len(dS.uuidList) > 0 {
 		mockList.UpdatedIds = dS.uuidList
 	}
-	dS.transId = transId
+	dS.transID = transID
 	return mockList, nil
 }
 
-func (dS mockConceptService) Read(uuid string, transId string) (thing interface{}, found bool, err error) {
+func (dS *mockConceptService) Read(uuid string, transID string) (thing interface{}, found bool, err error) {
 	if dS.failRead {
 		return nil, false, errors.New("TEST failing to READ")
 	}
 	if uuid == dS.uuid {
 		return mockServiceData{}, true, nil
 	}
-	dS.transId = transId
+	dS.transID = transID
 	return nil, false, nil
 }
 
-func (dS mockConceptService) DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error) {
+func (dS *mockConceptService) DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error) {
 	if dS.failParse {
 		return "", "", errors.New("TEST failing to DECODE")
 	}
 	return mockServiceData{}, dS.uuid, nil
 }
 
-func (dS mockConceptService) Check() error {
+func (dS *mockConceptService) Check() error {
 	if dS.failCheck {
 		return errors.New("TEST failing to CHECK")
 	}
 	return nil
 }
 
-func (dS mockConceptService) Initialise() error {
+func (dS *mockConceptService) Initialise() error {
 	return nil
 }

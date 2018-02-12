@@ -1038,9 +1038,9 @@ func deleteConcordedNodes(t *testing.T, uuids ...string) {
 }
 
 func getIdentifierValue(t *testing.T, uuidPropertyName string, uuid string, label string) string {
-	results := []struct {
+	var results []struct {
 		Value string `json:"i.value"`
-	}{}
+	}
 
 	query := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`

@@ -118,7 +118,7 @@ func main() {
 		conceptsService := concepts.NewConceptService(db)
 		conceptsService.Initialise()
 
-		handler := concepts.ConceptsHandler{ConceptsService: conceptsService}
+		handler := concepts.ConceptsHandler{ConceptsService: &conceptsService}
 
 		services := map[string]concepts.ConceptService{}
 		for _, path := range concepts.ConceptTypePaths {
