@@ -26,7 +26,7 @@ func TestPutHandler(t *testing.T) {
 		contentType string // Contents of the Content-Type header
 		body        string
 	}{
-		{"Success", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{\"updatedIDs\":null}\n"},
+		{"Success", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID}, http.StatusOK, "", "{\"updatedIDs\":null}"},
 		{"ParseError", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failParse: true}, http.StatusBadRequest, "", errorMessage("TEST failing to DECODE")},
 		{"UUIDMisMatch", newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999")), mockConceptService{uuid: knownUUID}, http.StatusBadRequest, "", errorMessage("Uuids from payload and request, respectively, do not match: '12345' '99999'")},
 		{"WriteFailed", newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID)), mockConceptService{uuid: knownUUID, failWrite: true}, http.StatusServiceUnavailable, "", errorMessage("TEST failing to WRITE")},
