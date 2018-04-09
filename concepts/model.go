@@ -1,5 +1,13 @@
 package concepts
 
+type MembershipRole struct {
+	RoleUUID             string `json:"membershipRoleUUID,omitempty"`
+	InceptionDate        string `json:"inceptionDate,omitempty"`
+	TerminationDate      string `json:"terminationDate,omitempty"`
+	InceptionDateEpoch   int64  `json:"inceptionDateEpoch,omitempty"`
+	TerminationDateEpoch int64  `json:"terminationDateEpoch,omitempty"`
+}
+
 type AggregatedConcept struct {
 	PrefUUID              string    `json:"prefUUID,omitempty"`
 	PrefLabel             string    `json:"prefLabel,omitempty"`
@@ -13,13 +21,18 @@ type AggregatedConcept struct {
 	TwitterHandle         string    `json:"twitterHandle,omitempty"`
 	ScopeNote             string    `json:"scopeNote,omitempty"`
 	ShortLabel            string    `json:"shortLabel,omitempty"`
-	MembershipRoles       []string  `json:"membershipRoles,omitempty"`
 	OrganisationUUID      string    `json:"organisationUUID,omitempty"`
 	PersonUUID            string    `json:"personUUID,omitempty"`
 	AggregatedHash        string    `json:"aggregateHash,omitempty"`
 	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
-	FigiCode        string     `json:"figiCode,omitempty"`
-	IssuedBy        string     `json:"issuedBy,omitempty"`
+
+	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
+	InceptionDate        string           `json:"inceptionDate,omitempty"`
+	TerminationDate      string           `json:"terminationDate,omitempty"`
+	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
+	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
+	FigiCode             string           `json:"figiCode,omitempty"`
+	IssuedBy             string           `json:"issuedBy,omitempty"`
 }
 
 // Concept - could be any concept genre, subject etc
@@ -42,12 +55,49 @@ type Concept struct {
 	ShortLabel        string   `json:"shortLabel,omitempty"`
 	BroaderUUIDs      []string `json:"broaderUUIDs,omitempty"`
 	RelatedUUIDs      []string `json:"relatedUUIDs,omitempty"`
-	MembershipRoles   []string `json:"membershipRoles,omitempty"`
 	OrganisationUUID  string   `json:"organisationUUID,omitempty"`
 	PersonUUID        string   `json:"personUUID,omitempty"`
 	Hash              string   `json:"hash,omitempty"`
-	FigiCode        string     `json:"figiCode,omitempty"`
-	IssuedBy        string     `json:"issuedBy,omitempty"`
+
+	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
+	InceptionDate        string           `json:"inceptionDate,omitempty"`
+	TerminationDate      string           `json:"terminationDate,omitempty"`
+	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
+	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
+	FigiCode             string           `json:"figiCode,omitempty"`
+	IssuedBy             string           `json:"issuedBy,omitempty"`
+}
+
+// UpdateMode is the mode for updating node or relationship
+type UpdateMode int
+
+const (
+	// Skip doesn't update the node or relation
+	Skip UpdateMode = 1 << iota
+	// SkipLabel doesn't update the label
+	SkipLabel
+	// SkipAttributes doesn't update the attributes
+	SkipAttributes
+	// SkipRelated doesn't update the related nodes, nor the relations
+	SkipRelated
+	// MergeAttributes will not remove missing attributes
+	MergeAttributes
+	// MergeRelated will not remove missing relations
+	MergeRelated
+)
+
+type Node struct {
+	UUID       string `neo:"type:primary"`
+	Relations  []*Relation
+	Labels     []string
+	Attributes map[string]interface{}
+}
+
+type Relation struct {
+	From       *Node
+	To         *Node
+	Name       string
+	Attributes map[string]interface{}
 }
 
 type UpdatedConcepts struct {
