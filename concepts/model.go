@@ -87,10 +87,11 @@ const (
 )
 
 type Node struct {
-	UUID       string `neo:"type:primary"`
+	PrimaryKey string
 	Relations  []*Relation
-	Labels     []string
+	Labels     string
 	Attributes map[string]interface{}
+	Options    []Option
 }
 
 type Relation struct {
