@@ -18,6 +18,8 @@ type AggregatedConcept struct {
 	PersonUUID            string    `json:"personUUID,omitempty"`
 	AggregatedHash        string    `json:"aggregateHash,omitempty"`
 	SourceRepresentations []Concept `json:"sourceRepresentations,omitempty"`
+	FigiCode        string     `json:"figiCode,omitempty"`
+	IssuedBy        string     `json:"issuedBy,omitempty"`
 }
 
 // Concept - could be any concept genre, subject etc
@@ -44,6 +46,8 @@ type Concept struct {
 	OrganisationUUID  string   `json:"organisationUUID,omitempty"`
 	PersonUUID        string   `json:"personUUID,omitempty"`
 	Hash              string   `json:"hash,omitempty"`
+	FigiCode        string     `json:"figiCode,omitempty"`
+	IssuedBy        string     `json:"issuedBy,omitempty"`
 }
 
 type UpdatedConcepts struct {
@@ -73,12 +77,14 @@ var constraintMap = map[string]string{
 	"TMEIdentifier":        "value",
 	"FactsetIdentifier":    "value",
 	"SmartlogicIdentifier": "value",
+	"FinancialInstrument":  "uuid",
 }
 
 var conceptLabels = [...]string{
 	"Concept", "Classification", "Section", "Subject", "SpecialReport", "Topic",
 	"Location", "Genre", "Brand", "Person", "Organisation", "MembershipRole", "Membership",
 	"BoardRole",
+	"FinancialInstrument",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing
@@ -87,6 +93,7 @@ var authorityToIdentifierLabelMap = map[string]string{
 	"TME":        "TMEIdentifier",
 	"UPP":        "UPPIdentifier",
 	"Smartlogic": "SmartlogicIdentifier",
+	"FACTSET":    "FactsetIdentifier",
 }
 
 var ConceptTypePaths = []string{
@@ -103,4 +110,5 @@ var ConceptTypePaths = []string{
 	"membershiproles",
 	"memberships",
 	"boardroles",
+	"financial-instruments",
 }

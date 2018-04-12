@@ -27,14 +27,18 @@ const (
 	simpleSmartlogicTopicUUID  = "abd38d90-2152-11e8-9ac1-da24cd01f044"
 	parentUuid                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
-	boardRoleUUID             = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
-	membershipRoleUUID        = "f807193d-337b-412f-b32c-afa14b385819"
-	organisationUUID          = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
-	personUUID                = "35946807-0205-4fc1-8516-bb1ae141659b"
-	membershipUUID            = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
-	anotherMembershipRoleUUID = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
-	anotherOrganisationUUID   = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
-	anotherPersonUUID         = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
+	boardRoleUUID                     = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
+	membershipRoleUUID                = "f807193d-337b-412f-b32c-afa14b385819"
+	organisationUUID                  = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
+	personUUID                        = "35946807-0205-4fc1-8516-bb1ae141659b"
+	financialInstrumentUUID           = "475b7b59-66d5-47e2-a273-adc3d1ba8286"
+	financialInstrumentSameIssuerUUID = "08c6066c-9356-4e96-abd5-9a4f3726724a"
+	financialOrgUUID                  = "4290f028-05e9-4c2d-9f11-61ec59ba081a"
+	anotherFinancialOrgUUID           = "230e3a74-694a-4d94-8294-6a45ec1ced26"
+	membershipUUID                    = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+	anotherMembershipRoleUUID         = "fe94adc6-ca44-438f-ad8f-0188d4a74987"
+	anotherOrganisationUUID           = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
+	anotherPersonUUID                 = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
 
 	sourceId_1 = "74c94c35-e16b-4527-8ef1-c8bcdcc8f05b"
 	sourceId_2 = "de3bcb30-992c-424e-8891-73f5bd9a7d3a"
@@ -643,6 +647,63 @@ func getMembership() AggregatedConcept {
 		}}}
 }
 
+func getFinancialInstrument() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  financialInstrumentUUID,
+		PrefLabel: "FinancialInstrument Pref Label",
+		Type:      "FinancialInstrument",
+		FigiCode:  "12345",
+		IssuedBy:  financialOrgUUID,
+		SourceRepresentations: []Concept{{
+			UUID:           financialInstrumentUUID,
+			PrefLabel:      "FinancialInstrument Pref Label",
+			Type:           "FinancialInstrument",
+			Authority:      "FACTSET",
+			AuthorityValue: "746464",
+			FigiCode:       "12345",
+			IssuedBy:       financialOrgUUID,
+		}},
+	}
+}
+
+func getFinancialInstrumentWithSameIssuer() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  financialInstrumentSameIssuerUUID,
+		PrefLabel: "FinancialInstrument Pref Label 2",
+		Type:      "FinancialInstrument",
+		FigiCode:  "12345678",
+		IssuedBy:  financialOrgUUID,
+		SourceRepresentations: []Concept{{
+			UUID:           financialInstrumentSameIssuerUUID,
+			PrefLabel:      "FinancialInstrument Pref Label 2",
+			Type:           "FinancialInstrument",
+			Authority:      "FACTSET",
+			AuthorityValue: "19283671",
+			FigiCode:       "12345678",
+			IssuedBy:       financialOrgUUID,
+		}},
+	}
+}
+
+func getUpdatedFinancialInstrument() AggregatedConcept {
+	return AggregatedConcept{
+		PrefUUID:  financialInstrumentUUID,
+		PrefLabel: "FinancialInstrument Pref Label",
+		Type:      "FinancialInstrument",
+		FigiCode:  "123457",
+		IssuedBy:  anotherFinancialOrgUUID,
+		SourceRepresentations: []Concept{{
+			UUID:           financialInstrumentUUID,
+			PrefLabel:      "FinancialInstrument Pref Label",
+			Type:           "FinancialInstrument",
+			Authority:      "FACTSET",
+			AuthorityValue: "746464",
+			FigiCode:       "123457",
+			IssuedBy:       anotherFinancialOrgUUID,
+		}},
+	}
+}
+
 func getUpdatedMembership() AggregatedConcept {
 	return AggregatedConcept{
 		PrefUUID:         membershipUUID,
@@ -702,6 +763,17 @@ func TestWriteService(t *testing.T) {
 		{"Creates All Values Present for a MembershipRole", getMembershipRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipRoleUUID}}},
 		{"Creates All Values Present for a BoardRole", getBoardRole(), nil, "", UpdatedConcepts{UpdatedIds: []string{boardRoleUUID}}},
 		{"Creates All Values Present for a Membership", getMembership(), nil, "", UpdatedConcepts{UpdatedIds: []string{membershipUUID}}},
+		{
+			testName:             "Creates All Values Present for a FinancialInstrument",
+			aggregatedConcept:    getFinancialInstrument(),
+			otherRelatedConcepts: nil,
+			errStr:               "",
+			updatedConcepts: UpdatedConcepts{
+				UpdatedIds: []string{
+					financialInstrumentUUID,
+				},
+			},
+		},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship", getConceptWithRelatedTo(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a RELATED_TO relationship to an unknown thing", getConceptWithRelatedToUnknownThing(), nil, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
 		{"Creates All Values Present for a Concept with a HAS_BROADER relationship", getConceptWithHasBroader(), []AggregatedConcept{getYetAnotherFullLoneAggregatedConcept()}, "", UpdatedConcepts{UpdatedIds: []string{basicConceptUUID}}},
@@ -789,6 +861,40 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	assert.Equal(t, anotherPersonUUID, updatedMemebership.PersonUUID)
 }
 
+func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
+	defer cleanDB(t)
+
+	_, err := conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	_, err = conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+
+	_, err = conceptsDriver.Write(getUpdatedFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	_, err = conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+}
+
+func TestFinancialInstrumentIssuerOrgRelationRemoved(t *testing.T) {
+	defer cleanDB(t)
+
+	_, err := conceptsDriver.Write(getFinancialInstrument(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrument(), "TestFinancialInstrumentExistingIssuedByRemoved")
+
+	_, err = conceptsDriver.Write(getFinancialInstrumentWithSameIssuer(), "test_tid")
+	assert.NoError(t, err, "Failed to write financial instrument")
+
+	readConceptAndCompare(t, getFinancialInstrumentWithSameIssuer(), "TestFinancialInstrumentExistingIssuedByRemoved")
+}
+
 func TestWriteService_HandlingConcordance(t *testing.T) {
 	tid := "test_tid"
 	type testStruct struct {
@@ -844,7 +950,6 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 }
 
 func TestMultipleConcordancesAreHandled(t *testing.T) {
-	cleanDB(t)
 	defer cleanDB(t)
 
 	_, err := conceptsDriver.Write(getFullLoneAggregatedConcept(), "test_tid")
@@ -1110,9 +1215,72 @@ func getConceptService(t *testing.T) ConceptService {
 }
 
 func cleanDB(t *testing.T) {
-	cleanSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID, simpleSmartlogicTopicUUID)
-	deleteSourceNodes(t, parentUuid, anotherBasicConceptUUID, basicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID, simpleSmartlogicTopicUUID)
-	deleteConcordedNodes(t, parentUuid, basicConceptUUID, anotherBasicConceptUUID, sourceId_1, sourceId_2, sourceId_3, unknownThingUUID, yetAnotherBasicConceptUUID, membershipRoleUUID, personUUID, organisationUUID, membershipUUID, anotherMembershipRoleUUID, anotherOrganisationUUID, anotherPersonUUID, simpleSmartlogicTopicUUID)
+	cleanSourceNodes(t,
+		parentUuid,
+		anotherBasicConceptUUID,
+		basicConceptUUID,
+		sourceId_1,
+		sourceId_2,
+		sourceId_3,
+		unknownThingUUID,
+		yetAnotherBasicConceptUUID,
+		membershipRoleUUID,
+		personUUID,
+		organisationUUID,
+		membershipUUID,
+		anotherMembershipRoleUUID,
+		anotherOrganisationUUID,
+		anotherPersonUUID,
+		simpleSmartlogicTopicUUID,
+		boardRoleUUID,
+		financialInstrumentUUID,
+		financialOrgUUID,
+		anotherFinancialOrgUUID,
+	)
+	deleteSourceNodes(t,
+		parentUuid,
+		anotherBasicConceptUUID,
+		basicConceptUUID,
+		sourceId_1,
+		sourceId_2,
+		sourceId_3,
+		unknownThingUUID,
+		yetAnotherBasicConceptUUID,
+		membershipRoleUUID,
+		personUUID,
+		organisationUUID,
+		membershipUUID,
+		anotherMembershipRoleUUID,
+		anotherOrganisationUUID,
+		anotherPersonUUID,
+		simpleSmartlogicTopicUUID,
+		boardRoleUUID,
+		financialInstrumentUUID,
+		financialOrgUUID,
+		anotherFinancialOrgUUID,
+	)
+	deleteConcordedNodes(t,
+		parentUuid,
+		basicConceptUUID,
+		anotherBasicConceptUUID,
+		sourceId_1,
+		sourceId_2,
+		sourceId_3,
+		unknownThingUUID,
+		yetAnotherBasicConceptUUID,
+		membershipRoleUUID,
+		personUUID,
+		organisationUUID,
+		membershipUUID,
+		anotherMembershipRoleUUID,
+		anotherOrganisationUUID,
+		anotherPersonUUID,
+		simpleSmartlogicTopicUUID,
+		boardRoleUUID,
+		financialInstrumentUUID,
+		financialOrgUUID,
+		anotherFinancialOrgUUID,
+	)
 }
 
 func deleteSourceNodes(t *testing.T, uuids ...string) {
