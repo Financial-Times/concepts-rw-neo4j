@@ -656,6 +656,8 @@ func getMembership() AggregatedConcept {
 			membershipRole,
 			anotherMembershipRole,
 		},
+		Salutation: "Mr",
+		BirthYear:  2018,
 		SourceRepresentations: []Concept{
 			{
 				UUID:             membershipUUID,
@@ -671,6 +673,8 @@ func getMembership() AggregatedConcept {
 					membershipRole,
 					anotherMembershipRole,
 				},
+				Salutation: "Mr",
+				BirthYear:  2018,
 			},
 		},
 	}
@@ -1169,6 +1173,8 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	assert.True(t, reflect.DeepEqual([]MembershipRole{membershipRole, anotherMembershipRole}, originalMembership.MembershipRoles))
 	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
 	assert.Equal(t, personUUID, originalMembership.PersonUUID)
+	assert.Equal(t, "Mr", originalMembership.Salutation)
+	assert.Equal(t, 2018, originalMembership.BirthYear)
 
 	_, err = conceptsDriver.Write(getUpdatedMembership(), "test_tid")
 	assert.NoError(t, err, "Failed to write membership")

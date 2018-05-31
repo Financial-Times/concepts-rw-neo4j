@@ -107,6 +107,9 @@ type neoAggregatedConcept struct {
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
 	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
+	// Person
+	Salutation string `json:"salutation,omitempty"`
+	BirthYear  int    `json:"birthYear,omitempty"`
 }
 
 type neoConcept struct {
@@ -150,6 +153,9 @@ type neoConcept struct {
 	YearFounded            int      `json:"yearFounded,omitempty"`
 	LeiCode                string   `json:"leiCode,omitempty"`
 	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
+	// Person
+	Salutation string `json:"salutation,omitempty"`
+	BirthYear  int    `json:"birthYear,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -260,7 +266,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				canonical.postalCode as postalCode,
 				canonical.yearFounded as yearFounded,
 				canonical.leiCode as leiCode,
-				canonical.isDeprecated as isDeprecated
+				canonical.isDeprecated as isDeprecated,
+				canonical.salutation as salutation,
+				canonical.birthYear as birthYear
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -316,6 +324,9 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		PostalCode:             results[0].PostalCode,
 		YearFounded:            results[0].YearFounded,
 		LeiCode:                results[0].LeiCode,
+		// Person
+		Salutation: results[0].Salutation,
+		BirthYear:  results[0].BirthYear,
 	}
 
 	sourceConcepts := []Concept{}
@@ -755,6 +766,9 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		PostalCode:             aggregatedConcept.PostalCode,
 		YearFounded:            aggregatedConcept.YearFounded,
 		LeiCode:                aggregatedConcept.LeiCode,
+		// Person
+		Salutation: aggregatedConcept.Salutation,
+		BirthYear:  aggregatedConcept.BirthYear,
 	}
 
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -1106,6 +1120,13 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	}
 	if concept.TerminationDateEpoch > 0 {
 		nodeProps["terminationDateEpoch"] = concept.TerminationDateEpoch
+	}
+
+	if concept.Salutation != "" {
+		nodeProps["salutation"] = concept.Salutation
+	}
+	if concept.BirthYear > 0 {
+		nodeProps["birthYear"] = concept.BirthYear
 	}
 
 	return nodeProps
