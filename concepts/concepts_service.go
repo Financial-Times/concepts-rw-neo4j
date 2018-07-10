@@ -19,12 +19,12 @@ const (
 	iso8601DateOnly = "2006-01-02"
 )
 
-//Service - CypherDriver - CypherDriver
+// ConceptService - CypherDriver - CypherDriver
 type ConceptService struct {
 	conn neoutils.NeoConnection
 }
 
-// Service defines the functions any read-write application needs to implement
+// ConceptServicer defines the functions any read-write application needs to implement
 type ConceptServicer interface {
 	Write(thing interface{}, transID string) (updatedIds interface{}, err error)
 	Read(uuid string, transID string) (thing interface{}, found bool, err error)
@@ -33,15 +33,16 @@ type ConceptServicer interface {
 	Initialise() error
 }
 
-//NewConceptService instantiate driver
+// NewConceptService instantiate driver
 func NewConceptService(cypherRunner neoutils.NeoConnection) ConceptService {
 	return ConceptService{cypherRunner}
 }
 
-//Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
+// Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
 func (s *ConceptService) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
+		"Concept":    "leiCode",
 	})
 	if err != nil {
 		logger.WithError(err).Error("Could not run db index")
