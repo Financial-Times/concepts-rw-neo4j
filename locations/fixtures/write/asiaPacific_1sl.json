@@ -1,0 +1,17 @@
+{
+  "prefUUID": "94f3ff02-bcbf-11e8-9c7a-da24cd01f044",
+  "prefLabel": "Asia-Pacific",
+  "type": "Location",
+  "aliases": [
+    "Asia-Pacific"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "94f3ff02-bcbf-11e8-9c7a-da24cd01f044",
+      "prefLabel": "Asia-Pacific",
+      "type": "Location",
+      "authority": "Smartlogic",
+      "authorityValue": "94f3ff02-bcbf-11e8-9c7a-da24cd01f044"
+    }
+  ]
+}

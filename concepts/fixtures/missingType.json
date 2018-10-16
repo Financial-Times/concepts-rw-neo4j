@@ -1,0 +1,12 @@
+{
+  "prefUUID": "{{ .Uuid}}",
+  "prefLabel": "Invalid {{ .Type}}",
+  "sourceRepresentations": [
+    {
+      "uuid": "{{ .Uuid}}",
+      "prefLabel": "Invalid {{ .Type}}",
+      "authority": "TME",
+      "authorityValue": "YmQ4IE38B6P4570NaK4ZjLWE1NWItYjgxNzJi72DHTRh-QnJRz"
+    }
+  ]
+}

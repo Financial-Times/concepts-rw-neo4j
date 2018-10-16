@@ -1,0 +1,17 @@
+{
+  "prefUUID": "96622afa-ba6f-11e8-989a-da24cd01f044",
+  "prefLabel": "President Obama",
+  "type": "Person",
+  "aliases": [
+    "President Obama"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "96622afa-ba6f-11e8-989a-da24cd01f044",
+      "type": "Person",
+      "prefLabel": "President Obama",
+      "authority": "Smartlogic",
+      "authorityValue": "96622afa-ba6f-11e8-989a-da24cd01f044"
+    }
+  ]
+}

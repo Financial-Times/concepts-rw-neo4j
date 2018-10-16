@@ -1,0 +1,17 @@
+{
+  "prefUUID": "fdc96953-d639-3df9-a373-4d6e94c55a93",
+  "prefLabel": "Letter",
+  "type": "Genre",
+  "aliases": [
+    "Letter"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "fdc96953-d639-3df9-a373-4d6e94c55a93",
+      "prefLabel": "Letter",
+      "type": "Genre",
+      "authority": "TME",
+      "authorityValue": "NQ==-R2V5yNB3wq2ucmVz"
+    }
+  ]
+}

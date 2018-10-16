@@ -1,0 +1,81 @@
+{
+  "prefUUID": "58f3aeac-8a33-4b9f-a208-14ead197b361",
+  "prefLabel": "Apple Inc",
+  "type": "PublicCompany",
+  "aliases": [
+    "Apple, Inc.",
+    "Apple",
+    "Apple Inc.",
+    "Apple Computer, Inc.",
+    "Apple Computers",
+    "Apple Canada",
+    "Apple Computer",
+    "Apple Computer Inc",
+    "Apple Inc",
+    "Apple Incorporated"
+  ],
+  "scopeNote": "American multinational technology company",
+  "countryCode": "US",
+  "countryOfIncorporation": "US",
+  "formerNames": [
+    "Apple Computer, Inc."
+  ],
+  "leiCode": "HWUPKR9IT4XBT394",
+  "postalCode": "95014-2083",
+  "properName": "Apple, Inc.",
+  "shortName": "Apple",
+  "yearFounded": 1976,
+  "sourceRepresentations": [
+    {
+      "uuid": "43ed1b5c-6043-348f-ac35-045b42d3b947",
+      "type": "PublicCompany",
+      "prefLabel": "Apple, Inc.",
+      "authority": "FACTSET",
+      "authorityValue": "001QAE-E",
+      "aliases": [
+        "Apple, Inc.",
+        "Apple",
+        "Apple Inc.",
+        "Apple Computer, Inc."
+      ],
+      "countryCode": "US",
+      "countryOfIncorporation": "US",
+      "formerNames": [
+        "Apple Computer, Inc."
+      ],
+      "leiCode": "HWUPKR0MPOU8FGXBT394",
+      "parentOrganisation": "b1047bed-f6f6-31c4-9aa9-199f48aeb5a1",
+      "postalCode": "95014-2083",
+      "properName": "Apple, Inc.",
+      "shortName": "Apple",
+      "yearFounded": 1976
+    },
+    {
+      "uuid": "33df7971-bc95-3029-bfb9-1a92e377b971",
+      "type": "Organisation",
+      "prefLabel": "Apple Inc",
+      "authority": "TME",
+      "authorityValue": "TnN0ZWluX09OuR3nBNX0FBUEw=-T04=",
+      "aliases": [
+        "Apple",
+        "Apple Canada",
+        "Apple Computer",
+        "Apple Computer Inc",
+        "Apple Computers",
+        "Apple Inc",
+        "Apple Incorporated"
+      ]
+    },
+    {
+      "uuid": "58f3aeac-8a33-4b9f-a208-14ead197b361",
+      "type": "Organisation",
+      "prefLabel": "Apple Inc",
+      "authority": "Smartlogic",
+      "authorityValue": "58f3aeac-8a33-4b9f-a208-14ead197b361",
+      "scopeNote": "American multinational technology company",
+      "aliases": [
+        "Apple Inc"
+      ]
+    }
+  ]
+}

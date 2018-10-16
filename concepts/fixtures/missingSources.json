@@ -1,0 +1,5 @@
+{
+  "prefUUID": "{{ .Uuid}}",
+  "prefLabel": "Invalid {{ .Type}}",
+  "type": "{{ .Type}}"
+}

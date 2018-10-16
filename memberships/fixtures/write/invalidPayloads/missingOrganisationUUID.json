@@ -1,0 +1,29 @@
+{
+  "prefUUID": "d0360165-3ea7-3506-af2a-9a3b1316a78c",
+  "prefLabel": "Graduate Degree",
+  "type": "Membership",
+  "aliases": [
+    "Graduate Degree"
+  ],
+  "membershipRoles": [
+    {
+      "membershipRoleUUID": "c27c9826-bb2f-11e8-989a-da24cd01f044"
+    }
+  ],
+  "personUUID": "ba26b1a2-bb2f-11e8-989a-da24cd01f044",
+  "sourceRepresentations": [
+    {
+      "uuid": "d0360165-3ea7-3506-af2a-9a3b1316a78c",
+      "type": "Membership",
+      "prefLabel": "Graduate Degree",
+      "authority": "FACTSET",
+      "authorityValue": "10785424",
+      "membershipRoles": [
+        {
+          "membershipRoleUUID": "c27c9826-bb2f-11e8-989a-da24cd01f044"
+        }
+      ],
+      "personUUID": "ba26b1a2-bb2f-11e8-989a-da24cd01f044"
+    }
+  ]
+}

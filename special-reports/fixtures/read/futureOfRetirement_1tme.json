@@ -1,0 +1,17 @@
+{
+  "prefUUID": "6e2a289d-5d3d-38c0-989d-b1600e6b77cc",
+  "prefLabel": "The Future of Retirement",
+  "type": "SpecialReport",
+  "aliases": [
+    "The Future of Retirement"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "6e2a289d-5d3d-38c0-989d-b1600e6b77cc",
+      "prefLabel": "The Future of Retirement",
+      "type": "SpecialReport",
+      "authority": "TME",
+      "authorityValue": "ODkzOTRkKjhT453EsTg0NDAz-U3BlY123459ydHM="
+    }
+  ]
+}

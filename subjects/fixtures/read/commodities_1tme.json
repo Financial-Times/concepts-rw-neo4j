@@ -1,0 +1,17 @@
+{
+  "prefUUID": "9dcc589d-a118-30a7-9de9-cfc4309f42b3",
+  "prefLabel": "Commodities",
+  "type": "Subject",
+  "aliases": [
+    "Commodities"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "9dcc589d-a118-30a7-9de9-cfc4309f42b3",
+      "prefLabel": "Commodities",
+      "type": "Subject",
+      "authority": "TME",
+      "authorityValue": "MTEx-U3Viama76cXSVjdHM="
+    }
+  ]
+}

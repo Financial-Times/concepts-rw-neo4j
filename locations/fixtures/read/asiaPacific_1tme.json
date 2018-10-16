@@ -1,0 +1,18 @@
+{
+  "prefUUID": "2dac3134-874d-3bbd-9392-da6d99fb01a0",
+  "prefLabel": "Asia-Pacific",
+  "type": "Location",
+  "aliases": [
+    "Asia-Pacific"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "2dac3134-874d-3bbd-9392-da6d99fb01a0",
+      "prefLabel": "Asia-Pacific",
+      "type": "Location",
+      "authority": "TME",
+      "authorityValue": "TnN0ZWluXvWQ1saLm7fMDA5MzQx-R0w=",
+      "isDeprecated": true
+    }
+  ]
+}

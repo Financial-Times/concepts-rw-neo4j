@@ -1,0 +1,36 @@
+{
+  "prefUUID": "0665c4a0-2e63-4b5d-8397-6d0aaa30f52b",
+  "prefLabel": "Moscow Bureau Chief",
+  "type": "Membership",
+  "aliases": [
+    "Moscow Bureau Chief"
+  ],
+  "scopeNote": "Curated Membership of FT role",
+  "membershipRoles": [
+    {
+      "membershipRoleUUID": "06c838ad-4fa2-4cae-b55b-9a2b0477b6f5"
+    }
+  ],
+  "organisationUUID": "2d42983c-9c91-4d72-bc5d-a4153b11ec86",
+  "personUUID": "035df8a2-bb45-11e8-a488-da24cd01f044",
+  "sourceRepresentations": [
+    {
+      "uuid": "0665c4a0-2e63-4b5d-8397-6d0aaa30f52b",
+      "type": "Membership",
+      "prefLabel": "Moscow Bureau Chief",
+      "authority": "Smartlogic",
+      "authorityValue": "0665c4a0-2e63-4b5d-8397-6d0aaa30f52b",
+      "aliases": [
+        "Moscow Bureau Chief"
+      ],
+      "scopeNote": "Curated Membership of FT role",
+      "membershipRoles": [
+        {
+          "membershipRoleUUID": "06c838ad-4fa2-4cae-b55b-9a2b0477b6f5"
+        }
+      ],
+      "organisationUUID": "2d42983c-9c91-4d72-bc5d-a4153b11ec86",
+      "personUUID": "035df8a2-bb45-11e8-a488-da24cd01f044"
+    }
+  ]
+}

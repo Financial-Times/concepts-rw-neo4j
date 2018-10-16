@@ -1,0 +1,63 @@
+{
+  "prefUUID": "3ca8899c-ba69-11e8-ba49-da24cd01f044",
+  "prefLabel": "Barack Obama",
+  "type": "Person",
+  "aliases": [
+    "President Obama",
+    "Sen. Barack Obama",
+    "Barack H. Obama",
+    "Barack H. Obama II",
+    "Barack Hussein Obama",
+    "Barack Hussein Obama, Jr.",
+    "Barack Obama II",
+    "Obama",
+    "President Barack Hussein Obama II",
+    "Barack Obama",
+    "Barack Hussein Obama II"
+  ],
+  "scopeNote": "44th President of the United States of America",
+  "isAuthor": true,
+  "salutation": "Mr.",
+  "birthYear": 1961,
+  "emailAddress": "b.obama@gmail.com",
+  "twitterHandle": "@Obama1",
+  "_imageUrl": "https://www.ft.com/images/raw/barack-obama",
+  "sourceRepresentations": [
+    {
+      "uuid": "208edf7d-d4eb-329c-a293-560713d75250",
+      "type": "Person",
+      "prefLabel": "Barack Obama",
+      "authority": "TME",
+      "authorityValue": "OTZjYzIzZTUtMj1DfG4YjNiYzEyOWZi-QXV0aG9ycw==",
+      "isAuthor": true
+    },
+    {
+      "uuid": "2d3a0bfb-80ff-395d-8b26-afaeb353d08c",
+      "type": "Person",
+      "prefLabel": "Barack H. Obama",
+      "authority": "FACTSET",
+      "authorityValue": "0BAMA1-E"
+    },
+    {
+      "uuid": "3ca8899c-ba69-11e8-ba49-da24cd01f044",
+      "type": "Person",
+      "prefLabel": "Barack Obama",
+      "authority": "Smartlogic",
+      "authorityValue": "3ca8899c-ba69-11e8-ba49-da24cd01f044"
+    },
+    {
+      "uuid": "57d79ccb-8804-3651-9144-8fc5fb4eacd9",
+      "type": "Person",
+      "prefLabel": "Barack Obama",
+      "authority": "TME",
+      "authorityValue": "TnN0ZWluX5Tt7hYfMjM=-UE4="
+    },
+    {
+      "uuid": "7eff22dd-7bf4-4e15-aea1-70b9592af499",
+      "type": "Person",
+      "prefLabel": "Barack Obama",
+      "authority": "Wikidata",
+      "authorityValue": "http://www.wikidata.org/entity/0BAMA"
+    }
+  ]
+}

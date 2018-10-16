@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"io"
 	"net/http"
 	"regexp"
@@ -24,7 +25,8 @@ var irregularConceptTypePaths = map[string]string{
 }
 
 type ConceptsHandler struct {
-	ConceptsService ConceptServicer
+	ConceptsService map[string]ConceptServicer
+	Connection      neoutils.NeoConnection
 }
 
 func (h *ConceptsHandler) RegisterHandlers(router *mux.Router) {
@@ -39,14 +41,19 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 	uuid := vars["uuid"]
 	conceptType := vars["concept_type"]
 
+	if _, ok := h.ConceptsService[conceptType]; !ok {
+		writeJSONError(w, fmt.Sprintf("concept type %s is not currently supported", conceptType), http.StatusBadRequest)
+		return
+	}
+
 	transID := transactionidutils.GetTransactionIDFromRequest(r)
 	w.Header().Add("Content-Type", "application/json")
 	w.Header().Set("X-Request-Id", transID)
 
 	var body io.Reader = r.Body
 	dec := json.NewDecoder(body)
-	inst, docUUID, err := h.ConceptsService.DecodeJSON(dec)
 
+	inst, docUUID, err := DecodeJSON(dec)
 	if err != nil {
 		writeJSONError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -63,7 +70,7 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedIds, err := h.ConceptsService.Write(inst, transID)
+	updatedIds, err := h.ConceptsService[conceptType].Write(inst, transID)
 
 	if err != nil {
 		switch e := err.(type) {
@@ -86,11 +93,17 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
-	} else {
-		w.WriteHeader(http.StatusOK)
-		w.Write(updateIDsBody)
-		return
 	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(updateIDsBody)
+	return
+}
+
+//DecodeJSON - decode json
+func DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
+	sub := AggregatedConcept{}
+	err := dec.Decode(&sub)
+	return sub, sub.PrefUUID, err
 }
 
 func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +113,12 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 
 	transID := transactionidutils.GetTransactionIDFromRequest(r)
 
-	obj, found, err := h.ConceptsService.Read(uuid, transID)
+	if _, ok := h.ConceptsService[conceptType]; !ok {
+		writeJSONError(w, fmt.Sprintf("concept type %s is not currently supported", conceptType), http.StatusBadRequest)
+		return
+	}
+
+	obj, found, err := h.ConceptsService[conceptType].Read(uuid, transID)
 
 	w.Header().Add("Content-Type", "application/json")
 	w.Header().Set("X-Request-Id", transID)

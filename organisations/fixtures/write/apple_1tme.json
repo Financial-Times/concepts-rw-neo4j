@@ -1,0 +1,32 @@
+{
+  "prefUUID": "33df7971-bc95-3029-bfb9-1a92e377b971",
+  "prefLabel": "Apple Inc",
+  "type": "PublicCompany",
+  "aliases": [
+    "Apple",
+    "Apple Canada",
+    "Apple Computer",
+    "Apple Computer Inc",
+    "Apple Computers",
+    "Apple Inc",
+    "Apple Incorporated"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "33df7971-bc95-3029-bfb9-1a92e377b971",
+      "type": "Organisation",
+      "prefLabel": "Apple Inc",
+      "authority": "TME",
+      "authorityValue": "TnN0ZWluX09OuR3nBNX0FBUEw=-T04=",
+      "aliases": [
+        "Apple",
+        "Apple Canada",
+        "Apple Computer",
+        "Apple Computer Inc",
+        "Apple Computers",
+        "Apple Inc",
+        "Apple Incorporated"
+      ]
+    }
+  ]
+}

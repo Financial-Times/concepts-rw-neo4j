@@ -1,7 +1,19 @@
 package main
 
 import (
+	"github.com/Financial-Times/concepts-rw-neo4j/alphaville-series"
+	"github.com/Financial-Times/concepts-rw-neo4j/brands"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
+	"github.com/Financial-Times/concepts-rw-neo4j/genres"
+	"github.com/Financial-Times/concepts-rw-neo4j/locations"
+	"github.com/Financial-Times/concepts-rw-neo4j/membership-roles"
+	"github.com/Financial-Times/concepts-rw-neo4j/memberships"
+	"github.com/Financial-Times/concepts-rw-neo4j/organisations"
+	"github.com/Financial-Times/concepts-rw-neo4j/people"
+	"github.com/Financial-Times/concepts-rw-neo4j/sections"
+	"github.com/Financial-Times/concepts-rw-neo4j/special-reports"
+	"github.com/Financial-Times/concepts-rw-neo4j/subjects"
+	"github.com/Financial-Times/concepts-rw-neo4j/topics"
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/gorilla/mux"
@@ -17,10 +29,10 @@ const appDescription = "A RESTful API for managing Concepts in neo4j"
 const serviceName = "concepts-rw-neo4j"
 
 type ServerConf struct {
-	AppSystemCode      string
-	AppName            string
-	Port               int
-	RequestLoggingOn   bool
+	AppSystemCode    string
+	AppName          string
+	Port             int
+	RequestLoggingOn bool
 }
 
 func main() {
@@ -73,22 +85,23 @@ func main() {
 		conf := neoutils.DefaultConnectionConfig()
 		conf.BatchSize = *batchSize
 		db, err := neoutils.Connect(*neoURL, conf)
-
 		if err != nil {
-			logger.Errorf("Could not connect to neo4j, error=[%s]\n", err)
+			logger.Fatalf("Could not connect to neo4j, error=[%s]\n", err.Error())
 		}
 
 		appConf := ServerConf{
-			AppSystemCode:      *appSystemCode,
-			AppName:            *appName,
-			Port:               *port,
-			RequestLoggingOn:   *requestLoggingOn,
+			AppSystemCode:    *appSystemCode,
+			AppName:          *appName,
+			Port:             *port,
+			RequestLoggingOn: *requestLoggingOn,
 		}
 
-		conceptsService := concepts.NewConceptService(db)
-		conceptsService.Initialise()
+		if err := concepts.Initialise(db); err != nil {
+			logger.Fatalf("Could not initialize constraints on db, error=[%s]\n", err.Error())
+		}
 
-		handler := concepts.ConceptsHandler{ConceptsService: &conceptsService}
+		services := createServices(db)
+		handler := concepts.ConceptsHandler{ConceptsService: services, Connection: db}
 		runServerWithParams(handler, appConf)
 	}
 	logger.Infof("Application started with args %s", os.Args)
@@ -110,4 +123,21 @@ func runServerWithParams(handler concepts.ConceptsHandler, appConf ServerConf) {
 		logger.Fatalf("Unable to start: %v", err)
 	}
 	logger.Printf("exiting on %s", serviceName)
+}
+
+func createServices(db neoutils.NeoConnection) map[string]concepts.ConceptServicer {
+	serviceMap := make(map[string]concepts.ConceptServicer)
+	serviceMap["alphaville-series"] = alphaville_series.NewAlphavilleSeriesService(db)
+	serviceMap["brands"] = brands.NewBrandService(db)
+	serviceMap["genres"] = genres.NewGenreService(db)
+	serviceMap["locations"] = locations.NewLocationService(db)
+	serviceMap["memberships"] = memberships.NewMembershipService(db)
+	serviceMap["membership-roles"] = membership_roles.NewMembershipRoleService(db)
+	serviceMap["organisations"] = organisations.NewOrganisationService(db)
+	serviceMap["people"] = people.NewPeopleService(db)
+	serviceMap["sections"] = sections.NewSectionService(db)
+	serviceMap["subjects"] = subjects.NewSubjectService(db)
+	serviceMap["special-reports"] = special_reports.NewSpecialReportService(db)
+	serviceMap["topics"] = topics.NewTopicService(db)
+	return serviceMap
 }

@@ -1,0 +1,13 @@
+{
+  "prefUUID": "d0360165-3ea7-3506-af2a-9a3b1316a78c",
+  "prefLabel": "Invalid MembershipRole",
+  "type": "MembershipRole",
+  "sourceRepresentations": [
+    {
+      "uuid": "d0360165-3ea7-3506-af2a-9a3b1316a78c",
+      "prefLabel": "Invalid MembershipRole",
+      "type": "MembershipRole",
+      "authority": "FACTSET"
+    }
+  ]
+}

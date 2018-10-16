@@ -1,0 +1,44 @@
+{
+  "prefUUID": "318dc7a8-bcbb-11e8-9c7a-da24cd01f044",
+  "prefLabel": "Asia-Pacific",
+  "type": "Location",
+  "aliases": [
+    "Asia-Pacific"
+  ],
+  "scopeNote": "Covers the Asia-Pacific region",
+  "sourceRepresentations": [
+    {
+      "uuid": "2dac3134-874d-3bbd-9392-da6d99fb01a0",
+      "prefLabel": "Asia-Pacific",
+      "type": "Location",
+      "authority": "TME",
+      "authorityValue": "TnN0ZWluXvWQ1saLm7fMDA5MzQx-R0w=",
+      "isDeprecated": true
+    },
+    {
+      "uuid": "318dc7a8-bcbb-11e8-9c7a-da24cd01f044",
+      "prefLabel": "Asia-Pacific",
+      "type": "Location",
+      "authority": "Smartlogic",
+      "authorityValue": "318dc7a8-bcbb-11e8-9c7a-da24cd01f044",
+      "broaderUUIDs": [
+        "7254e6c9-e9de-4952-9a94-564cc9ada79c",
+        "e073df10-861d-4212-b0ae-436f0ade834f"
+      ],
+      "relatedUUIDs": [
+        "99f28ed2-bcc0-11e8-9c7a-da24cd01f044",
+        "a60afddb-fc00-4424-868b-e0e90470912d"
+      ],
+      "supersededByUUIDs": [
+        "a27d9d8a-bcc0-11e8-9c7a-da24cd01f044"
+      ]
+    },
+    {
+      "uuid": "96b88cae-6988-31b9-b916-ab91f116d98a",
+      "prefLabel": "Asia-Pacific",
+      "type": "Section",
+      "authority": "TME",
+      "authorityValue": "MTE=-U2Vjd12dFFdGlvbnM= ON"
+    }
+  ]
+}

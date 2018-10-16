@@ -1,0 +1,59 @@
+{
+  "prefUUID": "fd3b0d26-bfd5-11e8-9c7a-da24cd01f044",
+  "prefLabel": "Fintech",
+  "type": "Topic",
+  "aliases": [
+    "Fintech",
+    "Companies"
+  ],
+  "broaderUUIDs": [
+    "66f1abb1-d35e-4d98-88db-b7a943104e84",
+    "c91b1fad-1097-468b-be82-9a8ff717d54c"
+  ],
+  "relatedUUIDs": [
+    "a072c32f-42de-4cc6-8e77-c468d681e5db",
+    "fbfd271a-71a6-4663-842b-0c6406785bc6"
+  ],
+  "supersededByUUIDs": [
+    "b062fd6b-01fa-4049-a1bc-092f9f43c307"
+  ],
+  "scopeNote": "Innovative technology in the delivery of financial services. ",
+  "sourceRepresentations": [
+    {
+      "uuid": "42767939-582e-39d3-a940-39c5ccb15d0f",
+      "type": "Topic",
+      "prefLabel": "Fintech",
+      "authority": "TME",
+      "authorityValue": "YTE3ZjE1ZmM5RrC98JkE3NDIxNTQ3-VG9waWNz"
+    },
+    {
+      "uuid": "fd3b0d26-bfd5-11e8-9c7a-da24cd01f044",
+      "type": "Topic",
+      "prefLabel": "Fintech",
+      "authority": "Smartlogic",
+      "authorityValue": "fd3b0d26-bfd5-11e8-9c7a-da24cd01f044",
+      "aliases": [
+        "Fintech"
+      ],
+      "broaderUUIDs": [
+        "66f1abb1-d35e-4d98-88db-b7a943104e84",
+        "c91b1fad-1097-468b-be82-9a8ff717d54c"
+      ],
+      "relatedUUIDs": [
+        "a072c32f-42de-4cc6-8e77-c468d681e5db",
+        "fbfd271a-71a6-4663-842b-0c6406785bc6"
+      ],
+      "supersededByUUIDs": [
+        "b062fd6b-01fa-4049-a1bc-092f9f43c307"
+      ],
+      "scopeNote": "Innovative technology in the delivery of financial services. "
+    },
+    {
+      "uuid": "aa956186-0794-3427-bf18-527626bab96b",
+      "type": "Section",
+      "prefLabel": "Companies",
+      "authority": "TME",
+      "authorityValue": "Mjk=-U2Vj432dJhBVGlnM="
+    }
+  ]
+}

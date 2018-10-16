@@ -1,0 +1,17 @@
+{
+  "prefUUID": "42767939-582e-39d3-a940-39c5ccb15d0f",
+  "prefLabel": "Fintech",
+  "type": "Topic",
+  "aliases": [
+    "Fintech"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "42767939-582e-39d3-a940-39c5ccb15d0f",
+      "type": "Topic",
+      "prefLabel": "Fintech",
+      "authority": "TME",
+      "authorityValue": "YTE3ZjE1ZmM5RrC98JkE3NDIxNTQ3-VG9waWNz"
+    }
+  ]
+}

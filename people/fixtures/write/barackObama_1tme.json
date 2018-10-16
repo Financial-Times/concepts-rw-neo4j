@@ -1,0 +1,20 @@
+{
+  "prefUUID": "57d79ccb-8804-3651-9144-8fc5fb4eacd9",
+  "prefLabel": "Barack Obama",
+  "type": "Person",
+  "aliases": [
+    "Barack Obama"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "57d79ccb-8804-3651-9144-8fc5fb4eacd9",
+      "type": "Person",
+      "prefLabel": "Barack Obama",
+      "authority": "TME",
+      "authorityValue": "TnN0ZWluX5Tt7hYfMjM=-UE4=",
+      "aliases": [
+        "Barack Obama"
+      ]
+    }
+  ]
+}

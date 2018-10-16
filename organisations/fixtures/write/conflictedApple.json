@@ -1,0 +1,31 @@
+{
+  "prefUUID": "58f3aeac-8a33-4b9f-a208-14ead197b361",
+  "prefLabel": "Apple, Inc.",
+  "type": "PublicCompany",
+  "aliases": [
+    "Apple, Inc.",
+    "Apple Inc."
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "58f3aeac-8a33-4b9f-a208-14ead197b361",
+      "type": "PublicCompany",
+      "prefLabel": "Apple, Inc.",
+      "authority": "Smartlogic",
+      "authorityValue": "58f3aeac-8a33-4b9f-a208-14ead197b361",
+      "aliases": [
+        "Apple, Inc."
+      ]
+    },
+    {
+      "uuid": "1d3711e2-b766-11e8-adcb-da24cd01f044",
+      "type": "Organisation",
+      "prefLabel": "Apple Inc",
+      "authority": "Smartlogic",
+      "authorityValue": "1d3711e2-b766-11e8-adcb-da24cd01f044",
+      "aliases": [
+        "Apple Inc"
+      ]
+    }
+  ]
+}

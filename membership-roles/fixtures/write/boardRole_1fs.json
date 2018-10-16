@@ -1,0 +1,17 @@
+{
+  "prefUUID": "93a856fe-bb55-11e8-a488-da24cd01f044",
+  "prefLabel": "Chief Executive Officer",
+  "type": "MembershipRole",
+  "aliases": [
+    "Chief Executive Officer"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "93a856fe-bb55-11e8-a488-da24cd01f044",
+      "type": "MembershipRole",
+      "prefLabel": "Chief Executive Officer",
+      "authority": "FACTSET",
+      "authorityValue": "CEO"
+    }
+  ]
+}

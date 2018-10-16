@@ -1,0 +1,29 @@
+{
+  "prefUUID": "7626fab0-7e3e-4598-9089-ad0afdb33459",
+  "prefLabel": "Companies",
+  "type": "Topic",
+  "aliases": [
+    "Companies"
+  ],
+  "scopeNote": "Corporate news, analysis and comment.",
+  "sourceRepresentations": [
+    {
+      "uuid": "aa956186-0794-3427-bf18-527626bab96b",
+      "type": "Section",
+      "prefLabel": "Companies",
+      "authority": "TME",
+      "authorityValue": "Mjk=-U2Vj432dJhBVGlnM="
+    },
+    {
+      "uuid": "7626fab0-7e3e-4598-9089-ad0afdb33459",
+      "type": "Topic",
+      "prefLabel": "Companies",
+      "authority": "Smartlogic",
+      "authorityValue": "7626fab0-7e3e-4598-9089-ad0afdb33459",
+      "aliases": [
+        "Companies"
+      ],
+      "scopeNote": "Corporate news, analysis and comment."
+    }
+  ]
+}

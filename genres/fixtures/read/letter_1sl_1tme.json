@@ -1,0 +1,25 @@
+{
+  "prefUUID": "58a458ee-bc06-11e8-9ef6-da24cd01f044",
+  "prefLabel": "Letters",
+  "type": "Genre",
+  "aliases": [
+    "Letters",
+    "Letter"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "58a458ee-bc06-11e8-9ef6-da24cd01f044",
+      "prefLabel": "Letters",
+      "type": "Genre",
+      "authority": "Smartlogic",
+      "authorityValue": "58a458ee-bc06-11e8-9ef6-da24cd01f044"
+    },
+    {
+      "uuid": "fdc96953-d639-3df9-a373-4d6e94c55a93",
+      "prefLabel": "Letter",
+      "type": "Genre",
+      "authority": "TME",
+      "authorityValue": "NQ==-R2V5yNB3wq2ucmVz"
+    }
+  ]
+}

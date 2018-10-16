@@ -1,0 +1,17 @@
+{
+  "prefUUID": "68856f1d-07c2-35a2-ac78-8c6081259b49",
+  "prefLabel": "Draaisma's big questions",
+  "type": "AlphavilleSeries",
+  "aliases": [
+    "Draaisma's big questions"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "68856f1d-07c2-35a2-ac78-8c6081259b49",
+      "prefLabel": "Draaisma's big questions",
+      "type": "AlphavilleSeries",
+      "authority": "TME",
+      "authorityValue": "Mzg2OTY=-QWxwaGF2aWxe1WQ3zaWZpY2F0aW9u"
+    }
+  ]
+}

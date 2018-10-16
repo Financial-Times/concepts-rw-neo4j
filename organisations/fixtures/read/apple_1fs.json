@@ -1,0 +1,46 @@
+{
+  "prefUUID": "43ed1b5c-6043-348f-ac35-045b42d3b947",
+  "prefLabel": "Apple, Inc.",
+  "type": "PublicCompany",
+  "aliases": [
+    "Apple, Inc.",
+    "Apple",
+    "Apple Inc.",
+    "Apple Computer, Inc.",
+    "Apple Computers",
+    "Apple Canada",
+    "Apple Computer",
+    "Apple Computer Inc",
+    "Apple Inc",
+    "Apple Incorporated",
+    "Apple Comps",
+    "Apple Inc.",
+    "Apple Incorporated"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "43ed1b5c-6043-348f-ac35-045b42d3b947",
+      "prefLabel": "Apple, Inc.",
+      "type": "PublicCompany",
+      "authority": "FACTSET",
+      "authorityValue": "001QAE-E",
+      "parentOrganisation": "b1047bed-f6f6-31c4-9aa9-199f48aeb5a1"
+    }
+  ],
+  "properName": "Apple, Inc.",
+  "shortName": "Apple",
+  "formerNames": [
+    "Apple Computer, Inc."
+  ],
+  "localNames": [
+    "Apple Comps"
+  ],
+  "tradeNames": [
+    "Apple Inc."
+  ],
+  "countryCode": "US",
+  "countryOfIncorporation": "US",
+  "postalCode": "95014-2083",
+  "yearFounded": 1976,
+  "leiCode": "HWUPKR9IT4XBT394"
+}

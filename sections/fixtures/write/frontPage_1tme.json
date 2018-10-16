@@ -1,0 +1,17 @@
+{
+  "prefUUID": "4c90c06b-edc7-3ef4-be21-b9d83d9654fa",
+  "prefLabel": "Front page",
+  "type": "Section",
+  "aliases": [
+    "Front page"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "4c90c06b-edc7-3ef4-be21-b9d83d9654fa",
+      "type": "Section",
+      "prefLabel": "Front page",
+      "authority": "TME",
+      "authorityValue": "MTY5-U2Vjd1Sdf43GlvbnM="
+    }
+  ]
+}

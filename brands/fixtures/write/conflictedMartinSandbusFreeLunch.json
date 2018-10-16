@@ -1,0 +1,50 @@
+{
+  "prefUUID": "bb4a1ba8-b1c2-11e8-bfb1-da24cd01f044",
+  "prefLabel": "Free Lunch for All",
+  "type": "Brand",
+  "aliases": [
+    "Martin Sandbu's Free Lunch",
+    "Free Lunch",
+    "Free Lunch for All"
+  ],
+  "parentUUIDs": [
+    "4771fdbb-2941-40b1-9c10-d0aec1a8d22c"
+  ],
+  "descriptionXML": "<p>Martin Sandbu’s Free Lunch is the FT’s daily newsletter on the global economic policy debate. Free for premium subscribers, it is sent out by lunchtime in Europe, and offers a spirited opinion on the latest commentary and stories. It is your daily guided tour to the meaning behind global economics news.</p><p><a href=\"https://www.ft.com/newsletters/nbe/profile.cfm#martin_sandbus_free_lunch\">Sign up for the newsletter</a></p>",
+  "_imageUrl": "https://imgur/eaecbdee.png",
+  "strapline": "Daily global economics briefing",
+  "relatedUUIDs": [
+    "d0f5eb30-b5b9-11e8-adcb-da24cd01f044",
+    "bbf5d061-a3c9-4c95-850c-8e509e45091e"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "3678d538-b503-11e8-adcb-da24cd01f044",
+      "type": "Brand",
+      "prefLabel": "Free Lunch",
+      "authority": "Smartlogic",
+      "authorityValue": "3678d538-b503-11e8-adcb-da24cd01f044",
+      "aliases": [
+        "Free Lunch"
+      ],
+      "descriptionXML": "<p>Martin Sandbu is an author for the FT</p>"
+    },
+    {
+      "uuid": "bb4a1ba8-b1c2-11e8-bfb1-da24cd01f044",
+      "type": "Brand",
+      "prefLabel": "Free Lunch for All",
+      "authority": "Smartlogic",
+      "authorityValue": "bb4a1ba8-b1c2-11e8-bfb1-da24cd01f044",
+      "aliases": [
+        "Free Lunch"
+      ],
+      "descriptionXML": "<p>Martin Sandbu’s Free Lunch is the FT’s daily newsletter on the global economic policy debate. Free for premium subscribers, it is sent out by lunchtime in Europe, and offers a spirited opinion on the latest commentary and stories. It is your daily guided tour to the meaning behind global economics news.</p><p><a href=\"https://www.ft.com/newsletters/nbe/profile.cfm#martin_sandbus_free_lunch\">Sign up for the newsletter</a></p>",
+      "_imageUrl": "https://imgur/eaecbdee.png",
+      "strapline": "Daily global economics briefing",
+      "relatedUUIDs": [
+        "d0f5eb30-b5b9-11e8-adcb-da24cd01f044",
+        "bbf5d061-a3c9-4c95-850c-8e509e45091e"
+      ]
+    }
+  ]
+}

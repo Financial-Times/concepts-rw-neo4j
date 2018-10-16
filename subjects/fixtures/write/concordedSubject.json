@@ -1,0 +1,24 @@
+{
+  "prefUUID": "9dcc589d-a118-30a7-9de9-cfc4309f42b3",
+  "prefLabel": "Commodities",
+  "type": "Subject",
+  "aliases": [
+    "Commodities"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "d0360165-3ea7-3506-af2a-9a3b1316a78c",
+      "type": "Subject",
+      "prefLabel": "Commodities",
+      "authority": "Smartlogic",
+      "authorityValue": "d0360165-3ea7-3506-af2a-9a3b1316a78c"
+    },
+    {
+      "uuid": "9dcc589d-a118-30a7-9de9-cfc4309f42b3",
+      "type": "Subject",
+      "prefLabel": "Commodities",
+      "authority": "TME",
+      "authorityValue": "MTEx-U3Viama76cXSVjdHM="
+    }
+  ]
+}

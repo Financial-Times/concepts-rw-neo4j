@@ -1,0 +1,43 @@
+{
+  "prefUUID": "1d3711e2-b766-11e8-adcb-da24cd01f044",
+  "prefLabel": "Apple Inc",
+  "type": "PublicCompany",
+  "aliases": [
+    "Apple, Inc.",
+    "Apple",
+    "Apple Inc.",
+    "Apple Computer, Inc.",
+    "Apple Computers",
+    "Apple Canada",
+    "Apple Computer",
+    "Apple Computer Inc",
+    "Apple Inc",
+    "Apple Incorporated"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "1d3711e2-b766-11e8-adcb-da24cd01f044",
+      "prefLabel": "Apple Inc",
+      "type": "Organisation",
+      "authority": "Smartlogic",
+      "authorityValue": "1d3711e2-b766-11e8-adcb-da24cd01f044"
+    },
+    {
+      "uuid": "33df7971-bc95-3029-bfb9-1a92e377b971",
+      "prefLabel": "Apple Inc",
+      "type": "Organisation",
+      "authority": "TME",
+      "authorityValue": "TnN0ZWluX09OuR3nBNX0FBUEw=-T04="
+    }
+  ],
+  "properName": "Apple, Inc.",
+  "shortName": "Apple",
+  "formerNames": [
+    "Apple Computer, Inc."
+  ],
+  "countryCode": "US",
+  "countryOfIncorporation": "US",
+  "postalCode": "95014-2083",
+  "yearFounded": 1976,
+  "leiCode": "HWUPKR9IT4XBT394"
+}

@@ -1,0 +1,33 @@
+{
+  "prefUUID": "3678d538-b503-11e8-adcb-da24cd01f044",
+  "prefLabel": "Free Lunch",
+  "type": "Brand",
+  "aliases": [
+    "Martin Sandbu",
+    "Free Lunch"
+  ],
+  "descriptionXML": "<p>Martin Sandbu is an author for the FT</p>",
+  "sourceRepresentations": [
+    {
+      "uuid": "4cc4424c-99f1-31b5-a810-5134847e6b02",
+      "type": "Person",
+      "prefLabel": "Martin Sandbu",
+      "authority": "TME",
+      "authorityValue": "YmQ4Y2VlMj14OP4570Ne30Lkj2NbRTRh-QnJRz",
+      "aliases": [
+        "Martin Sandbu"
+      ]
+    },
+    {
+      "uuid": "3678d538-b503-11e8-adcb-da24cd01f044",
+      "type": "Brand",
+      "prefLabel": "Free Lunch",
+      "authority": "Smartlogic",
+      "authorityValue": "3678d538-b503-11e8-adcb-da24cd01f044",
+      "aliases": [
+        "Free Lunch"
+      ],
+      "descriptionXML": "<p>Martin Sandbu is an author for the FT</p>"
+    }
+  ]
+}

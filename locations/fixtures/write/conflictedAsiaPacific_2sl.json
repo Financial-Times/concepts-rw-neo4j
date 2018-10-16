@@ -1,0 +1,27 @@
+{
+  "prefUUID": "318dc7a8-bcbb-11e8-9c7a-da24cd01f044",
+  "prefLabel": "Asia-Pacific",
+  "type": "Location",
+  "aliases": [
+    "Asia-Pacific"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "318dc7a8-bcbb-11e8-9c7a-da24cd01f044",
+      "type": "Location",
+      "prefLabel": "Asia-Pacific",
+      "authority": "Smartlogic",
+      "authorityValue": "318dc7a8-bcbb-11e8-9c7a-da24cd01f044",
+      "aliases": [
+        "Asia-Pacific"
+      ]
+    },
+    {
+      "uuid": "94f3ff02-bcbf-11e8-9c7a-da24cd01f044",
+      "prefLabel": "Asia-Pacific",
+      "type": "Location",
+      "authority": "Smartlogic",
+      "authorityValue": "94f3ff02-bcbf-11e8-9c7a-da24cd01f044"
+    }
+  ]
+}

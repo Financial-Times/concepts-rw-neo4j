@@ -1,0 +1,17 @@
+{
+  "prefUUID": "58a458ee-bc06-11e8-9ef6-da24cd01f044",
+  "prefLabel": "Letters",
+  "type": "Genre",
+  "aliases": [
+    "Letters"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "58a458ee-bc06-11e8-9ef6-da24cd01f044",
+      "prefLabel": "Letters",
+      "type": "Genre",
+      "authority": "Smartlogic",
+      "authorityValue": "58a458ee-bc06-11e8-9ef6-da24cd01f044"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "prefUUID": "f96c16f2-bbfe-11e8-9d1c-da24cd01f044",
+  "prefLabel": "Letter",
+  "type": "Genre",
+  "aliases": [
+    "Letters to the Editor",
+    "Letter"
+  ],
+  "scopeNote" : "These letters are to the editor",
+  "sourceRepresentations": [
+    {
+      "uuid": "73394ef6-c73a-386c-b433-21deef7a88ac",
+      "type": "Section",
+      "prefLabel": "Letters to the Editor",
+      "authority": "TME",
+      "authorityValue": "MTIy-U2VjdG4JninWqMClvbnM="
+    },
+    {
+      "uuid": "fdc96953-d639-3df9-a373-4d6e94c55a93",
+      "type": "Genre",
+      "prefLabel": "Letter",
+      "authority": "TME",
+      "authorityValue": "NQ==-R2V5yNB3wq2ucmVz"
+    },
+    {
+      "uuid": "f96c16f2-bbfe-11e8-9d1c-da24cd01f044",
+      "type": "Genre",
+      "prefLabel": "Letter",
+      "authority": "Smartlogic",
+      "authorityValue": "f96c16f2-bbfe-11e8-9d1c-da24cd01f044",
+      "scopeNote" : "These letters are to the editor",
+      "aliases": [
+        "Letter"
+      ]
+    }
+  ]
+}

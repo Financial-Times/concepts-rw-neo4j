@@ -1,0 +1,27 @@
+{
+  "prefUUID": "e35694c5-0cf2-3dbe-b20d-ff4e200d714c",
+  "prefLabel": "Free Lunch",
+  "type": "Brand",
+  "aliases": [
+    "Martin Sandbu's Free Lunch",
+    "Free Lunch"
+  ],
+  "parentUUIDs": [
+    "4771fdbb-2941-40b1-9c10-d0aec1a8d22c"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "e35694c5-0cf2-3dbe-b20d-ff4e200d714c",
+      "type": "Brand",
+      "prefLabel": "Free Lunch",
+      "authority": "TME",
+      "authorityValue": "YmQ4Y2VlMj14OP4570NmZjLWE1NWItYjgxNzJi72DHTRh-QnJRz",
+      "aliases": [
+        "Martin Sandbu's Free Lunch"
+      ],
+      "parentUUIDs": [
+        "4771fdbb-2941-40b1-9c10-d0aec1a8d22c"
+      ]
+    }
+  ]
+}

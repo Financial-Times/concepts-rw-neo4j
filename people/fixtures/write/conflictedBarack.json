@@ -1,0 +1,28 @@
+{
+  "prefUUID": "3ca8899c-ba69-11e8-ba49-da24cd01f044",
+  "prefLabel": "Barack Obama",
+  "type": "Person",
+  "aliases": [
+    "President Obama",
+    "Barack Obama"
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "3ca8899c-ba69-11e8-ba49-da24cd01f044",
+      "type": "Person",
+      "prefLabel": "Barack Obama",
+      "authority": "Smartlogic",
+      "authorityValue": "3ca8899c-ba69-11e8-ba49-da24cd01f044"
+    },
+    {
+      "uuid": "96622afa-ba6f-11e8-989a-da24cd01f044",
+      "type": "Person",
+      "prefLabel": "President Obama",
+      "authority": "Smartlogic",
+      "authorityValue": "96622afa-ba6f-11e8-989a-da24cd01f044",
+      "aliases": [
+        "President Obama"
+      ]
+    }
+  ]
+}

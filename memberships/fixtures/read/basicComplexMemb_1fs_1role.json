@@ -1,0 +1,36 @@
+{
+  "prefUUID": "529101e4-a0ce-4b16-bbc5-73edb3ae46c5",
+  "prefLabel": "President, CEO, CFO, Secretary & Treasurer",
+  "type": "Membership",
+  "aliases": [
+    "President, CEO, CFO, Secretary & Treasurer"
+  ],
+  "organisationUUID": "54916418-9239-424b-b15e-a6291159330e",
+  "personUUID": "c74f2a24-bb3b-11e8-a488-da24cd01f044",
+  "sourceRepresentations": [
+    {
+      "uuid": "529101e4-a0ce-4b16-bbc5-73edb3ae46c5",
+      "prefLabel": "President, CEO, CFO, Secretary & Treasurer",
+      "type": "Membership",
+      "authority": "FACTSET",
+      "authorityValue": "84571236",
+      "organisationUUID": "54916418-9239-424b-b15e-a6291159330e",
+      "personUUID": "c74f2a24-bb3b-11e8-a488-da24cd01f044",
+      "membershipRoles": [
+        {
+          "membershipRoleUUID": "c92fc814-bb2f-11e8-989a-da24cd01f044",
+          "inceptionDate": "1999-10-01",
+          "terminationDate": "2008-05-18"
+        }
+      ]
+    }
+  ],
+  "membershipRoles": [
+    {
+      "membershipRoleUUID": "c92fc814-bb2f-11e8-989a-da24cd01f044",
+      "inceptionDate": "1999-10-01",
+      "terminationDate": "2008-05-18"
+    }
+  ],
+  "inceptionDate": "1999-10-01"
+}

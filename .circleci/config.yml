@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /go/src/github.com/Financial-Times/concepts-rw-neo4j
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.11
         environment:
           CIRCLE_TEST_REPORTS: /tmp/test-reports
           CIRCLE_ARTIFACTS: /tmp/artifacts
@@ -36,7 +36,7 @@ jobs:
       - run:
           name: Run tests and create coverage report
           command: |
-            go test ./... -race -cover -coverprofile=$CIRCLE_TEST_REPORTS/coverage.out | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
+            go test ./... -v -race -cover -coverprofile=$CIRCLE_TEST_REPORTS/coverage.out | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
       - run:
           name: Upload coverage report
           command: |
