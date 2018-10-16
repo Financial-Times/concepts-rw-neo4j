@@ -29,7 +29,7 @@ func (os *OrganisationService) Write(thing interface{}, transID string) (interfa
 	sourceUuidsAndTypes := concepts.GetUUIDAndTypeFromSources(aggregatedConceptToWrite.SourceRepresentations)
 	payloadHash, err := hashstructure.Hash(aggregatedConceptToWrite, nil)
 	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("read request for existing concordance resulted in error")
+		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("could not hash request payload")
 		return updateRecord, err
 	}
 	hashAsString := strconv.FormatUint(payloadHash, 10)
