@@ -2,7 +2,6 @@
 replicaCount: 2
 service:
   name: concepts-rw-neo4j
-eksCluster: true
 env:
   BATCH_SIZE: 5000
   LOG_LEVEL: info
