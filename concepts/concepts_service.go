@@ -65,9 +65,10 @@ func (s *ConceptService) Initialise() error {
 	}
 
 	err = s.conn.EnsureConstraints(map[string]string{
-		"Thing":    "prefUUID",
-		"Concept":  "prefUUID",
-		"Location": "iso31661",
+		"Thing":                       "prefUUID",
+		"Concept":                     "prefUUID",
+		"Location":                    "iso31661",
+		"NAICSIndustryClassification": "industryIdentifier",
 	})
 	if err != nil {
 		logger.WithError(err).Error("Could not run db constraints")
@@ -122,6 +123,8 @@ type neoAggregatedConcept struct {
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`
+	// Industry Classifications
+	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
 type neoConcept struct {
@@ -178,6 +181,8 @@ type neoConcept struct {
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`
+	// Industry Classifications
+	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -263,7 +268,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					isDeprecated: source.isDeprecated,
 					countryOfIncorporationUUID: coi.uuid,
 					countryOfOperationsUUID: coo.uuid,
-					countryOfRiskUUID: cor.uuid
+					countryOfRiskUUID: cor.uuid,
+					industryIdentifier: source.industryIdentifier
 				} as sources,
 				collect({
 					inceptionDate: roleRel.inceptionDate,
@@ -310,7 +316,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				canonical.isDeprecated as isDeprecated,
 				canonical.salutation as salutation,
 				canonical.birthYear as birthYear,
-				canonical.iso31661 as iso31661
+				canonical.iso31661 as iso31661,
+				canonical.industryIdentifier as industryIdentifier
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -373,6 +380,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		BirthYear:  results[0].BirthYear,
 		// Location
 		ISO31661: results[0].ISO31661,
+		// Industry Classification
+		IndustryIdentifier: results[0].IndustryIdentifier,
 	}
 
 	var sourceConcepts []Concept
@@ -933,6 +942,8 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		BirthYear:  aggregatedConcept.BirthYear,
 		// Location
 		ISO31661: aggregatedConcept.ISO31661,
+		// Industry Classification
+		IndustryIdentifier: aggregatedConcept.IndustryIdentifier,
 	}
 
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
@@ -1359,6 +1370,9 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	}
 	if concept.ISO31661 != "" {
 		nodeProps["iso31661"] = concept.ISO31661
+	}
+	if concept.IndustryIdentifier != "" {
+		nodeProps["industryIdentifier"] = concept.IndustryIdentifier
 	}
 
 	return nodeProps
