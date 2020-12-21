@@ -540,7 +540,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Brand",
 						ConceptUUID:   brandUUID,
-						AggregateHash: "7468848243852800761",
+						AggregateHash: "1592235706145661871",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -722,14 +722,14 @@ func TestWriteService(t *testing.T) {
 			testName:          "Creates All Values correctly for multiple Concept sources with common HAS_FOCUS relationships",
 			aggregatedConcept: getAggregatedConcept(t, "concorded-concept-with-multiple-has-focus.json"),
 			otherRelatedConcepts: []AggregatedConcept{
-				getAggregatedConcept(t, "another-topic.json"), getAggregatedConcept(t, "organisation.json"),
+				getAggregatedConcept(t, "topic.json"), getAggregatedConcept(t, "another-topic.json"), getAggregatedConcept(t, "organisation.json"),
 			},
 			updatedConcepts: ConceptChanges{
 				ChangedRecords: []Event{
 					{
 						ConceptType:   "Organisation",
 						ConceptUUID:   conceptHasFocusUUID,
-						AggregateHash: "10187588748361539345",
+						AggregateHash: "12573325123596828362",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -737,7 +737,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Organisation",
 						ConceptUUID:   anotherConceptHasFocusUUID,
-						AggregateHash: "10187588748361539345",
+						AggregateHash: "12573325123596828362",
 						EventDetails: ConceptEvent{
 							Type: UpdatedEvent,
 						},
@@ -745,7 +745,7 @@ func TestWriteService(t *testing.T) {
 					{
 						ConceptType:   "Organisation",
 						ConceptUUID:   anotherConceptHasFocusUUID,
-						AggregateHash: "10187588748361539345",
+						AggregateHash: "12573325123596828362",
 						EventDetails: ConcordanceEvent{
 							Type:  AddedEvent,
 							OldID: anotherConceptHasFocusUUID,
