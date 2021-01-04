@@ -1214,7 +1214,6 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			basicConceptUUID,
 			sourceID2,
 		},
-		returnedError: "",
 		updatedConcepts: ConceptChanges{
 			ChangedRecords: []Event{
 				{
@@ -1534,14 +1533,25 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		singleConcordanceSupersededByRemoveRelationship,
 	}
 
+	cleanDB(t)
 	for _, scenario := range scenarios {
-		cleanDB(t)
 		//Write data into db, to set up test scenario
 		_, err := conceptsDriver.Write(scenario.setUpConcept, tid)
 		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 		verifyAggregateHashIsCorrect(t, scenario.setUpConcept, scenario.testName)
 		//Overwrite data with update
 		output, err := conceptsDriver.Write(scenario.testConcept, tid)
+		if scenario.returnedError != "" {
+			if assert.Error(t, err, "Scenario "+scenario.testName+" failed; should return an error") {
+				assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unknown error")
+			}
+			// Do not check the output on error because it sometimes causes test errors
+			continue
+		}
+		if !assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error") {
+			continue
+		}
+
 		actualChanges := output.(ConceptChanges)
 		sort.Slice(actualChanges.ChangedRecords, func(i, j int) bool {
 			l, _ := json.Marshal(actualChanges.ChangedRecords[i])
@@ -1561,14 +1571,11 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 			}
 			return false
 		})
-		if err != nil {
-			assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unexpected error")
-		}
 
 		sort.Strings(scenario.updatedConcepts.UpdatedIds)
 		sort.Strings(actualChanges.UpdatedIds)
 
-		assert.Equal(t, scenario.updatedConcepts, actualChanges, "Test "+scenario.testName+" failed: Updated uuid list differs from expected")
+		assert.Equal(t, scenario.updatedConcepts, actualChanges, "Scenario "+scenario.testName+" failed: Updated uuid list differs from expected")
 
 		for _, id := range scenario.uuidsToCheck {
 			conceptIf, found, err := conceptsDriver.Read(id, tid)
