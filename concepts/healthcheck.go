@@ -27,9 +27,10 @@ func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCod
 		Timeout: 10 * time.Second,
 	}
 
-	router.HandleFunc("/__health", fthealth.Handler(hc))
-	router.HandleFunc(st.BuildInfoPath, st.BuildInfoHandler)
-	router.HandleFunc(st.GTGPath, st.NewGoodToGoHandler(h.GTG))
+	serveMux := http.NewServeMux()
+	serveMux.HandleFunc("/__health", fthealth.Handler(hc))
+	serveMux.HandleFunc(st.BuildInfoPath, st.BuildInfoHandler)
+	serveMux.HandleFunc(st.GTGPath, st.NewGoodToGoHandler(h.GTG))
 
 	var monitoringRouter http.Handler = router
 	if enableRequestLogging {
@@ -37,7 +38,9 @@ func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCod
 	}
 	monitoringRouter = httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry, monitoringRouter)
 
-	return monitoringRouter
+	serveMux.Handle("/", monitoringRouter)
+
+	return serveMux
 }
 
 func (h *ConceptsHandler) GTG() gtg.Status {

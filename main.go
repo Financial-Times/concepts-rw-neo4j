@@ -96,17 +96,14 @@ func main() {
 }
 
 func runServerWithParams(handler concepts.ConceptsHandler, appConf ServerConf) {
-	router := mux.NewRouter()
 	logger.Info("Registering handlers")
+	router := mux.NewRouter()
 	handler.RegisterHandlers(router)
-
-	mr := handler.RegisterAdminHandlers(router, appConf.AppSystemCode, appConf.AppName, appDescription, appConf.RequestLoggingOn)
-
-	http.Handle("/", mr)
+	serveMux := handler.RegisterAdminHandlers(router, appConf.AppSystemCode, appConf.AppName, appDescription, appConf.RequestLoggingOn)
 
 	logger.Printf("listening on %d", appConf.Port)
 
-	if err := http.ListenAndServe(":"+strconv.Itoa(appConf.Port), mr); err != nil {
+	if err := http.ListenAndServe(":"+strconv.Itoa(appConf.Port), serveMux); err != nil {
 		logger.Fatalf("Unable to start: %v", err)
 	}
 	logger.Printf("exiting on %s", serviceName)
