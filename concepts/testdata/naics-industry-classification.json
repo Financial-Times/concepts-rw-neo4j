@@ -1,0 +1,22 @@
+{
+    "prefUUID": "38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
+    "prefLabel": "Newspaper, Periodical, Book, and Directory Publishers",
+    "type": "NAICSIndustryClassification",
+    "aliases": [
+        "Newspaper, Periodical, Book, and Directory Publishers"
+    ],
+    "industryIdentifier": "5111",
+    "sourceRepresentations": [
+        {
+            "uuid": "38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
+            "type": "NAICSIndustryClassification",
+            "prefLabel": "Newspaper, Periodical, Book, and Directory Publishers",
+            "authority": "Smartlogic",
+            "authorityValue": "38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
+            "aliases": [
+                "Newspaper, Periodical, Book, and Directory Publishers"
+            ],
+            "industryIdentifier": "5111"
+        }
+    ]
+}

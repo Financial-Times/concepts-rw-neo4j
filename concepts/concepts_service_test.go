@@ -47,6 +47,7 @@ const (
 	parentOrgUUID                     = "c001ee9c-94c5-11e8-8f42-da24cd01f044"
 	locationUUID                      = "82cba3ce-329b-3010-b29d-4282a215889f"
 	anotherLocationUUID               = "6b683eff-56c3-43d9-acfc-7511d974fc01"
+	naicsIndustryClassificationUUID   = "38ee195d-ebdd-48a9-af4b-c8a322e7b04d"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -904,6 +905,25 @@ func TestWriteService(t *testing.T) {
 				UpdatedIds: []string{
 					locationUUID,
 					anotherLocationUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a NAICSIndustryClassification",
+			aggregatedConcept: getAggregatedConcept(t, "naics-industry-classification.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "NAICSIndustryClassification",
+						ConceptUUID:   naicsIndustryClassificationUUID,
+						AggregateHash: "6746190087876440450",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					naicsIndustryClassificationUUID,
 				},
 			},
 		},
@@ -2118,6 +2138,7 @@ func cleanDB(t *testing.T) {
 		anotherTopicUUID,
 		conceptHasFocusUUID,
 		anotherConceptHasFocusUUID,
+		naicsIndustryClassificationUUID,
 	)
 	deleteSourceNodes(t,
 		parentUUID,
@@ -2154,6 +2175,7 @@ func cleanDB(t *testing.T) {
 		anotherTopicUUID,
 		conceptHasFocusUUID,
 		anotherConceptHasFocusUUID,
+		naicsIndustryClassificationUUID,
 	)
 	deleteConcordedNodes(t,
 		parentUUID,
@@ -2190,6 +2212,7 @@ func cleanDB(t *testing.T) {
 		anotherTopicUUID,
 		conceptHasFocusUUID,
 		anotherConceptHasFocusUUID,
+		naicsIndustryClassificationUUID,
 	)
 }
 
