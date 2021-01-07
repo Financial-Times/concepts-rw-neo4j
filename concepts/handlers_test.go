@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -250,9 +251,9 @@ func TestGtgHandler(t *testing.T) {
 	for _, test := range tests {
 		r := mux.NewRouter()
 		handler := ConceptsHandler{test.ds}
-		handler.RegisterAdminHandlers(r, "", "", "", true)
+		sm := handler.RegisterAdminHandlers(r, "", "", "", true)
 		rec := httptest.NewRecorder()
-		r.ServeHTTP(rec, test.req)
+		sm.ServeHTTP(rec, test.req)
 		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
 		assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
 	}
