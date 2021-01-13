@@ -4,8 +4,8 @@ github.com/Financial-Times/go-logger v0.0.0-20180323124113-febee6537e90 h1:U7wPa
 github.com/Financial-Times/go-logger v0.0.0-20180323124113-febee6537e90/go.mod h1:NI4Dg39A21H57YC2nG8C42C6ENz/YVsI0jMQWngJzR0=
 github.com/Financial-Times/http-handlers-go v0.0.0-20180517120644-2c20324ab887 h1:4qEj6CB6jF9eloZIV/SCS7mQ/9iyx+3Ru/w7m10c69w=
 github.com/Financial-Times/http-handlers-go v0.0.0-20180517120644-2c20324ab887/go.mod h1:sAkXv1oPYgNTYBYsYs83HwpYp7R50mvgBGGcsOlJtOw=
-github.com/Financial-Times/neo-model-utils-go v0.0.0-20180712095719-aea1e95c8305 h1:ob+VRuAq7QGfqT4ccoH5Ru0nfnBmjmNgUEaLzXTzUNw=
-github.com/Financial-Times/neo-model-utils-go v0.0.0-20180712095719-aea1e95c8305/go.mod h1:HdCuBcOftPWj3SBix/6H9NbPQpur9F7stSF0MEROMcU=
+github.com/Financial-Times/neo-model-utils-go v1.0.0 h1:0iTxDtXKkJ9vYQDE73KM/+ghtFLdq0U6bQPdiwaSEaQ=
+github.com/Financial-Times/neo-model-utils-go v1.0.0/go.mod h1:D5ny/A+002uCPCZbtP/E+qpY3//gYJzHw6sqqBUm2Lc=
 github.com/Financial-Times/neo-utils-go v0.0.0-20180807105745-1fe6ae2f38f3 h1:oH+0BiMwcZVV1zwYm4f/jybJ9LhzrQn1Y4WwbIpwQ+s=
 github.com/Financial-Times/neo-utils-go v0.0.0-20180807105745-1fe6ae2f38f3/go.mod h1:LF1qICt4PuWDINYtXL4WXU595WTKReIBwV6obcncNBI=
 github.com/Financial-Times/neoism v1.3.2-0.20180622150314-0a3ba1ab89c4 h1:6u+Xk6f3tn/v6kV/syCh5Sl390UsfOY09pZpfsq2fbs=
@@ -16,6 +16,7 @@ github.com/Financial-Times/transactionid-utils-go v0.2.0 h1:YcET5Hd1fUGWWpQSVszY
 github.com/Financial-Times/transactionid-utils-go v0.2.0/go.mod h1:tPAcAFs/dR6Q7hBDGNyUyixHRvg/n9NW/JTq8C58oZ0=
 github.com/Financial-Times/up-rw-app-api-go v0.0.0-20170710125828-d9d93a1f6895 h1:UkmfGpvzyZAnwhPq95hKHg0MjSo2fRUxAIwnx/7JFos=
 github.com/Financial-Times/up-rw-app-api-go v0.0.0-20170710125828-d9d93a1f6895/go.mod h1:4gFzx5u4779W7H0DI9EO25+kyLDVlDQPHFQwprijX8Y=
+github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gorilla/context v1.1.1 h1:AWwleXJkX/nhcU9bZSnZoi3h/qGYqQAGhq6zZe/aQW8=
@@ -46,8 +47,11 @@ github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a h1:9ZKAASQSHhD
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/sirupsen/logrus v1.1.1 h1:VzGj7lhU7KEB9e9gMpAV/v5XT2NVSvLJhJLCWbnkgXg=
 github.com/sirupsen/logrus v1.1.1/go.mod h1:zrgwTnHtNr00buQ1vSptGe8m1f/BbgsPukg8qsT7A+A=
+github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1w=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
+github.com/stretchr/testify v1.6.1 h1:hDPOHmpOpP40lSULcqw7IrRb/u7w6RpDC9399XyoNd0=
+github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 go4.org v0.0.0-20180809161055-417644f6feb5 h1:+hE86LblG4AyDgwMCLTE6FOlM9+qjHSYS+rKqxUVdsM=
 go4.org v0.0.0-20180809161055-417644f6feb5/go.mod h1:MkTOUMDaeVYJUOUsaDXIhWPZYa1yOyC1qaOBpL57BhE=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
@@ -58,5 +62,9 @@ golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1/go.mod h1:mL1N/T3taQHkDXs73r
 golang.org/x/sys v0.0.0-20180905080454-ebe1bf3edb33/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20181011152604-fa43e7bc11ba h1:nZJIJPGow0Kf9bU9QTc1U6OXbs/7Hu4e+cNv+hxH+Zc=
 golang.org/x/sys v0.0.0-20181011152604-fa43e7bc11ba/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/jmcvetta/napping.v3 v3.2.0 h1:NpSZLAL6VgiyhdqaOkxwVtHXOLrQJZ6fFOMQgp7G8PQ=
 gopkg.in/jmcvetta/napping.v3 v3.2.0/go.mod h1:0dPR4/IGM4+xGT+e48O2yJlg6qofrONCtEAWkurVlZQ=
+gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c h1:dUUwHk2QECo/6vqA44rthZ8ie2QXMNeKRTHCNY2nXvo=
+gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=

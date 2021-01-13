@@ -50,6 +50,8 @@ type AggregatedConcept struct {
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`
+	// Industry Classifications
+	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
 // Concept - could be any concept genre, subject etc
@@ -107,6 +109,8 @@ type Concept struct {
 	// Person
 	Salutation string `json:"salutation,omitempty"`
 	BirthYear  int    `json:"birthYear,omitempty"`
+	// Industry Classifications
+	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
 type ConceptChanges struct {
@@ -135,28 +139,30 @@ type ConcordanceEvent struct {
 // Map of all the possible node types so we can ensure they all have
 // constraints on the uuid
 var constraintMap = map[string]string{
-	"Thing":                "uuid",
-	"Concept":              "uuid",
-	"Classification":       "uuid",
-	"Section":              "uuid",
-	"Subject":              "uuid",
-	"SpecialReport":        "uuid",
-	"Location":             "uuid",
-	"Topic":                "uuid",
-	"Genre":                "uuid",
-	"Brand":                "uuid",
-	"AlphavilleSeries":     "uuid",
-	"PublicCompany":        "uuid",
-	"Person":               "uuid",
-	"Organisation":         "uuid",
-	"MembershipRole":       "uuid",
-	"BoardRole":            "uuid",
-	"Membership":           "uuid",
-	"UPPIdentifier":        "value",
-	"TMEIdentifier":        "value",
-	"FactsetIdentifier":    "value",
-	"SmartlogicIdentifier": "value",
-	"FinancialInstrument":  "uuid",
+	"Thing":                       "uuid",
+	"Concept":                     "uuid",
+	"Classification":              "uuid",
+	"Section":                     "uuid",
+	"Subject":                     "uuid",
+	"SpecialReport":               "uuid",
+	"Location":                    "uuid",
+	"Topic":                       "uuid",
+	"Genre":                       "uuid",
+	"Brand":                       "uuid",
+	"AlphavilleSeries":            "uuid",
+	"PublicCompany":               "uuid",
+	"Person":                      "uuid",
+	"Organisation":                "uuid",
+	"MembershipRole":              "uuid",
+	"BoardRole":                   "uuid",
+	"Membership":                  "uuid",
+	"UPPIdentifier":               "value",
+	"TMEIdentifier":               "value",
+	"FactsetIdentifier":           "value",
+	"SmartlogicIdentifier":        "value",
+	"FinancialInstrument":         "uuid",
+	"IndustryClassification":      "uuid",
+	"NAICSIndustryClassification": "uuid",
 }
 
 var conceptLabels = [...]string{
@@ -177,6 +183,8 @@ var conceptLabels = [...]string{
 	"FinancialInstrument",
 	"Company",
 	"PublicCompany",
+	"IndustryClassification",
+	"NAICSIndustryClassification",
 }
 
 // Map of authority and nodelabel for identifiers - we should be removing

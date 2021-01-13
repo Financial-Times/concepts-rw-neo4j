@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"net/http"
-	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	logger "github.com/Financial-Times/go-logger"
@@ -96,18 +99,36 @@ func main() {
 }
 
 func runServerWithParams(handler concepts.ConceptsHandler, appConf ServerConf) {
-	router := mux.NewRouter()
 	logger.Info("Registering handlers")
+	router := mux.NewRouter()
 	handler.RegisterHandlers(router)
+	serveMux := handler.RegisterAdminHandlers(router, appConf.AppSystemCode, appConf.AppName, appDescription, appConf.RequestLoggingOn)
 
-	mr := handler.RegisterAdminHandlers(router, appConf.AppSystemCode, appConf.AppName, appDescription, appConf.RequestLoggingOn)
-
-	http.Handle("/", mr)
-
-	logger.Printf("listening on %d", appConf.Port)
-
-	if err := http.ListenAndServe(":"+strconv.Itoa(appConf.Port), mr); err != nil {
-		logger.Fatalf("Unable to start: %v", err)
+	server := &http.Server{
+		Addr:    ":" + strconv.Itoa(appConf.Port),
+		Handler: serveMux,
 	}
-	logger.Printf("exiting on %s", serviceName)
+
+	go func() {
+		logger.Infof("Starting HTTP server listening on %d", appConf.Port)
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			logger.Fatalf("Unable to start HTTP server: %v", err)
+		}
+	}()
+
+	waitForSignal()
+	logger.Info("Received termination signal: shutting down HTTP server")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Fatalf("Failed to gracefully shutdown the server: %v", err)
+	}
+}
+
+func waitForSignal() {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	<-ch
 }

@@ -9,18 +9,19 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Financial-Times/transactionid-utils-go"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
 var irregularConceptTypePaths = map[string]string{
-	"AlphavilleSeries": "alphaville-series",
-	"BoardRole":        "membership-roles",
-	"Dummy":            "dummies",
-	"Person":           "people",
-	"PublicCompany":    "organisations",
+	"AlphavilleSeries":            "alphaville-series",
+	"BoardRole":                   "membership-roles",
+	"Dummy":                       "dummies",
+	"Person":                      "people",
+	"PublicCompany":               "organisations",
+	"NAICSIndustryClassification": "industry-classifications",
 }
 
 type ConceptsHandler struct {
