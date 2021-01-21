@@ -161,21 +161,22 @@ type neoConcept struct {
 	UUID                 string           `json:"uuid,omitempty"`
 	IsDeprecated         bool             `json:"isDeprecated,omitempty"`
 	// Organisations
-	ProperName                 string   `json:"properName,omitempty"`
-	ShortName                  string   `json:"shortName,omitempty"`
-	TradeNames                 []string `json:"tradeNames,omitempty"`
-	FormerNames                []string `json:"formerNames,omitempty"`
-	CountryCode                string   `json:"countryCode,omitempty"`
-	CountryOfRisk              string   `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation     string   `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations        string   `json:"countryOfOperations,omitempty"`
-	CountryOfRiskUUID          string   `json:"countryOfRiskUUID,omitempty"`
-	CountryOfIncorporationUUID string   `json:"countryOfIncorporationUUID,omitempty"`
-	CountryOfOperationsUUID    string   `json:"countryOfOperationsUUID,omitempty"`
-	PostalCode                 string   `json:"postalCode,omitempty"`
-	YearFounded                int      `json:"yearFounded,omitempty"`
-	LeiCode                    string   `json:"leiCode,omitempty"`
-	ParentOrganisation         string   `json:"parentOrganisation,omitempty"`
+	ProperName                   string                        `json:"properName,omitempty"`
+	ShortName                    string                        `json:"shortName,omitempty"`
+	TradeNames                   []string                      `json:"tradeNames,omitempty"`
+	FormerNames                  []string                      `json:"formerNames,omitempty"`
+	CountryCode                  string                        `json:"countryCode,omitempty"`
+	CountryOfRisk                string                        `json:"countryOfRisk,omitempty"`
+	CountryOfIncorporation       string                        `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations          string                        `json:"countryOfOperations,omitempty"`
+	CountryOfRiskUUID            string                        `json:"countryOfRiskUUID,omitempty"`
+	CountryOfIncorporationUUID   string                        `json:"countryOfIncorporationUUID,omitempty"`
+	CountryOfOperationsUUID      string                        `json:"countryOfOperationsUUID,omitempty"`
+	PostalCode                   string                        `json:"postalCode,omitempty"`
+	YearFounded                  int                           `json:"yearFounded,omitempty"`
+	LeiCode                      string                        `json:"leiCode,omitempty"`
+	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
+	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 	// Location
 	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
@@ -214,6 +215,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			OPTIONAL MATCH (source)-[:COUNTRY_OF_OPERATIONS]->(coo:Thing)
 			OPTIONAL MATCH (source)-[:COUNTRY_OF_RISK]->(cor:Thing)
 			OPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(coi:Thing)
+			OPTIONAL MATCH (source)-[hasICRel:HAS_INDUSTRY_CLASSIFICATION]->(naics:NAICSIndustryClassification) 
 			WITH
 				collect(DISTINCT broader.uuid) as broaderUUIDs,
 				canonical,
@@ -231,6 +233,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 				coo,
 				cor,
 				coi,
+				collect(DISTINCT {UUID: naics.uuid, Rank: hasICRel.rank}) as naicsIndustryClassifications,
 				source
 				ORDER BY
 					source.uuid,
@@ -269,7 +272,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 					countryOfIncorporationUUID: coi.uuid,
 					countryOfOperationsUUID: coo.uuid,
 					countryOfRiskUUID: cor.uuid,
-					industryIdentifier: source.industryIdentifier
+					industryIdentifier: source.industryIdentifier,
+					naicsIndustryClassifications: naicsIndustryClassifications
 				} as sources,
 				collect({
 					inceptionDate: roleRel.inceptionDate,
@@ -393,27 +397,28 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		}
 
 		concept := Concept{
-			Authority:                  srcConcept.Authority,
-			AuthorityValue:             srcConcept.AuthorityValue,
-			BroaderUUIDs:               filterSlice(srcConcept.BroaderUUIDs),
-			SupersededByUUIDs:          filterSlice(srcConcept.SupersededByUUIDs),
-			FigiCode:                   srcConcept.FigiCode,
-			IssuedBy:                   srcConcept.IssuedBy,
-			LastModifiedEpoch:          srcConcept.LastModifiedEpoch,
-			MembershipRoles:            cleanMembershipRoles(srcConcept.MembershipRoles),
-			OrganisationUUID:           srcConcept.OrganisationUUID,
-			CountryOfIncorporationUUID: srcConcept.CountryOfIncorporationUUID,
-			CountryOfRiskUUID:          srcConcept.CountryOfRiskUUID,
-			CountryOfOperationsUUID:    srcConcept.CountryOfOperationsUUID,
-			ParentUUIDs:                filterSlice(srcConcept.ParentUUIDs),
-			PersonUUID:                 srcConcept.PersonUUID,
-			PrefLabel:                  srcConcept.PrefLabel,
-			RelatedUUIDs:               filterSlice(srcConcept.RelatedUUIDs),
-			ImpliedByUUIDs:             filterSlice(srcConcept.ImpliedByUUIDs),
-			HasFocusUUIDs:              filterSlice(srcConcept.HasFocusUUIDs),
-			Type:                       conceptType,
-			UUID:                       srcConcept.UUID,
-			IsDeprecated:               srcConcept.IsDeprecated,
+			Authority:                    srcConcept.Authority,
+			AuthorityValue:               srcConcept.AuthorityValue,
+			BroaderUUIDs:                 filterSlice(srcConcept.BroaderUUIDs),
+			SupersededByUUIDs:            filterSlice(srcConcept.SupersededByUUIDs),
+			FigiCode:                     srcConcept.FigiCode,
+			IssuedBy:                     srcConcept.IssuedBy,
+			LastModifiedEpoch:            srcConcept.LastModifiedEpoch,
+			MembershipRoles:              cleanMembershipRoles(srcConcept.MembershipRoles),
+			OrganisationUUID:             srcConcept.OrganisationUUID,
+			CountryOfIncorporationUUID:   srcConcept.CountryOfIncorporationUUID,
+			CountryOfRiskUUID:            srcConcept.CountryOfRiskUUID,
+			CountryOfOperationsUUID:      srcConcept.CountryOfOperationsUUID,
+			ParentUUIDs:                  filterSlice(srcConcept.ParentUUIDs),
+			PersonUUID:                   srcConcept.PersonUUID,
+			PrefLabel:                    srcConcept.PrefLabel,
+			RelatedUUIDs:                 filterSlice(srcConcept.RelatedUUIDs),
+			ImpliedByUUIDs:               filterSlice(srcConcept.ImpliedByUUIDs),
+			HasFocusUUIDs:                filterSlice(srcConcept.HasFocusUUIDs),
+			NAICSIndustryClassifications: cleanNAICS(srcConcept.NAICSIndustryClassifications),
+			Type:                         conceptType,
+			UUID:                         srcConcept.UUID,
+			IsDeprecated:                 srcConcept.IsDeprecated,
 			// Organisations
 			ParentOrganisation: srcConcept.ParentOrganisation,
 		}
@@ -875,9 +880,10 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[cooRel:COUNTRY_OF_OPERATIONS]->(coo)
 			OPTIONAL MATCH (t)-[coiRel:COUNTRY_OF_INCORPORATION]->(coi)
 			OPTIONAL MATCH (t)-[corRel:COUNTRY_OF_RISK]->(cor)
+			OPTIONAL MATCH (t)-[icRel:HAS_INDUSTRY_CLASSIFICATION]->(ic)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader, impliedBy, hasFocus, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel`, getLabelsToRemove()),
+			DELETE x, rel, i, eq, relatedTo, broader, impliedBy, hasFocus, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel, icRel`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -1134,6 +1140,26 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			},
 		}
 		queryBatch = append(queryBatch, writeCountryOfOperations)
+	}
+
+	if uuid != "" {
+		for _, naics := range concept.NAICSIndustryClassifications {
+			if naics.UUID != "" {
+				writeNAICS := &neoism.CypherQuery{
+					Statement: `MERGE (org:Thing {uuid: {uuid}})
+								MERGE (naicsUPP:Identifier:UPPIdentifier {value: {naicsUUID}})
+								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
+								MERGE (naicsUPP)-[:IDENTIFIES]->(naicsIC)
+								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC)`,
+					Parameters: neoism.Props{
+						"naicsUUID": naics.UUID,
+						"rank":      naics.Rank,
+						"uuid":      concept.UUID,
+					},
+				}
+				queryBatch = append(queryBatch, writeNAICS)
+			}
+		}
 	}
 
 	if uuid != "" && len(concept.MembershipRoles) > 0 {
@@ -1487,6 +1513,18 @@ func getEpoch(t string) int64 {
 	return tt.Unix()
 }
 
+// cleanNAICS returns the same slice of NAICSIndustryClassification if all are valid,
+// skips the invalid ones, returns nil if the input slice doesn't have valid NAICSIndustryClassification objects
+func cleanNAICS(naics []NAICSIndustryClassification) []NAICSIndustryClassification {
+	var res []NAICSIndustryClassification
+	for _, ic := range naics {
+		if ic.UUID != "" {
+			res = append(res, ic)
+		}
+	}
+	return res
+}
+
 func filterSlice(a []string) []string {
 	r := []string{}
 	for _, str := range a {
@@ -1527,6 +1565,9 @@ func cleanConcept(c AggregatedConcept) AggregatedConcept {
 		sort.SliceStable(c.SourceRepresentations[j].HasFocusUUIDs, func(k, l int) bool {
 			return c.SourceRepresentations[j].HasFocusUUIDs[k] < c.SourceRepresentations[j].HasFocusUUIDs[l]
 		})
+		sort.SliceStable(c.SourceRepresentations[j].NAICSIndustryClassifications, func(k, l int) bool {
+			return c.SourceRepresentations[j].NAICSIndustryClassifications[k].Rank < c.SourceRepresentations[j].NAICSIndustryClassifications[l].Rank
+		})
 	}
 	for i := range c.MembershipRoles {
 		c.MembershipRoles[i].InceptionDateEpoch = 0
@@ -1565,10 +1606,11 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 			FigiCode:          source.FigiCode,
 			IsDeprecated:      source.IsDeprecated,
 			// Organisations
-			ParentOrganisation:         source.ParentOrganisation,
-			CountryOfOperationsUUID:    source.CountryOfOperationsUUID,
-			CountryOfIncorporationUUID: source.CountryOfIncorporationUUID,
-			CountryOfRiskUUID:          source.CountryOfRiskUUID,
+			ParentOrganisation:           source.ParentOrganisation,
+			CountryOfOperationsUUID:      source.CountryOfOperationsUUID,
+			CountryOfIncorporationUUID:   source.CountryOfIncorporationUUID,
+			CountryOfRiskUUID:            source.CountryOfRiskUUID,
+			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}
