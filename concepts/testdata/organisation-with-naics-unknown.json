@@ -1,0 +1,63 @@
+{
+  "prefUUID": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed",
+  "prefLabel": "New York Times Co",
+  "type": "PublicCompany",
+  "aliases": [
+    "New York Times Company",
+    "The New York Times",
+    "The New York Times Co.",
+    "The New York Times Company",
+    "New York Times",
+    "New York Times Co"
+  ],
+  "emailAddress": "help@nytimes.com",
+  "scopeNote": "American media company, publisher of The New York Times",
+  "countryCode": "US",
+  "countryOfRisk": "US",
+  "countryOfIncorporation": "US",
+  "countryOfOperations": "US",
+  "leiCode": "529900J1WEMMIW7BOH57",
+  "postalCode": "10018",
+  "properName": "The New York Times Co.",
+  "shortName": "The New York Times",
+  "yearFounded": 1851,
+  "naicsIndustryClassifications": [
+    {
+      "uuid": "07fb6996-f046-4e95-8aaf-fafd138ca3ec",
+      "rank": 1
+    }
+  ],
+  "sourceRepresentations": [
+    {
+      "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed",
+      "type": "PublicCompany",
+      "prefLabel": "The New York Times Co.",
+      "authority": "FACTSET",
+      "authorityValue": "000R9L-E",
+      "aliases": [
+        "The New York Times",
+        "The New York Times Co.",
+        "The New York Times Company"
+      ],
+      "emailAddress": "help@nytimes.com",
+      "countryCode": "US",
+      "countryOfRisk": "US",
+      "countryOfIncorporation": "US",
+      "countryOfOperations": "US",
+      "countryOfRiskUUID": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
+      "countryOfIncorporationUUID": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
+      "countryOfOperationsUUID": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
+      "leiCode": "529900J1WEMMIW7BOH57",
+      "postalCode": "10018",
+      "properName": "The New York Times Co.",
+      "shortName": "The New York Times",
+      "yearFounded": 1851,
+      "naicsIndustryClassifications": [
+        {
+          "uuid": "07fb6996-f046-4e95-8aaf-fafd138ca3ec",
+          "rank": 1
+        }
+      ]
+    }
+  ]
+}

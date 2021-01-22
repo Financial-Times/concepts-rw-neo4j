@@ -32,22 +32,24 @@ const (
 	simpleSmartlogicTopicUUID  = "abd38d90-2152-11e8-9ac1-da24cd01f044"
 	parentUUID                 = "2ef39c2a-da9c-4263-8209-ebfd490d3101"
 
-	boardRoleUUID                     = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
-	membershipRoleUUID                = "f807193d-337b-412f-b32c-afa14b385819"
-	organisationUUID                  = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
-	personUUID                        = "35946807-0205-4fc1-8516-bb1ae141659b"
-	financialInstrumentUUID           = "475b7b59-66d5-47e2-a273-adc3d1ba8286"
-	financialInstrumentSameIssuerUUID = "08c6066c-9356-4e96-abd5-9a4f3726724a"
-	financialOrgUUID                  = "4290f028-05e9-4c2d-9f11-61ec59ba081a"
-	anotherFinancialOrgUUID           = "230e3a74-694a-4d94-8294-6a45ec1ced26"
-	membershipUUID                    = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
-	anotherOrganisationUUID           = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
-	anotherPersonUUID                 = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
-	testOrgUUID                       = "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
-	parentOrgUUID                     = "c001ee9c-94c5-11e8-8f42-da24cd01f044"
-	locationUUID                      = "82cba3ce-329b-3010-b29d-4282a215889f"
-	anotherLocationUUID               = "6b683eff-56c3-43d9-acfc-7511d974fc01"
-	naicsIndustryClassificationUUID   = "38ee195d-ebdd-48a9-af4b-c8a322e7b04d"
+	boardRoleUUID                          = "aa9ef631-c025-43b2-b0ce-d78d394cc6e6"
+	membershipRoleUUID                     = "f807193d-337b-412f-b32c-afa14b385819"
+	organisationUUID                       = "7f40d291-b3cb-47c4-9bce-18413e9350cf"
+	personUUID                             = "35946807-0205-4fc1-8516-bb1ae141659b"
+	financialInstrumentUUID                = "475b7b59-66d5-47e2-a273-adc3d1ba8286"
+	financialInstrumentSameIssuerUUID      = "08c6066c-9356-4e96-abd5-9a4f3726724a"
+	financialOrgUUID                       = "4290f028-05e9-4c2d-9f11-61ec59ba081a"
+	anotherFinancialOrgUUID                = "230e3a74-694a-4d94-8294-6a45ec1ced26"
+	membershipUUID                         = "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+	anotherOrganisationUUID                = "7ccf2673-2ec0-4b42-b69e-9a2460b945c6"
+	anotherPersonUUID                      = "69a8e241-2bfb-4aed-a441-8489d813c5f7"
+	testOrgUUID                            = "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
+	parentOrgUUID                          = "c001ee9c-94c5-11e8-8f42-da24cd01f044"
+	locationUUID                           = "82cba3ce-329b-3010-b29d-4282a215889f"
+	anotherLocationUUID                    = "6b683eff-56c3-43d9-acfc-7511d974fc01"
+	organisationWithNAICSUUID              = "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+	naicsIndustryClassificationUUID        = "38ee195d-ebdd-48a9-af4b-c8a322e7b04d"
+	naicsIndustryClassificationAnotherUUID = "49da878c-67ce-4343-9a09-a4a767e584a2"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -924,6 +926,28 @@ func TestWriteService(t *testing.T) {
 				},
 				UpdatedIds: []string{
 					naicsIndustryClassificationUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values correctly for Organisation with HAS_INDUSTRY_CLASSIFICATION relationships",
+			aggregatedConcept: getAggregatedConcept(t, "organisation-with-naics.json"),
+			otherRelatedConcepts: []AggregatedConcept{
+				getAggregatedConcept(t, "naics-industry-classification.json"), getAggregatedConcept(t, "naics-industry-classification-internet.json"),
+			},
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "PublicCompany",
+						ConceptUUID:   organisationWithNAICSUUID,
+						AggregateHash: "2263283178946465258",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					organisationWithNAICSUUID,
 				},
 			},
 		},
@@ -2139,6 +2163,8 @@ func cleanDB(t *testing.T) {
 		conceptHasFocusUUID,
 		anotherConceptHasFocusUUID,
 		naicsIndustryClassificationUUID,
+		naicsIndustryClassificationAnotherUUID,
+		organisationWithNAICSUUID,
 	)
 	deleteSourceNodes(t,
 		parentUUID,
@@ -2176,6 +2202,8 @@ func cleanDB(t *testing.T) {
 		conceptHasFocusUUID,
 		anotherConceptHasFocusUUID,
 		naicsIndustryClassificationUUID,
+		naicsIndustryClassificationAnotherUUID,
+		organisationWithNAICSUUID,
 	)
 	deleteConcordedNodes(t,
 		parentUUID,
@@ -2213,6 +2241,8 @@ func cleanDB(t *testing.T) {
 		conceptHasFocusUUID,
 		anotherConceptHasFocusUUID,
 		naicsIndustryClassificationUUID,
+		naicsIndustryClassificationAnotherUUID,
+		organisationWithNAICSUUID,
 	)
 }
 
