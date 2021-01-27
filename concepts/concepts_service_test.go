@@ -10,18 +10,20 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
-	"sort"
-	"strings"
-
-	logger "github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jmcvetta/neoism"
 	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
+
+	logger "github.com/Financial-Times/go-logger"
+	"github.com/Financial-Times/neo-utils-go/neoutils"
 )
 
 //all uuids to be cleaned from DB
@@ -300,6 +302,7 @@ func TestWriteService(t *testing.T) {
 		testName             string
 		aggregatedConcept    AggregatedConcept
 		otherRelatedConcepts []AggregatedConcept
+		writtenNotReadFields []string
 		errStr               string
 		updatedConcepts      ConceptChanges
 	}{
@@ -951,6 +954,26 @@ func TestWriteService(t *testing.T) {
 				},
 			},
 		},
+		{
+			testName:             "Creates All Values correctly for Organisation with HAS_INDUSTRY_CLASSIFICATION relationships to unknown",
+			aggregatedConcept:    getAggregatedConcept(t, "organisation-with-naics-unknown.json"),
+			writtenNotReadFields: []string{"NAICSIndustryClassifications"},
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "PublicCompany",
+						ConceptUUID:   organisationWithNAICSUUID,
+						AggregateHash: "16227393696410127014",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					organisationWithNAICSUUID,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -965,7 +988,7 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts, err := conceptsDriver.Write(test.aggregatedConcept, "")
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
-				readConceptAndCompare(t, test.aggregatedConcept, test.testName)
+				readConceptAndCompare(t, test.aggregatedConcept, test.testName, test.writtenNotReadFields...)
 
 				sort.Slice(test.updatedConcepts.ChangedRecords, func(i, j int) bool {
 					l, _ := json.Marshal(test.updatedConcepts.ChangedRecords[i])
@@ -2105,7 +2128,7 @@ func TestWriteLocation(t *testing.T) {
 	readConceptAndCompare(t, locationISO31661, "TestWriteLocationISO31661")
 }
 
-func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName string) {
+func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName string, ignoredFields ...string) {
 	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
 	actual := actualIf.(AggregatedConcept)
 
@@ -2113,7 +2136,11 @@ func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName str
 	clean := cleanSourceProperties(payload)
 	expected := cleanHash(cleanConcept(clean))
 
-	assert.Equal(t, expected, actual, fmt.Sprintf("Test %s failed: Concepts were not equal", testName))
+	cmpOptions := cmpopts.IgnoreFields(Concept{}, ignoredFields...)
+	if !cmp.Equal(expected, actual, cmpOptions) {
+		t.Errorf("Test %s failed: Concepts were not equal:\n%s", testName, cmp.Diff(expected, actual, cmpOptions))
+	}
+
 	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Unexpected Error occurred", testName))
 	assert.True(t, found, fmt.Sprintf("Test %s failed: Concept has not been found", testName))
 }
