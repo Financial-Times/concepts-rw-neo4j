@@ -842,14 +842,6 @@ func TestWriteService(t *testing.T) {
 			},
 		},
 		{
-			testName:          "Adding Concept with existing Identifiers fails",
-			aggregatedConcept: getAggregatedConcept(t, "concorded-concept-with-conflicted-identifier.json"),
-			errStr:            "already exists with label `TMEIdentifier` and property `value` = '1234'",
-			updatedConcepts: ConceptChanges{
-				UpdatedIds: []string{},
-			},
-		},
-		{
 			testName:          "Adding Organisation with all related locations in place works",
 			aggregatedConcept: getOrganisationWithAllCountries(),
 			otherRelatedConcepts: []AggregatedConcept{
@@ -1009,24 +1001,6 @@ func TestWriteService(t *testing.T) {
 				sort.Strings(updatedConcepts.UpdatedIds)
 
 				assert.Equal(t, test.updatedConcepts, updatedConcepts, "Test "+test.testName+" failed: Updated uuid list differs from expected")
-
-				// Check lone nodes and leaf nodes for identifiers nodes
-				// lone node
-				if len(test.aggregatedConcept.SourceRepresentations) != 1 {
-					// Check leaf nodes for Identifiers
-					for _, leaf := range test.aggregatedConcept.SourceRepresentations {
-						// We don't have Identifiers for ManagedLocation concepts
-						if leaf.Authority == "ManagedLocation" {
-							continue
-						}
-						actualValue := getIdentifierValue(t, "uuid", leaf.UUID, fmt.Sprintf("%vIdentifier", leaf.Authority))
-						assert.Equal(t, leaf.AuthorityValue, actualValue, "Identifier value incorrect")
-					}
-
-					// Check Canonical node doesn't have a Identifier node
-					actualValue := getIdentifierValue(t, "prefUUID", test.aggregatedConcept.PrefUUID, "UPPIdentifier")
-					assert.Equal(t, "", actualValue, "Identifier nodes should not be related to Canonical Nodes")
-				}
 			} else {
 				if err != nil {
 					assert.Error(t, err, "Error was expected")
@@ -2031,10 +2005,24 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 			{
 				UUID:      basicConceptUUID,
 				PrefLabel: "The Best Label",
+				Authority: "UPP",
 			},
 		},
 	}
 	sourceRepNoAuthorityValue := AggregatedConcept{
+		PrefUUID:  basicConceptUUID,
+		PrefLabel: "The Best Label",
+		Type:      "Brand",
+		SourceRepresentations: []Concept{
+			{
+				UUID:      basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Authority: "UPP",
+				Type:      "Brand",
+			},
+		},
+	}
+	sourceRepNoAuthority := AggregatedConcept{
 		PrefUUID:  basicConceptUUID,
 		PrefLabel: "The Best Label",
 		Type:      "Brand",
@@ -2088,6 +2076,11 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 		aggConcept:    sourceRepNoAuthorityValue,
 		returnedError: "Invalid request, no sourceRepresentation.authorityValue has been supplied",
 	}
+	testSourceRepNoAuthority := testStruct{
+		testName:      "testSourceRepNoAuthority",
+		aggConcept:    sourceRepNoAuthority,
+		returnedError: "Invalid request, no sourceRepresentation.authority has been supplied",
+	}
 	returnNoErrorTest := testStruct{
 		testName:      "returnNoErrorTest",
 		aggConcept:    returnNoError,
@@ -2101,6 +2094,7 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 		testSourceRepNoPrefLabel,
 		testSourceRepNoType,
 		testSourceRepNoAuthorityValue,
+		testSourceRepNoAuthority,
 		returnNoErrorTest,
 	}
 
@@ -2279,8 +2273,7 @@ func deleteSourceNodes(t *testing.T, uuids ...string) {
 		qs[i] = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`
 			MATCH (a:Thing {uuid: "%s"})
-			OPTIONAL MATCH (a)-[rel:IDENTIFIES]-(i)
-			DETACH DELETE rel, i, a`, uuid)}
+			DETACH DELETE a`, uuid)}
 	}
 	err := db.CypherBatch(qs)
 	assert.NoError(t, err, "Error executing clean up cypher")
@@ -2292,9 +2285,8 @@ func cleanSourceNodes(t *testing.T, uuids ...string) {
 		qs[i] = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`
 			MATCH (a:Thing {uuid: "%s"})
-			OPTIONAL MATCH (a)-[rel:IDENTIFIES]-(i)
 			OPTIONAL MATCH (a)-[hp:HAS_PARENT]-(p)
-			DELETE rel, hp, i`, uuid)}
+			DELETE hp`, uuid)}
 	}
 	err := db.CypherBatch(qs)
 	assert.NoError(t, err, "Error executing clean up cypher")
@@ -2311,29 +2303,6 @@ func deleteConcordedNodes(t *testing.T, uuids ...string) {
 	}
 	err := db.CypherBatch(qs)
 	assert.NoError(t, err, "Error executing clean up cypher")
-}
-
-func getIdentifierValue(t *testing.T, uuidPropertyName string, uuid string, label string) string {
-	var results []struct {
-		Value string `json:"i.value"`
-	}
-
-	query := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`
-			match (c:Concept {%s :{uuid}})-[r:IDENTIFIES]-(i:%s) return i.value
-		`, uuidPropertyName, label),
-		Parameters: map[string]interface{}{
-			"uuid": uuid,
-		},
-		Result: &results,
-	}
-	err := db.CypherBatch([]*neoism.CypherQuery{query})
-	assert.NoError(t, err, fmt.Sprintf("Error while retrieving %s", label))
-
-	if len(results) > 0 {
-		return results[0].Value
-	}
-	return ""
 }
 
 func verifyAggregateHashIsCorrect(t *testing.T, concept AggregatedConcept, testName string) {
