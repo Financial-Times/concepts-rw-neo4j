@@ -164,10 +164,6 @@ var constraintMap = map[string]string{
 	"MembershipRole":              "uuid",
 	"BoardRole":                   "uuid",
 	"Membership":                  "uuid",
-	"UPPIdentifier":               "value",
-	"TMEIdentifier":               "value",
-	"FactsetIdentifier":           "value",
-	"SmartlogicIdentifier":        "value",
 	"FinancialInstrument":         "uuid",
 	"IndustryClassification":      "uuid",
 	"NAICSIndustryClassification": "uuid",
@@ -195,11 +191,16 @@ var conceptLabels = [...]string{
 	"NAICSIndustryClassification",
 }
 
-// Map of authority and nodelabel for identifiers - we should be removing
-// Identifiers after all the concepts have been migrated to the new model
-var authorityToIdentifierLabelMap = map[string]string{
-	"TME":        "TMEIdentifier",
-	"UPP":        "UPPIdentifier",
-	"Smartlogic": "SmartlogicIdentifier",
-	"FACTSET":    "FactsetIdentifier",
+var authorities = []string{
+	"TME",
+	"FACTSET",
+	"UPP",
+	"LEI",
+	"Smartlogic",
+	"ManagedLocation",
+	"ISO-3166-1",
+	"Geonames",
+	"Wikidata",
+	"DBPedia",
+	"NAICS",
 }

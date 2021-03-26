@@ -47,8 +47,7 @@ func NewConceptService(cypherRunner neoutils.NeoConnection) ConceptService {
 // Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
 func (s *ConceptService) Initialise() error {
 	err := s.conn.EnsureIndexes(map[string]string{
-		"Identifier": "value",
-		"Concept":    "leiCode",
+		"Concept": "leiCode",
 	})
 	if err != nil {
 		logger.WithError(err).Error("Could not run db index")
@@ -653,9 +652,11 @@ func validateObject(aggConcept AggregatedConcept, transID string) error {
 		return requestError{formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
 	}
 	for _, concept := range aggConcept.SourceRepresentations {
-		// Is Authority recognised?
-		if _, ok := authorityToIdentifierLabelMap[concept.Authority]; !ok {
-			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority, therefore unable to add the relevant Identifier node: %s", concept.Authority)
+		if concept.Authority == "" {
+			return requestError{formatError("sourceRepresentation.authority", concept.UUID, transID)}
+		}
+		if !stringInArr(concept.Authority, authorities) {
+			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", concept.Authority)
 		}
 		if concept.Type == "" {
 			return requestError{formatError("sourceRepresentation.type", concept.UUID, transID)}
@@ -862,9 +863,8 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 	var queryBatch []*neoism.CypherQuery
 
 	for _, sr := range ac.SourceRepresentations {
-		deletePreviousSourceIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
+		deletePreviousSourceLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
-			OPTIONAL MATCH (t)<-[rel:IDENTIFIES]-(i)
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
 			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
 			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
@@ -883,16 +883,16 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			OPTIONAL MATCH (t)-[icRel:HAS_INDUSTRY_CLASSIFICATION]->(ic)
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, rel, i, eq, relatedTo, broader, impliedBy, hasFocus, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel, icRel`, getLabelsToRemove()),
+			DELETE x, eq, relatedTo, broader, impliedBy, hasFocus, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel, icRel`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
 		}
-		queryBatch = append(queryBatch, deletePreviousSourceIdentifiersLabelsAndPropertiesQuery)
+		queryBatch = append(queryBatch, deletePreviousSourceLabelsAndPropertiesQuery)
 	}
 
 	//cleanUP all the previous Equivalent to relationships
-	deletePreviousCanonicalIdentifiersLabelsAndPropertiesQuery := &neoism.CypherQuery{
+	deletePreviousCanonicalLabelsAndPropertiesQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MATCH (t:Thing {prefUUID:{acUUID}})
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
 			REMOVE t:%s
@@ -902,7 +902,7 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 			"acUUID": acUUID,
 		},
 	}
-	queryBatch = append(queryBatch, deletePreviousCanonicalIdentifiersLabelsAndPropertiesQuery)
+	queryBatch = append(queryBatch, deletePreviousCanonicalLabelsAndPropertiesQuery)
 
 	return queryBatch
 }
@@ -1025,9 +1025,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	for _, parentUUID := range concept.ParentUUIDs {
 		writeParent := &neoism.CypherQuery{
 			Statement: `MERGE (o:Thing {uuid: {uuid}})
-						MERGE (parentupp:Identifier:UPPIdentifier {value: {parentUUID}})
 						MERGE (parent:Thing {uuid: {parentUUID}})
-						MERGE (parentupp)-[:IDENTIFIES]->(parent)
 						MERGE (o)-[:HAS_PARENT]->(parent)	`,
 			Parameters: neoism.Props{
 				"parentUUID": parentUUID,
@@ -1040,9 +1038,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if concept.OrganisationUUID != "" {
 		writeOrganisation := &neoism.CypherQuery{
 			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-						MERGE (orgupp:Identifier:UPPIdentifier {value: {orgUUID}})
 						MERGE (org:Thing {uuid: {orgUUID}})
-						MERGE (orgupp)-[:IDENTIFIES]->(org)
 						MERGE (membership)-[:HAS_ORGANISATION]->(org)`,
 			Parameters: neoism.Props{
 				"orgUUID": concept.OrganisationUUID,
@@ -1055,9 +1051,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if concept.PersonUUID != "" {
 		writePerson := &neoism.CypherQuery{
 			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-						MERGE (personupp:Identifier:UPPIdentifier {value: {personUUID}})
 						MERGE (person:Thing {uuid: {personUUID}})
-						MERGE (personupp)-[:IDENTIFIES]->(person)
 						MERGE (membership)-[:HAS_MEMBER]->(person)`,
 			Parameters: neoism.Props{
 				"personUUID": concept.PersonUUID,
@@ -1072,8 +1066,6 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			Statement: `MERGE (fi:Thing {uuid: {fiUUID}})
 						MERGE (org:Thing {uuid: {orgUUID}})
 						MERGE (fi)-[:ISSUED_BY]->(org)
-						MERGE (fiupp:Identifier:FIGIIdentifier {value: {fiCode}})
-						MERGE (fiupp)-[:IDENTIFIES]->(fi)
 						`,
 			Parameters: neoism.Props{
 				"fiUUID":  concept.UUID,
@@ -1087,9 +1079,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if uuid != "" && concept.ParentOrganisation != "" {
 		writeParentOrganisation := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (orgUPP:Identifier:UPPIdentifier {value: {orgUUID}})
 							MERGE (parentOrg:Thing {uuid: {orgUUID}})
-							MERGE (orgUPP)-[:IDENTIFIES]->(parentOrg)
 							MERGE (org)-[:SUB_ORGANISATION_OF]->(parentOrg)`,
 			Parameters: neoism.Props{
 				"orgUUID": concept.ParentOrganisation,
@@ -1102,9 +1092,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if uuid != "" && concept.CountryOfRiskUUID != "" {
 		writeCountryOfRisk := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (locUPP:Identifier:UPPIdentifier {value: {locUUID}})
 							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (locUPP)-[:IDENTIFIES]->(location)
 							MERGE (org)-[:COUNTRY_OF_RISK]->(location)`,
 			Parameters: neoism.Props{
 				"locUUID": concept.CountryOfRiskUUID,
@@ -1116,9 +1104,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if uuid != "" && concept.CountryOfIncorporationUUID != "" {
 		writeCountryOfIncorporation := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (locUPP:Identifier:UPPIdentifier {value: {locUUID}})
 							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (locUPP)-[:IDENTIFIES]->(location)
 							MERGE (org)-[:COUNTRY_OF_INCORPORATION]->(location)`,
 			Parameters: neoism.Props{
 				"locUUID": concept.CountryOfIncorporationUUID,
@@ -1130,9 +1116,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 	if uuid != "" && concept.CountryOfOperationsUUID != "" {
 		writeCountryOfOperations := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (locUPP:Identifier:UPPIdentifier {value: {locUUID}})
 							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (locUPP)-[:IDENTIFIES]->(location)
 							MERGE (org)-[:COUNTRY_OF_OPERATIONS]->(location)`,
 			Parameters: neoism.Props{
 				"locUUID": concept.CountryOfOperationsUUID,
@@ -1147,9 +1131,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			if naics.UUID != "" {
 				writeNAICS := &neoism.CypherQuery{
 					Statement: `MERGE (org:Thing {uuid: {uuid}})
-								MERGE (naicsUPP:Identifier:UPPIdentifier {value: {naicsUUID}})
 								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
-								MERGE (naicsUPP)-[:IDENTIFIES]->(naicsIC)
 								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC)`,
 					Parameters: neoism.Props{
 						"naicsUUID": naics.UUID,
@@ -1201,16 +1183,8 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 			queryBatch = append(queryBatch, writeParent)
 		}
 	}
-
 	queryBatch = append(queryBatch, createConceptQuery)
-
-	// If no UUID then it is the canonical node and will not have identifier nodes
-	if uuid != "" && concept.Type != "Membership" {
-		queryBatch = append(queryBatch, addIdentifierNodes(uuid, concept.Authority, concept.AuthorityValue)...)
-	}
-
 	return queryBatch
-
 }
 
 //Add relationships to concepts
@@ -1220,9 +1194,7 @@ func addRelationship(conceptID string, relationshipIDs []string, relationshipTyp
 			Statement: fmt.Sprintf(`
 						MATCH (o:Concept {uuid: {uuid}})
 						MERGE (p:Thing {uuid: {id}})
-		            	MERGE (o)-[:%s]->(p)
-						MERGE (x:Identifier:UPPIdentifier{value:{id}})
-                        MERGE (x)-[:IDENTIFIES]->(p)`, relationshipType),
+		            	MERGE (o)-[:%s]->(p)`, relationshipType),
 			Parameters: map[string]interface{}{
 				"uuid":         conceptID,
 				"id":           id,
@@ -1402,37 +1374,6 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	}
 
 	return nodeProps
-}
-
-//Add identifiers to node
-func addIdentifierNodes(UUID string, authority string, authorityValue string) []*neoism.CypherQuery {
-	var queryBatch []*neoism.CypherQuery
-	//Add Alternative Identifier
-
-	if label, ok := authorityToIdentifierLabelMap[authority]; ok {
-		alternativeIdentifierQuery := createNewIdentifierQuery(UUID, label, authorityValue)
-		queryBatch = append(queryBatch, alternativeIdentifierQuery)
-
-		uppIdentifierQuery := createNewIdentifierQuery(UUID, authorityToIdentifierLabelMap["UPP"], UUID)
-		queryBatch = append(queryBatch, uppIdentifierQuery)
-	}
-
-	return queryBatch
-}
-
-//Create identifier
-func createNewIdentifierQuery(uuid string, identifierLabel string, identifierValue string) *neoism.CypherQuery {
-	statementTemplate := fmt.Sprintf(`MERGE (t:Thing {uuid:{uuid}})
-					MERGE (i:Identifier:%s {value:{value}})
-					MERGE (t)<-[:IDENTIFIES]-(i)`, identifierLabel)
-	query := &neoism.CypherQuery{
-		Statement: statementTemplate,
-		Parameters: map[string]interface{}{
-			"uuid":  uuid,
-			"value": identifierValue,
-		},
-	}
-	return query
 }
 
 //DecodeJSON - decode json
