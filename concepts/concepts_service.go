@@ -655,6 +655,9 @@ func validateObject(aggConcept AggregatedConcept, transID string) error {
 		if concept.Authority == "" {
 			return requestError{formatError("sourceRepresentation.authority", concept.UUID, transID)}
 		}
+		if !stringInArr(concept.Authority, authorities) {
+			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", concept.Authority)
+		}
 		if concept.Type == "" {
 			return requestError{formatError("sourceRepresentation.type", concept.UUID, transID)}
 		}
