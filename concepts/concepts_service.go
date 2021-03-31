@@ -13,6 +13,7 @@ import (
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
 	"github.com/mitchellh/hashstructure"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -195,66 +196,20 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedCo
 		}
 	}
 
-	// TODO: this is here for consistency when refactoring.
-	aggregatedConceptToWrite.AggregatedHash = hashAsString
-
-	logEntry.Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
-	for _, query := range queryBatch {
-		logEntry.Debug(fmt.Sprintf("Query: %v", query))
+	if logger.Logger().Level == logrus.DebugLevel {
+		logEntry.Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
+		for _, query := range queryBatch {
+			logEntry.Debug(fmt.Sprintf("Query: %v", query))
+		}
 	}
 
 	// check that the issuer is not already related to a different org
 	if aggregatedConceptToWrite.IssuedBy != "" {
-		var fiRes []map[string]string
-		issuerQuery := &neoism.CypherQuery{
-			Statement: `
-					MATCH (issuer:Thing {uuid: {issuerUUID}})<-[:ISSUED_BY]-(fi)
-					RETURN fi.uuid AS fiUUID
-				`,
-			Parameters: map[string]interface{}{
-				"issuerUUID": aggregatedConceptToWrite.IssuedBy,
-			},
-			Result: &fiRes,
-		}
-		if err := s.conn.CypherBatch([]*neoism.CypherQuery{issuerQuery}); err != nil {
-			logEntry.Error("Could not get existing issuer.")
+		issuerQuery, err := s.getIssuerChangeQueries(tid, aggregatedConceptToWrite)
+		if err != nil {
 			return ConceptChanges{}, err
 		}
-
-		if len(fiRes) > 0 {
-			for _, fi := range fiRes {
-				fiUUID, ok := fi["fiUUID"]
-				if !ok {
-					continue
-				}
-
-				if fiUUID == aggregatedConceptToWrite.PrefUUID {
-					continue
-				}
-
-				msg := fmt.Sprintf(
-					"Issuer for %s was changed from %s to %s",
-					aggregatedConceptToWrite.IssuedBy,
-					fiUUID,
-					aggregatedConceptToWrite.PrefUUID,
-				)
-				logEntry.WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
-
-				deleteIssuerRelations := &neoism.CypherQuery{
-					Statement: `
-					MATCH (issuer:Thing {uuid: {issuerUUID}})
-					MATCH (fi:Thing {uuid: {fiUUID}})
-					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(fi)
-					DELETE issuerRel
-				`,
-					Parameters: map[string]interface{}{
-						"issuerUUID": aggregatedConceptToWrite.IssuedBy,
-						"fiUUID":     fiUUID,
-					},
-				}
-				queryBatch = append(queryBatch, deleteIssuerRelations)
-			}
-		}
+		queryBatch = append(queryBatch, issuerQuery...)
 	}
 
 	if err = s.conn.CypherBatch(queryBatch); err != nil {
@@ -264,6 +219,60 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedCo
 
 	logEntry.Info("Concept written to db")
 	return updateRecord, nil
+}
+
+func (s *ConceptService) getIssuerChangeQueries(tid string, aggregatedConceptToWrite AggregatedConcept) ([]*neoism.CypherQuery, error) {
+	var fiRes []map[string]string
+	logEntry := logger.WithTransactionID(tid).WithUUID(aggregatedConceptToWrite.PrefUUID)
+	queryBatch := []*neoism.CypherQuery{}
+	issuerQuery := &neoism.CypherQuery{
+		Statement: `
+					MATCH (issuer:Thing {uuid: {issuerUUID}})<-[:ISSUED_BY]-(fi)
+					RETURN fi.uuid AS fiUUID
+				`,
+		Parameters: map[string]interface{}{
+			"issuerUUID": aggregatedConceptToWrite.IssuedBy,
+		},
+		Result: &fiRes,
+	}
+	if err := s.conn.CypherBatch([]*neoism.CypherQuery{issuerQuery}); err != nil {
+		logEntry.Error("Could not get existing issuer.")
+		return nil, err
+	}
+
+	for _, fi := range fiRes {
+		fiUUID, ok := fi["fiUUID"]
+		if !ok {
+			continue
+		}
+
+		if fiUUID == aggregatedConceptToWrite.PrefUUID {
+			continue
+		}
+
+		msg := fmt.Sprintf(
+			"Issuer for %s was changed from %s to %s",
+			aggregatedConceptToWrite.IssuedBy,
+			fiUUID,
+			aggregatedConceptToWrite.PrefUUID,
+		)
+		logEntry.WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
+
+		deleteIssuerRelations := &neoism.CypherQuery{
+			Statement: `
+					MATCH (issuer:Thing {uuid: {issuerUUID}})
+					MATCH (fi:Thing {uuid: {fiUUID}})
+					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(fi)
+					DELETE issuerRel
+				`,
+			Parameters: map[string]interface{}{
+				"issuerUUID": aggregatedConceptToWrite.IssuedBy,
+				"fiUUID":     fiUUID,
+			},
+		}
+		queryBatch = append(queryBatch, deleteIssuerRelations)
+	}
+	return queryBatch, nil
 }
 
 var ConceptNotChangedErr = errors.New("concept not changed")
