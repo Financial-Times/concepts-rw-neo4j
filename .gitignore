@@ -32,4 +32,5 @@ _testmain.go
 vendor/*/
 .idea
 
+bin/
 /concepts-rw-neo4j
