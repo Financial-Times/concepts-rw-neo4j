@@ -259,43 +259,32 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedCo
 				}
 			}
 		}
+
+		for _, query := range prefUUIDsToBeDeletedQueryBatch {
+			queryBatch = append(queryBatch, query)
+		}
+		aggregatedConceptToWrite.AggregatedHash = hashAsString
+		queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
+
+		updateRecord.UpdatedIds = updatedUUIDList
+		updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+			ConceptType:   aggregatedConceptToWrite.Type,
+			ConceptUUID:   aggregatedConceptToWrite.PrefUUID,
+			AggregateHash: hashAsString,
+			TransactionID: tid,
+			EventDetails: ConceptEvent{
+				Type: UpdatedEvent,
+			},
+		})
 	} else {
-		uuidsToDelete, changeEvent, err := s.handleTransferConcordance(requestSourceData, hashAsString, aggregatedConceptToWrite, tid)
+		queryBatch, updateRecord, err = s.handleNewConcept(tid, aggregatedConceptToWrite, requestSourceData, hashAsString)
 		if err != nil {
 			return ConceptChanges{}, err
 		}
-		for _, id := range uuidsToDelete {
-			prefUUIDsToBeDeletedQueryBatch = append(prefUUIDsToBeDeletedQueryBatch, deleteLonePrefUUID(id))
-		}
-		updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, changeEvent...)
-
-		clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
-		for _, query := range clearDownQuery {
-			queryBatch = append(queryBatch, query)
-		}
-
-		//Concept is new, send notification of all source ids
-		for _, source := range aggregatedConceptToWrite.SourceRepresentations {
-			updatedUUIDList = append(updatedUUIDList, source.UUID)
-		}
 	}
 
-	for _, query := range prefUUIDsToBeDeletedQueryBatch {
-		queryBatch = append(queryBatch, query)
-	}
+	// TODO: this is here for consistency when refactoring.
 	aggregatedConceptToWrite.AggregatedHash = hashAsString
-	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
-
-	updateRecord.UpdatedIds = updatedUUIDList
-	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
-		ConceptType:   aggregatedConceptToWrite.Type,
-		ConceptUUID:   aggregatedConceptToWrite.PrefUUID,
-		AggregateHash: hashAsString,
-		TransactionID: tid,
-		EventDetails: ConceptEvent{
-			Type: UpdatedEvent,
-		},
-	})
 
 	logEntry.Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
 	for _, query := range queryBatch {
@@ -363,6 +352,38 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedCo
 
 	logEntry.Info("Concept written to db")
 	return updateRecord, nil
+}
+
+func (s *ConceptService) handleNewConcept(tid string, aggregatedConceptToWrite AggregatedConcept, requestSourceData map[string]string, hashAsString string) ([]*neoism.CypherQuery, ConceptChanges, error) {
+	uuidsToDelete, changeEvent, err := s.handleTransferConcordance(requestSourceData, hashAsString, aggregatedConceptToWrite, tid)
+	if err != nil {
+		return nil, ConceptChanges{}, err
+	}
+	updateRecord := ConceptChanges{}
+	//Concept is new, send notification of all source ids
+	for _, source := range aggregatedConceptToWrite.SourceRepresentations {
+		updateRecord.UpdatedIds = append(updateRecord.UpdatedIds, source.UUID)
+	}
+
+	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, changeEvent...)
+	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+		ConceptType:   aggregatedConceptToWrite.Type,
+		ConceptUUID:   aggregatedConceptToWrite.PrefUUID,
+		AggregateHash: hashAsString,
+		TransactionID: tid,
+		EventDetails: ConceptEvent{
+			Type: UpdatedEvent,
+		},
+	})
+
+	aggregatedConceptToWrite.AggregatedHash = hashAsString
+	queryBatch := s.clearDownExistingNodes(aggregatedConceptToWrite)
+	for _, id := range uuidsToDelete {
+		queryBatch = append(queryBatch, deleteLonePrefUUID(id))
+	}
+	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
+
+	return queryBatch, updateRecord, nil
 }
 
 func validateObject(aggConcept AggregatedConcept) error {
