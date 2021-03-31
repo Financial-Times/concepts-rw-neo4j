@@ -14,11 +14,15 @@ test:
 	@echo ">>> Running Tests..."
 	 go test  -timeout 60s -race ./... -count=1
 
-compose-test:
-	@echo ">>> Running Tests with Coverage..."
-	docker-compose -f docker-compose-tests.yml up -d --build && \
-    docker logs -f test-runner && \
-    docker-compose -f docker-compose-tests.yml down -v
+compose-test: compose-up compose-print compose-down
+
+compose-print:
+	docker logs -f test-runner
+compose-down:
+	docker-compose -f docker-compose-tests.yml down -v
+
+compose-up:
+	docker-compose -f docker-compose-tests.yml up -d --build
 
 clean:
 	@echo ">>> Removing binaries..."
