@@ -195,6 +195,10 @@ type equivalenceResult struct {
 
 //Read - read service
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
+	return s.read(uuid, transID)
+}
+
+func (s *ConceptService) read(uuid string, transID string) (AggregatedConcept, bool, error) {
 	var results []neoAggregatedConcept
 
 	query := &neoism.CypherQuery{
@@ -430,55 +434,67 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 }
 
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
+	concept, ok := thing.(AggregatedConcept)
+	if !ok {
+		return nil, errors.New("wrong thing")
+	}
+
+	return s.write(transID, concept)
+}
+
+func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedConcept) (ConceptChanges, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
-	updateRecord := ConceptChanges{}
-	var updatedUUIDList []string
-	aggregatedConceptToWrite := thing.(AggregatedConcept)
+
 	aggregatedConceptToWrite = cleanSourceProperties(aggregatedConceptToWrite)
 	requestSourceData := getSourceData(aggregatedConceptToWrite.SourceRepresentations)
 
+	logEntry := logger.WithTransactionID(tid).WithUUID(aggregatedConceptToWrite.PrefUUID)
+
 	requestHash, err := hashstructure.Hash(aggregatedConceptToWrite, nil)
 	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error hashing json from request")
-		return updateRecord, err
+		logEntry.WithError(err).Error("Error hashing json from request")
+		return ConceptChanges{}, err
 	}
 
 	hashAsString := strconv.FormatUint(requestHash, 10)
 
-	if err = validateObject(aggregatedConceptToWrite, transID); err != nil {
-		return updateRecord, err
+	if err = validateObject(aggregatedConceptToWrite); err != nil {
+		logEntry.WithError(err).Error("filed to validate aggregate concept")
+		return ConceptChanges{}, err
 	}
 
-	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transID)
+	existingConcept, exists, err := s.read(aggregatedConceptToWrite.PrefUUID, tid)
 	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Read request for existing concordance resulted in error")
-		return updateRecord, err
+		logEntry.WithError(err).Error("Read request for existing concordance resulted in error")
+		return ConceptChanges{}, err
 	}
 
 	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(AggregatedConcept)
 
+	var updatedUUIDList []string
+	updateRecord := ConceptChanges{}
+
 	var queryBatch []*neoism.CypherQuery
 	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
 	if exists {
-		existingAggregateConcept := existingConcept.(AggregatedConcept)
-		if existingAggregateConcept.AggregatedHash == "" {
-			existingAggregateConcept.AggregatedHash = "0"
+		if existingConcept.AggregatedHash == "" {
+			existingConcept.AggregatedHash = "0"
 		}
-		currentHash, err := strconv.ParseUint(existingAggregateConcept.AggregatedHash, 10, 64)
+		currentHash, err := strconv.ParseUint(existingConcept.AggregatedHash, 10, 64)
 		if err != nil {
-			logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Error whilst parsing existing concept hash")
-			return updateRecord, nil
+			logEntry.WithError(err).Info("Error whilst parsing existing concept hash")
+			return ConceptChanges{}, nil
 		}
-		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debugf("Currently stored concept has hash of %d", currentHash)
-		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debugf("Aggregated concept has hash of %d", requestHash)
+		logEntry.Debugf("Currently stored concept has hash of %d", currentHash)
+		logEntry.Debugf("Aggregated concept has hash of %d", requestHash)
 		if currentHash == requestHash {
-			logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("This concept has not changed since most recent update")
-			return updateRecord, nil
+			logEntry.Info("This concept has not changed since most recent update")
+			return ConceptChanges{}, nil
 		}
-		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("This concept is different to record stored in db, updating...")
+		logEntry.Info("This concept is different to record stored in db, updating...")
 
-		existingSourceData := getSourceData(existingAggregateConcept.SourceRepresentations)
+		existingSourceData := getSourceData(existingConcept.SourceRepresentations)
 
 		//Concept has been updated since last write, so need to send notification of all affected ids
 		for _, source := range aggregatedConceptToWrite.SourceRepresentations {
@@ -494,9 +510,9 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 		//Handle scenarios for transferring source id from an existing concordance to this concordance
 		if len(conceptsToTransferConcordance) > 0 {
-			prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(conceptsToTransferConcordance, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
+			prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(conceptsToTransferConcordance, &updateRecord, hashAsString, aggregatedConceptToWrite, tid)
 			if err != nil {
-				return updateRecord, err
+				return ConceptChanges{}, err
 			}
 
 		}
@@ -507,7 +523,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		}
 
 		for idToUnconcord := range conceptsToUnconcord {
-			for _, concept := range existingAggregateConcept.SourceRepresentations {
+			for _, concept := range existingConcept.SourceRepresentations {
 				if idToUnconcord == concept.UUID {
 					//aggConcept := buildAggregateConcept(concept)
 					//set this to 0 as otherwise it is empty
@@ -524,7 +540,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 						ConceptType:   conceptsToUnconcord[idToUnconcord],
 						ConceptUUID:   idToUnconcord,
 						AggregateHash: hashAsString,
-						TransactionID: transID,
+						TransactionID: tid,
 						EventDetails: ConcordanceEvent{
 							Type:  RemovedEvent,
 							OldID: aggregatedConceptToWrite.PrefUUID,
@@ -535,9 +551,9 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			}
 		}
 	} else {
-		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(requestSourceData, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
+		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(requestSourceData, &updateRecord, hashAsString, aggregatedConceptToWrite, tid)
 		if err != nil {
-			return updateRecord, err
+			return ConceptChanges{}, err
 		}
 
 		clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
@@ -562,15 +578,15 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		ConceptType:   aggregatedConceptToWrite.Type,
 		ConceptUUID:   aggregatedConceptToWrite.PrefUUID,
 		AggregateHash: hashAsString,
-		TransactionID: transID,
+		TransactionID: tid,
 		EventDetails: ConceptEvent{
 			Type: UpdatedEvent,
 		},
 	})
 
-	logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
+	logEntry.Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
 	for _, query := range queryBatch {
-		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
+		logEntry.Debug(fmt.Sprintf("Query: %v", query))
 	}
 
 	// check that the issuer is not already related to a different org
@@ -587,11 +603,8 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			Result: &fiRes,
 		}
 		if err := s.conn.CypherBatch([]*neoism.CypherQuery{issuerQuery}); err != nil {
-			logger.WithError(err).
-				WithTransactionID(transID).
-				WithUUID(aggregatedConceptToWrite.PrefUUID).
-				Error("Could not get existing issuer.")
-			return updateRecord, err
+			logEntry.Error("Could not get existing issuer.")
+			return ConceptChanges{}, err
 		}
 
 		if len(fiRes) > 0 {
@@ -611,9 +624,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					fiUUID,
 					aggregatedConceptToWrite.PrefUUID,
 				)
-				logger.WithTransactionID(transID).
-					WithUUID(aggregatedConceptToWrite.PrefUUID).
-					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
+				logEntry.WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
 
 				deleteIssuerRelations := &neoism.CypherQuery{
 					Statement: `
@@ -633,48 +644,43 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	}
 
 	if err = s.conn.CypherBatch(queryBatch); err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error executing neo4j write queries. Concept NOT written.")
-		return updateRecord, err
+		logEntry.WithError(err).Error("Error executing neo4j write queries. Concept NOT written.")
+		return ConceptChanges{}, err
 	}
 
-	logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Concept written to db")
+	logEntry.Info("Concept written to db")
 	return updateRecord, nil
 }
 
-func validateObject(aggConcept AggregatedConcept, transID string) error {
+func validateObject(aggConcept AggregatedConcept) error {
 	if aggConcept.PrefLabel == "" {
-		return requestError{formatError("prefLabel", aggConcept.PrefUUID, transID)}
+		return formatError("prefLabel", aggConcept.PrefUUID)
 	}
 	if _, ok := constraintMap[aggConcept.Type]; !ok {
-		return requestError{formatError("type", aggConcept.PrefUUID, transID)}
+		return formatError("type", aggConcept.PrefUUID)
 	}
 	if aggConcept.SourceRepresentations == nil {
-		return requestError{formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
+		return formatError("sourceRepresentation", aggConcept.PrefUUID)
 	}
 	for _, concept := range aggConcept.SourceRepresentations {
 		if concept.Authority == "" {
-			return requestError{formatError("sourceRepresentation.authority", concept.UUID, transID)}
-		}
-		if !stringInArr(concept.Authority, authorities) {
-			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", concept.Authority)
+			return formatError("sourceRepresentation.authority", concept.UUID)
 		}
 		if concept.Type == "" {
-			return requestError{formatError("sourceRepresentation.type", concept.UUID, transID)}
+			return formatError("sourceRepresentation.type", concept.UUID)
 		}
 		if concept.AuthorityValue == "" {
-			return requestError{formatError("sourceRepresentation.authorityValue", concept.UUID, transID)}
+			return formatError("sourceRepresentation.authorityValue", concept.UUID)
 		}
 		if _, ok := constraintMap[concept.Type]; !ok {
-			return requestError{formatError("type", aggConcept.PrefUUID, transID)}
+			return formatError("type", aggConcept.PrefUUID)
 		}
 	}
 	return nil
 }
 
-func formatError(field string, uuid string, transID string) string {
-	err := errors.New("Invalid request, no " + field + " has been supplied")
-	logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Validation of payload failed")
-	return err.Error()
+func formatError(field string, uuid string) error {
+	return requestError{details: "Invalid request, no " + field + " has been supplied"}
 }
 
 func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, secondMapConcepts map[string]string) map[string]string {

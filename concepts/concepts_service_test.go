@@ -2099,7 +2099,7 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		err := validateObject(scenario.aggConcept, "transaction_id")
+		err := validateObject(scenario.aggConcept)
 		if err != nil {
 			assert.Contains(t, err.Error(), scenario.returnedError, scenario.testName)
 		} else {
