@@ -84,12 +84,21 @@ type equivalenceResult struct {
 	Authority   string   `json:"authority"`
 }
 
+var ConceptNotFoundErr = errors.New("concept not found")
+
 //Read - read service
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
-	return s.read(uuid, transID)
+	result, err := s.read(uuid, transID)
+	if err == nil {
+		return result, true, nil
+	}
+	if errors.Is(err, ConceptNotFoundErr) {
+		return result, false, nil
+	}
+	return result, false, err
 }
 
-func (s *ConceptService) read(uuid string, transID string) (AggregatedConcept, bool, error) {
+func (s *ConceptService) read(uuid string, transID string) (AggregatedConcept, error) {
 	logEntry := logger.WithTransactionID(transID).WithUUID(uuid)
 
 	var results []neoAggregatedConcept
@@ -98,18 +107,18 @@ func (s *ConceptService) read(uuid string, transID string) (AggregatedConcept, b
 	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		logEntry.WithError(err).Error("Error executing neo4j read query")
-		return AggregatedConcept{}, false, err
+		return AggregatedConcept{}, err
 	}
 
 	if len(results) == 0 {
 		logEntry.Info("Concept not found in db")
-		return AggregatedConcept{}, false, nil
+		return AggregatedConcept{}, ConceptNotFoundErr
 	}
 
 	aggregatedConcept, err := results[0].Normalized()
 	if err != nil {
 		logEntry.WithError(err).Error("Returned concept had no recognized type")
-		return AggregatedConcept{}, false, err
+		return AggregatedConcept{}, err
 	}
 
 	var sourceConcepts []Concept
@@ -117,14 +126,14 @@ func (s *ConceptService) read(uuid string, transID string) (AggregatedConcept, b
 		concept, err := srcConcept.Normalize()
 		if err != nil {
 			logEntry.WithError(err).Error("Returned source concept had no recognized type")
-			return AggregatedConcept{}, false, err
+			return AggregatedConcept{}, err
 		}
 		sourceConcepts = append(sourceConcepts, concept)
 	}
 
 	aggregatedConcept.SourceRepresentations = sourceConcepts
 	logEntry.Debugf("Returned concept is %v", aggregatedConcept)
-	return cleanConcept(aggregatedConcept), true, nil
+	return cleanConcept(aggregatedConcept), nil
 }
 
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -157,11 +166,14 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedCo
 		logEntry.WithError(err).Error("filed to validate aggregate concept")
 		return ConceptChanges{}, err
 	}
-
-	existingConcept, exists, err := s.read(aggregatedConceptToWrite.PrefUUID, tid)
+	exists := true
+	existingConcept, err := s.read(aggregatedConceptToWrite.PrefUUID, tid)
 	if err != nil {
-		logEntry.WithError(err).Error("Read request for existing concordance resulted in error")
-		return ConceptChanges{}, err
+		if !errors.Is(err, ConceptNotFoundErr) {
+			logEntry.WithError(err).Error("Read request for existing concordance resulted in error")
+			return ConceptChanges{}, err
+		}
+		exists = false
 	}
 
 	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(AggregatedConcept)
