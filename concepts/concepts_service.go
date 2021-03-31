@@ -428,8 +428,8 @@ func (s *ConceptService) getEquivalentNodes(uuid string) ([]equivalenceResult, e
 	return result, nil
 }
 
-func (s *ConceptService) handleSingleSourceTransfer(updatedSourceID string, updatedSourceType string, aggregateHash string, newAggregatedConcept AggregatedConcept, transID string) ([]string, []Event, error) {
-	logEntry := logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID)
+func (s *ConceptService) handleSingleSourceTransfer(updatedSourceID string, updatedSourceType string, aggregateHash string, aggregatePrefUUID string, aggregateAuthority string, transID string) ([]string, []Event, error) {
+	logEntry := logger.WithTransactionID(transID).WithUUID(aggregatePrefUUID)
 
 	result, err := s.getEquivalentNodes(updatedSourceID)
 	if err != nil {
@@ -447,7 +447,7 @@ func (s *ConceptService) handleSingleSourceTransfer(updatedSourceID string, upda
 	//source node does not currently exist in neo4j, nothing to tidy up
 	if len(result) == 0 {
 		logEntry.Info("No existing concordance record found")
-		if updatedSourceID == newAggregatedConcept.PrefUUID {
+		if updatedSourceID == aggregatePrefUUID {
 			return nil, nil, nil
 		}
 		//concept does not exist, need update event
@@ -469,7 +469,7 @@ func (s *ConceptService) handleSingleSourceTransfer(updatedSourceID string, upda
 				EventDetails: ConcordanceEvent{
 					Type:  AddedEvent,
 					OldID: updatedSourceID,
-					NewID: newAggregatedConcept.PrefUUID,
+					NewID: aggregatePrefUUID,
 				},
 			},
 		}, err
@@ -507,15 +507,14 @@ func (s *ConceptService) handleSingleSourceTransfer(updatedSourceID string, upda
 				EventDetails: ConcordanceEvent{
 					Type:  AddedEvent,
 					OldID: updatedSourceID,
-					NewID: newAggregatedConcept.PrefUUID,
+					NewID: aggregatePrefUUID,
 				},
 			}}, nil
 	}
 
 	if updatedSourceID == entityEquivalence.PrefUUID {
-		if updatedSourceID != newAggregatedConcept.PrefUUID {
-			authority := getCanonicalAuthority(newAggregatedConcept)
-			if entityEquivalence.Authority != authority && stringInArr(entityEquivalence.Authority, concordancesSources) {
+		if updatedSourceID != aggregatePrefUUID {
+			if entityEquivalence.Authority != aggregateAuthority && stringInArr(entityEquivalence.Authority, concordancesSources) {
 				logEntry.Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transfered to the new concordance", updatedSourceID)
 				// just delete the lone prefUUID node because the other concordances to
 				// this node should already be in the new sourceRepresentations (aggregate-concept-transformer responsability)
@@ -529,7 +528,7 @@ func (s *ConceptService) handleSingleSourceTransfer(updatedSourceID string, upda
 						EventDetails: ConcordanceEvent{
 							Type:  AddedEvent,
 							OldID: updatedSourceID,
-							NewID: newAggregatedConcept.PrefUUID,
+							NewID: aggregatePrefUUID,
 						},
 					}}, nil
 			}
@@ -561,7 +560,7 @@ func (s *ConceptService) handleSingleSourceTransfer(updatedSourceID string, upda
 			EventDetails: ConcordanceEvent{
 				Type:  AddedEvent,
 				OldID: updatedSourceID,
-				NewID: newAggregatedConcept.PrefUUID,
+				NewID: aggregatePrefUUID,
 			},
 		},
 	}, nil
@@ -572,9 +571,10 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 
 	uuidsToDelete := []string{}
 	changeEvents := []Event{}
-
+	aggregateAuthority := getCanonicalAuthority(newAggregatedConcept)
+	aggregatePrefUUID := newAggregatedConcept.PrefUUID
 	for updatedSourceID, updatedSourceType := range conceptData {
-		uuids, events, err := s.handleSingleSourceTransfer(updatedSourceID, updatedSourceType, aggregateHash, newAggregatedConcept, transID)
+		uuids, events, err := s.handleSingleSourceTransfer(updatedSourceID, updatedSourceType, aggregateHash, aggregatePrefUUID, aggregateAuthority, transID)
 		if err != nil {
 			return nil, nil, err
 		}
