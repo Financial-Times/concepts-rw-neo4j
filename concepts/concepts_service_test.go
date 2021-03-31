@@ -1801,8 +1801,6 @@ func TestFilteringOfUniqueIds(t *testing.T) {
 func TestTransferConcordance(t *testing.T) {
 	statement := `MERGE (a:Thing{prefUUID:"1"}) MERGE (b:Thing{uuid:"1"}) MERGE (c:Thing{uuid:"2"}) MERGE (d:Thing{uuid:"3"}) MERGE (w:Thing{prefUUID:"4"}) MERGE (y:Thing{uuid:"5"}) MERGE (j:Thing{prefUUID:"6"}) MERGE (k:Thing{uuid:"6"}) MERGE (c)-[:EQUIVALENT_TO]->(a)<-[:EQUIVALENT_TO]-(b) MERGE (w)<-[:EQUIVALENT_TO]-(d) MERGE (j)<-[:EQUIVALENT_TO]-(k)`
 	db.CypherBatch([]*neoism.CypherQuery{{Statement: statement}})
-	var emptyQuery []*neoism.CypherQuery
-	var updatedConcept ConceptChanges
 
 	type testStruct struct {
 		testName         string
@@ -1859,13 +1857,13 @@ func TestTransferConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", AggregatedConcept{}, "")
+		returnedQueryList, _, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "1234", AggregatedConcept{}, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
-			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+			assert.NotEmpty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 			break
 		}
-		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		assert.Empty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 	}
 
 	defer deleteSourceNodes(t, "1", "2", "3", "5", "6")
@@ -1894,8 +1892,6 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	MERGE (editorial)-[:EQUIVALENT_TO]->(editorialCanonical)<-[:EQUIVALENT_TO]-(factset)
 	MERGE (ml)-[:EQUIVALENT_TO]->(mlCanonical)<-[:EQUIVALENT_TO]-(tme)`
 	db.CypherBatch([]*neoism.CypherQuery{{Statement: statement}})
-	var emptyQuery []*neoism.CypherQuery
-	var updatedConcept ConceptChanges
 
 	type testStruct struct {
 		testName          string
@@ -1950,13 +1946,13 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", scenario.targetConcordance, "")
+		returnedQueryList, _, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "1234", scenario.targetConcordance, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
-			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+			assert.NotEmpty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 			continue
 		}
-		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		assert.Empty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 	}
 
 	defer deleteSourceNodes(t, "1", "2", "3", "5")
