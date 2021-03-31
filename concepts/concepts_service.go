@@ -428,80 +428,76 @@ func (s *ConceptService) getEquivalentNodes(uuid string) ([]equivalenceResult, e
 	return result, nil
 }
 
-//Handle new source nodes that have been added to current concordance
-func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, aggregateHash string, newAggregatedConcept AggregatedConcept, transID string) ([]string, []Event, error) {
+func (s *ConceptService) handleSingleSourceTransfer(updatedSourceID string, updatedSourceType string, aggregateHash string, newAggregatedConcept AggregatedConcept, transID string) ([]string, []Event, error) {
+	result, err := s.getEquivalentNodes(updatedSourceID)
+	if err != nil {
+		logger.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error("Requests for source nodes canonical information resulted in error")
+		return nil, nil, err
+	}
 
-	uuidsToDelete := []string{}
-	changeEvents := []Event{}
+	if len(result) > 1 {
+		//this scenario should never happen
+		err = fmt.Errorf("Multiple source concepts found with matching uuid: %s", updatedSourceID)
+		logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error(err.Error())
+		return nil, nil, err
+	}
 
-	for updatedSourceID := range conceptData {
-		result, err := s.getEquivalentNodes(updatedSourceID)
-		if err != nil {
-			logger.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error("Requests for source nodes canonical information resulted in error")
+	//source node does not currently exist in neo4j, nothing to tidy up
+	if len(result) == 0 {
+		logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Info("No existing concordance record found")
+		if updatedSourceID == newAggregatedConcept.PrefUUID {
+			return nil, nil, nil
+		}
+		//concept does not exist, need update event
+		return nil, []Event{
+			{
+				ConceptType:   updatedSourceType,
+				ConceptUUID:   updatedSourceID,
+				AggregateHash: aggregateHash,
+				TransactionID: transID,
+				EventDetails: ConceptEvent{
+					Type: UpdatedEvent,
+				},
+			},
+			{
+				ConceptType:   updatedSourceType,
+				ConceptUUID:   updatedSourceID,
+				AggregateHash: aggregateHash,
+				TransactionID: transID,
+				EventDetails: ConcordanceEvent{
+					Type:  AddedEvent,
+					OldID: updatedSourceID,
+					NewID: newAggregatedConcept.PrefUUID,
+				},
+			},
+		}, err
+	}
+
+	entityEquivalence := result[0]
+	conceptType, err := mapper.MostSpecificType(entityEquivalence.Types)
+	if err != nil {
+		logger.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Errorf("could not return most specific type from source node: %v", entityEquivalence.Types)
+		return nil, nil, err
+	}
+
+	logger.WithField("UUID", updatedSourceID).Debug("Existing prefUUID is " + entityEquivalence.PrefUUID + " equivalence count is " + strconv.Itoa(entityEquivalence.Equivalence))
+	if entityEquivalence.Equivalence == 0 {
+		// Source is old as exists in Neo4j without a prefNode. It can be transferred without issue
+		return nil, nil, nil
+	}
+	if entityEquivalence.Equivalence == 1 {
+		// Source exists in neo4j but is not concorded. It can be transferred without issue but its prefNode should be deleted
+		if updatedSourceID != entityEquivalence.PrefUUID {
+			// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
+			err := fmt.Errorf("This source id: %s the only concordance to a non-matching node with prefUuid: %s", updatedSourceID, entityEquivalence.PrefUUID)
+			logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingDodgyData").Error(err)
 			return nil, nil, err
 		}
-
-		if len(result) > 1 {
-			//this scenario should never happen
-			err = fmt.Errorf("Multiple source concepts found with matching uuid: %s", updatedSourceID)
-			logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error(err.Error())
-			return nil, nil, err
-		}
-
-		//source node does not currently exist in neo4j, nothing to tidy up
-		if len(result) == 0 {
-			logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Info("No existing concordance record found")
-			if updatedSourceID != newAggregatedConcept.PrefUUID {
-				//concept does not exist, need update event
-				changeEvents = append(changeEvents, Event{
-					ConceptType:   conceptData[updatedSourceID],
-					ConceptUUID:   updatedSourceID,
-					AggregateHash: aggregateHash,
-					TransactionID: transID,
-					EventDetails: ConceptEvent{
-						Type: UpdatedEvent,
-					},
-				})
-
-				//create concordance event for non concorded concept
-				changeEvents = append(changeEvents, Event{
-					ConceptType:   conceptData[updatedSourceID],
-					ConceptUUID:   updatedSourceID,
-					AggregateHash: aggregateHash,
-					TransactionID: transID,
-					EventDetails: ConcordanceEvent{
-						Type:  AddedEvent,
-						OldID: updatedSourceID,
-						NewID: newAggregatedConcept.PrefUUID,
-					},
-				})
-			}
-			continue
-		}
-
-		entityEquivalence := result[0]
-		conceptType, err := mapper.MostSpecificType(entityEquivalence.Types)
-		if err != nil {
-			logger.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Errorf("could not return most specific type from source node: %v", entityEquivalence.Types)
-			return nil, nil, err
-		}
-
-		logger.WithField("UUID", updatedSourceID).Debug("Existing prefUUID is " + entityEquivalence.PrefUUID + " equivalence count is " + strconv.Itoa(entityEquivalence.Equivalence))
-		if entityEquivalence.Equivalence == 0 {
-			// Source is old as exists in Neo4j without a prefNode. It can be transferred without issue
-			continue
-		} else if entityEquivalence.Equivalence == 1 {
-			// Source exists in neo4j but is not concorded. It can be transferred without issue but its prefNode should be deleted
-			if updatedSourceID != entityEquivalence.PrefUUID {
-				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
-				err := fmt.Errorf("This source id: %s the only concordance to a non-matching node with prefUuid: %s", updatedSourceID, entityEquivalence.PrefUUID)
-				logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingDodgyData").Error(err)
-				return nil, nil, err
-			}
-			logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Pref uuid node for source %s will need to be deleted as its source will be removed", updatedSourceID)
-			uuidsToDelete = append(uuidsToDelete, entityEquivalence.PrefUUID)
-			//concordance added
-			changeEvents = append(changeEvents, Event{
+		logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Pref uuid node for source %s will need to be deleted as its source will be removed", updatedSourceID)
+		//concordance added
+		return []string{
+				entityEquivalence.PrefUUID,
+			}, []Event{{
 				ConceptType:   conceptType,
 				ConceptUUID:   updatedSourceID,
 				AggregateHash: aggregateHash,
@@ -511,19 +507,19 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 					OldID: updatedSourceID,
 					NewID: newAggregatedConcept.PrefUUID,
 				},
-			})
-			continue
-		}
+			}}, nil
+	}
 
-		if updatedSourceID == entityEquivalence.PrefUUID {
-			if updatedSourceID != newAggregatedConcept.PrefUUID {
-				authority := getCanonicalAuthority(newAggregatedConcept)
-				if entityEquivalence.Authority != authority && stringInArr(entityEquivalence.Authority, concordancesSources) {
-					logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transfered to the new concordance", updatedSourceID)
-					// just delete the lone prefUUID node because the other concordances to
-					// this node should already be in the new sourceRepresentations (aggregate-concept-transformer responsability)
-					uuidsToDelete = append(uuidsToDelete, entityEquivalence.PrefUUID)
-					changeEvents = append(changeEvents, Event{
+	if updatedSourceID == entityEquivalence.PrefUUID {
+		if updatedSourceID != newAggregatedConcept.PrefUUID {
+			authority := getCanonicalAuthority(newAggregatedConcept)
+			if entityEquivalence.Authority != authority && stringInArr(entityEquivalence.Authority, concordancesSources) {
+				logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transfered to the new concordance", updatedSourceID)
+				// just delete the lone prefUUID node because the other concordances to
+				// this node should already be in the new sourceRepresentations (aggregate-concept-transformer responsability)
+				return []string{
+						entityEquivalence.PrefUUID,
+					}, []Event{{
 						ConceptType:   conceptType,
 						ConceptUUID:   updatedSourceID,
 						AggregateHash: aggregateHash,
@@ -533,19 +529,18 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 							OldID: updatedSourceID,
 							NewID: newAggregatedConcept.PrefUUID,
 						},
-					})
-					continue
-				}
-				// Source is prefUUID for a different concordance
-				err := fmt.Errorf("Cannot currently process this record as it will break an existing concordance with prefUuid: %s", updatedSourceID)
-				logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingInvalidConcordance").Error(err)
-				return nil, nil, err
+					}}, nil
 			}
+			// Source is prefUUID for a different concordance
+			err := fmt.Errorf("Cannot currently process this record as it will break an existing concordance with prefUuid: %s", updatedSourceID)
+			logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingInvalidConcordance").Error(err)
+			return nil, nil, err
 		}
-		// Source was concorded to different concordance. Data on existing concordance is now out of date
-		logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingStaleData").Infof("Need to re-ingest concordance record for prefUuid: %s as source: %s has been removed.", entityEquivalence.PrefUUID, updatedSourceID)
-
-		changeEvents = append(changeEvents, Event{
+	}
+	// Source was concorded to different concordance. Data on existing concordance is now out of date
+	logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingStaleData").Infof("Need to re-ingest concordance record for prefUuid: %s as source: %s has been removed.", entityEquivalence.PrefUUID, updatedSourceID)
+	return nil, []Event{
+		{
 			ConceptType:   conceptType,
 			ConceptUUID:   updatedSourceID,
 			AggregateHash: aggregateHash,
@@ -555,9 +550,8 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 				OldID: entityEquivalence.PrefUUID,
 				NewID: updatedSourceID,
 			},
-		})
-
-		changeEvents = append(changeEvents, Event{
+		},
+		{
 			ConceptType:   conceptType,
 			ConceptUUID:   updatedSourceID,
 			AggregateHash: aggregateHash,
@@ -567,7 +561,23 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 				OldID: updatedSourceID,
 				NewID: newAggregatedConcept.PrefUUID,
 			},
-		})
+		},
+	}, nil
+}
+
+//Handle new source nodes that have been added to current concordance
+func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, aggregateHash string, newAggregatedConcept AggregatedConcept, transID string) ([]string, []Event, error) {
+
+	uuidsToDelete := []string{}
+	changeEvents := []Event{}
+
+	for updatedSourceID, updatedSourceType := range conceptData {
+		uuids, events, err := s.handleSingleSourceTransfer(updatedSourceID, updatedSourceType, aggregateHash, newAggregatedConcept, transID)
+		if err != nil {
+			return nil, nil, err
+		}
+		uuidsToDelete = append(uuidsToDelete, uuids...)
+		changeEvents = append(changeEvents, events...)
 	}
 
 	return uuidsToDelete, changeEvents, nil
