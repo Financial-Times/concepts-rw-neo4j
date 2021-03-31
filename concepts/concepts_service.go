@@ -178,104 +178,16 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedCo
 
 	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(AggregatedConcept)
 
-	var updatedUUIDList []string
 	updateRecord := ConceptChanges{}
-
 	var queryBatch []*neoism.CypherQuery
-	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
 	if exists {
-		if existingConcept.AggregatedHash == "" {
-			existingConcept.AggregatedHash = "0"
-		}
-		currentHash, err := strconv.ParseUint(existingConcept.AggregatedHash, 10, 64)
+		queryBatch, updateRecord, err = s.handleExistingConcept(tid, aggregatedConceptToWrite, existingConcept, requestHash, requestSourceData, hashAsString)
 		if err != nil {
-			logEntry.WithError(err).Info("Error whilst parsing existing concept hash")
-			return ConceptChanges{}, nil
-		}
-		logEntry.Debugf("Currently stored concept has hash of %d", currentHash)
-		logEntry.Debugf("Aggregated concept has hash of %d", requestHash)
-		if currentHash == requestHash {
-			logEntry.Info("This concept has not changed since most recent update")
-			return ConceptChanges{}, nil
-		}
-		logEntry.Info("This concept is different to record stored in db, updating...")
-
-		existingSourceData := getSourceData(existingConcept.SourceRepresentations)
-
-		//Concept has been updated since last write, so need to send notification of all affected ids
-		for _, source := range aggregatedConceptToWrite.SourceRepresentations {
-			updatedUUIDList = append(updatedUUIDList, source.UUID)
-		}
-
-		//This filter will leave us with ids that were members of existing concordance but are NOT members of current concordance
-		//They will need a new prefUUID node written
-		conceptsToUnconcord := filterIdsThatAreUniqueToFirstMap(existingSourceData, requestSourceData)
-
-		//This filter will leave us with ids that are members of current concordance payload but were not previously concorded to this concordance
-		conceptsToTransferConcordance := filterIdsThatAreUniqueToFirstMap(requestSourceData, existingSourceData)
-
-		//Handle scenarios for transferring source id from an existing concordance to this concordance
-		if len(conceptsToTransferConcordance) > 0 {
-			uuidsToDelete, changeEvent, err := s.handleTransferConcordance(conceptsToTransferConcordance, hashAsString, aggregatedConceptToWrite, tid)
-			if err != nil {
-				return ConceptChanges{}, err
+			if errors.Is(err, ConceptNotChangedErr) {
+				return ConceptChanges{}, nil
 			}
-			for _, id := range uuidsToDelete {
-				prefUUIDsToBeDeletedQueryBatch = append(prefUUIDsToBeDeletedQueryBatch, deleteLonePrefUUID(id))
-			}
-			updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, changeEvent...)
+			return ConceptChanges{}, err
 		}
-
-		clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
-		for _, query := range clearDownQuery {
-			queryBatch = append(queryBatch, query)
-		}
-
-		for idToUnconcord := range conceptsToUnconcord {
-			for _, concept := range existingConcept.SourceRepresentations {
-				if idToUnconcord == concept.UUID {
-					//aggConcept := buildAggregateConcept(concept)
-					//set this to 0 as otherwise it is empty
-					//TODO fix this up at some point to do it properly?
-					concept.Hash = "0"
-					unconcordQuery := s.writeCanonicalNodeForUnconcordedConcepts(concept)
-					queryBatch = append(queryBatch, unconcordQuery)
-
-					//We will need to send a notification of ids that have been removed from current concordance
-					updatedUUIDList = append(updatedUUIDList, idToUnconcord)
-
-					//Unconcordance event for new concept notifications
-					updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
-						ConceptType:   conceptsToUnconcord[idToUnconcord],
-						ConceptUUID:   idToUnconcord,
-						AggregateHash: hashAsString,
-						TransactionID: tid,
-						EventDetails: ConcordanceEvent{
-							Type:  RemovedEvent,
-							OldID: aggregatedConceptToWrite.PrefUUID,
-							NewID: idToUnconcord,
-						},
-					})
-				}
-			}
-		}
-
-		for _, query := range prefUUIDsToBeDeletedQueryBatch {
-			queryBatch = append(queryBatch, query)
-		}
-		aggregatedConceptToWrite.AggregatedHash = hashAsString
-		queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
-
-		updateRecord.UpdatedIds = updatedUUIDList
-		updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
-			ConceptType:   aggregatedConceptToWrite.Type,
-			ConceptUUID:   aggregatedConceptToWrite.PrefUUID,
-			AggregateHash: hashAsString,
-			TransactionID: tid,
-			EventDetails: ConceptEvent{
-				Type: UpdatedEvent,
-			},
-		})
 	} else {
 		queryBatch, updateRecord, err = s.handleNewConcept(tid, aggregatedConceptToWrite, requestSourceData, hashAsString)
 		if err != nil {
@@ -352,6 +264,101 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedCo
 
 	logEntry.Info("Concept written to db")
 	return updateRecord, nil
+}
+
+var ConceptNotChangedErr = errors.New("concept not changed")
+
+func (s *ConceptService) handleExistingConcept(tid string, aggregatedConceptToWrite AggregatedConcept, existingConcept AggregatedConcept, requestHash uint64, requestSourceData map[string]string, hashAsString string) ([]*neoism.CypherQuery, ConceptChanges, error) {
+	logEntry := logger.WithTransactionID(tid).WithUUID(aggregatedConceptToWrite.PrefUUID)
+	updateRecord := ConceptChanges{}
+	if existingConcept.AggregatedHash == "" {
+		existingConcept.AggregatedHash = "0"
+	}
+	currentHash, err := strconv.ParseUint(existingConcept.AggregatedHash, 10, 64)
+	if err != nil {
+		logEntry.WithError(err).Info("Error whilst parsing existing concept hash")
+		return nil, ConceptChanges{}, ConceptNotChangedErr
+	}
+	logEntry.Debugf("Currently stored concept has hash of %d", currentHash)
+	logEntry.Debugf("Aggregated concept has hash of %d", requestHash)
+	if currentHash == requestHash {
+		logEntry.Info("This concept has not changed since most recent update")
+		return nil, ConceptChanges{}, ConceptNotChangedErr
+	}
+	logEntry.Info("This concept is different to record stored in db, updating...")
+
+	existingSourceData := getSourceData(existingConcept.SourceRepresentations)
+
+	//Concept has been updated since last write, so need to send notification of all affected ids
+	for _, source := range aggregatedConceptToWrite.SourceRepresentations {
+		updateRecord.UpdatedIds = append(updateRecord.UpdatedIds, source.UUID)
+	}
+
+	//This filter will leave us with ids that were members of existing concordance but are NOT members of current concordance
+	//They will need a new prefUUID node written
+	conceptsToUnconcord := filterIdsThatAreUniqueToFirstMap(existingSourceData, requestSourceData)
+
+	//This filter will leave us with ids that are members of current concordance payload but were not previously concorded to this concordance
+	conceptsToTransferConcordance := filterIdsThatAreUniqueToFirstMap(requestSourceData, existingSourceData)
+
+	//Handle scenarios for transferring source id from an existing concordance to this concordance
+	var deletUUIDs []string
+	if len(conceptsToTransferConcordance) > 0 {
+		uuidsToDelete, changeEvent, err := s.handleTransferConcordance(conceptsToTransferConcordance, hashAsString, aggregatedConceptToWrite, tid)
+		if err != nil {
+			return nil, ConceptChanges{}, err
+		}
+		deletUUIDs = uuidsToDelete
+		updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, changeEvent...)
+	}
+
+	queryBatch := s.clearDownExistingNodes(aggregatedConceptToWrite)
+
+	for idToUnconcord := range conceptsToUnconcord {
+		for _, concept := range existingConcept.SourceRepresentations {
+			if idToUnconcord == concept.UUID {
+				//aggConcept := buildAggregateConcept(concept)
+				//set this to 0 as otherwise it is empty
+				//TODO fix this up at some point to do it properly?
+				concept.Hash = "0"
+				unconcordQuery := s.writeCanonicalNodeForUnconcordedConcepts(concept)
+				queryBatch = append(queryBatch, unconcordQuery)
+
+				//We will need to send a notification of ids that have been removed from current concordance
+				updateRecord.UpdatedIds = append(updateRecord.UpdatedIds, idToUnconcord)
+
+				//Unconcordance event for new concept notifications
+				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+					ConceptType:   conceptsToUnconcord[idToUnconcord],
+					ConceptUUID:   idToUnconcord,
+					AggregateHash: hashAsString,
+					TransactionID: tid,
+					EventDetails: ConcordanceEvent{
+						Type:  RemovedEvent,
+						OldID: aggregatedConceptToWrite.PrefUUID,
+						NewID: idToUnconcord,
+					},
+				})
+			}
+		}
+	}
+
+	for _, id := range deletUUIDs {
+		queryBatch = append(queryBatch, deleteLonePrefUUID(id))
+	}
+	aggregatedConceptToWrite.AggregatedHash = hashAsString
+	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
+
+	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+		ConceptType:   aggregatedConceptToWrite.Type,
+		ConceptUUID:   aggregatedConceptToWrite.PrefUUID,
+		AggregateHash: hashAsString,
+		TransactionID: tid,
+		EventDetails: ConceptEvent{
+			Type: UpdatedEvent,
+		},
+	})
+	return queryBatch, updateRecord, nil
 }
 
 func (s *ConceptService) handleNewConcept(tid string, aggregatedConceptToWrite AggregatedConcept, requestSourceData map[string]string, hashAsString string) ([]*neoism.CypherQuery, ConceptChanges, error) {
