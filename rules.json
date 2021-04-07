@@ -1,0 +1,55 @@
+{
+  "authorities": [
+    "TME",
+    "FACTSET",
+    "UPP",
+    "LEI",
+    "Smartlogic",
+    "ManagedLocation",
+    "ISO-3166-1",
+    "Geonames",
+    "Wikidata",
+    "DBPedia",
+    "NAICS"
+  ],
+  "labels": [
+    "Concept",
+    "Classification",
+    "Section",
+    "Subject",
+    "SpecialReport",
+    "Topic",
+    "Location",
+    "Genre",
+    "Brand",
+    "Person",
+    "Organisation",
+    "MembershipRole",
+    "Membership",
+    "BoardRole",
+    "FinancialInstrument",
+    "Company",
+    "PublicCompany",
+    "IndustryClassification",
+    "NAICSIndustryClassification"
+  ],
+  "properties": [
+    {
+      "name": "prefLabel",
+      "type": "string",
+      "allowMultipleValues": false
+    },
+    {
+      "name": "aliases",
+      "type": "string",
+      "allowMultipleValues": true
+    }
+  ],
+  "relationships": [
+    {
+      "name": "broader",
+      "neoName": "HAS_BROADER",
+      "allowMultipleValues": true
+    }
+  ]
+}

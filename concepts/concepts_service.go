@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"time"
 
+	ontology "github.com/Financial-Times/cm-graph-ontology"
 	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
@@ -28,6 +30,7 @@ var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 // ConceptService - CypherDriver - CypherDriver
 type ConceptService struct {
 	conn neoutils.NeoConnection
+	ont  *ontology.Ontology
 }
 
 // ConceptServicer defines the functions any read-write application needs to implement
@@ -41,7 +44,14 @@ type ConceptServicer interface {
 
 // NewConceptService instantiate driver
 func NewConceptService(cypherRunner neoutils.NeoConnection) ConceptService {
-	return ConceptService{cypherRunner}
+	// TODO: not elegant at all, build the package together with the config
+	os.Setenv("PATH_TO_CONFIG", "rules.json")
+	ont, err := ontology.NewOntology()
+	if err != nil {
+		// TODO: of course we shouldn't be panicking
+		logger.Fatal(err)
+	}
+	return ConceptService{cypherRunner, ont}
 }
 
 // Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
@@ -77,33 +87,33 @@ func (s *ConceptService) Initialise() error {
 }
 
 type neoAggregatedConcept struct {
-	AggregateHash         string           `json:"aggregateHash,omitempty"`
-	Aliases               []string         `json:"aliases,omitempty"`
-	Authority             string           `json:"authority,omitempty"`
-	AuthorityValue        string           `json:"authorityValue,omitempty"`
-	DescriptionXML        string           `json:"descriptionXML,omitempty"`
-	EmailAddress          string           `json:"emailAddress,omitempty"`
-	FacebookPage          string           `json:"facebookPage,omitempty"`
-	FigiCode              string           `json:"figiCode,omitempty"`
-	ImageURL              string           `json:"imageUrl,omitempty"`
-	InceptionDate         string           `json:"inceptionDate,omitempty"`
-	InceptionDateEpoch    int64            `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy              string           `json:"issuedBy,omitempty"`
-	LastModifiedEpoch     int              `json:"lastModifiedEpoch,omitempty"`
-	MembershipRoles       []MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID      string           `json:"organisationUUID,omitempty"`
-	PersonUUID            string           `json:"personUUID,omitempty"`
-	PrefLabel             string           `json:"prefLabel"`
-	PrefUUID              string           `json:"prefUUID,omitempty"`
-	ScopeNote             string           `json:"scopeNote,omitempty"`
-	ShortLabel            string           `json:"shortLabel,omitempty"`
-	SourceRepresentations []neoConcept     `json:"sourceRepresentations"`
-	Strapline             string           `json:"strapline,omitempty"`
-	TerminationDate       string           `json:"terminationDate,omitempty"`
-	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle         string           `json:"twitterHandle,omitempty"`
-	Types                 []string         `json:"types"`
-	IsDeprecated          bool             `json:"isDeprecated,omitempty"`
+	AggregateHash         string                    `json:"aggregateHash,omitempty"`
+	Aliases               []string                  `json:"aliases,omitempty"`
+	Authority             string                    `json:"authority,omitempty"`
+	AuthorityValue        string                    `json:"authorityValue,omitempty"`
+	DescriptionXML        string                    `json:"descriptionXML,omitempty"`
+	EmailAddress          string                    `json:"emailAddress,omitempty"`
+	FacebookPage          string                    `json:"facebookPage,omitempty"`
+	FigiCode              string                    `json:"figiCode,omitempty"`
+	ImageURL              string                    `json:"imageUrl,omitempty"`
+	InceptionDate         string                    `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch    int64                     `json:"inceptionDateEpoch,omitempty"`
+	IssuedBy              string                    `json:"issuedBy,omitempty"`
+	LastModifiedEpoch     int                       `json:"lastModifiedEpoch,omitempty"`
+	MembershipRoles       []ontology.MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID      string                    `json:"organisationUUID,omitempty"`
+	PersonUUID            string                    `json:"personUUID,omitempty"`
+	PrefLabel             string                    `json:"prefLabel"`
+	PrefUUID              string                    `json:"prefUUID,omitempty"`
+	ScopeNote             string                    `json:"scopeNote,omitempty"`
+	ShortLabel            string                    `json:"shortLabel,omitempty"`
+	SourceRepresentations []neoConcept              `json:"sourceRepresentations"`
+	Strapline             string                    `json:"strapline,omitempty"`
+	TerminationDate       string                    `json:"terminationDate,omitempty"`
+	TerminationDateEpoch  int64                     `json:"terminationDateEpoch,omitempty"`
+	TwitterHandle         string                    `json:"twitterHandle,omitempty"`
+	Types                 []string                  `json:"types"`
+	IsDeprecated          bool                      `json:"isDeprecated,omitempty"`
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
@@ -127,55 +137,55 @@ type neoAggregatedConcept struct {
 }
 
 type neoConcept struct {
-	Aliases              []string         `json:"aliases,omitempty"`
-	Authority            string           `json:"authority,omitempty"`
-	AuthorityValue       string           `json:"authorityValue,omitempty"`
-	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
-	DescriptionXML       string           `json:"descriptionXML,omitempty"`
-	EmailAddress         string           `json:"emailAddress,omitempty"`
-	FacebookPage         string           `json:"facebookPage,omitempty"`
-	FigiCode             string           `json:"figiCode,omitempty"`
-	ImageURL             string           `json:"imageUrl,omitempty"`
-	InceptionDate        string           `json:"inceptionDate,omitempty"`
-	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy             string           `json:"issuedBy,omitempty"`
-	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
-	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
-	PersonUUID           string           `json:"personUUID,omitempty"`
-	PrefLabel            string           `json:"prefLabel,omitempty"`
-	PrefUUID             string           `json:"prefUUID,omitempty"`
-	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
-	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
-	ImpliedByUUIDs       []string         `json:"impliedByUUIDs,omitempty"`
-	HasFocusUUIDs        []string         `json:"hasFocusUUIDs,omitempty"`
-	ScopeNote            string           `json:"scopeNote,omitempty"`
-	ShortLabel           string           `json:"shortLabel,omitempty"`
-	Strapline            string           `json:"strapline,omitempty"`
-	TerminationDate      string           `json:"terminationDate,omitempty"`
-	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle        string           `json:"twitterHandle,omitempty"`
-	Types                []string         `json:"types,omitempty"`
-	UUID                 string           `json:"uuid,omitempty"`
-	IsDeprecated         bool             `json:"isDeprecated,omitempty"`
+	Aliases              []string                  `json:"aliases,omitempty"`
+	Authority            string                    `json:"authority,omitempty"`
+	AuthorityValue       string                    `json:"authorityValue,omitempty"`
+	BroaderUUIDs         []string                  `json:"broaderUUIDs,omitempty"`
+	DescriptionXML       string                    `json:"descriptionXML,omitempty"`
+	EmailAddress         string                    `json:"emailAddress,omitempty"`
+	FacebookPage         string                    `json:"facebookPage,omitempty"`
+	FigiCode             string                    `json:"figiCode,omitempty"`
+	ImageURL             string                    `json:"imageUrl,omitempty"`
+	InceptionDate        string                    `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch   int64                     `json:"inceptionDateEpoch,omitempty"`
+	IssuedBy             string                    `json:"issuedBy,omitempty"`
+	LastModifiedEpoch    int                       `json:"lastModifiedEpoch,omitempty"`
+	MembershipRoles      []ontology.MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID     string                    `json:"organisationUUID,omitempty"`
+	ParentUUIDs          []string                  `json:"parentUUIDs,omitempty"`
+	PersonUUID           string                    `json:"personUUID,omitempty"`
+	PrefLabel            string                    `json:"prefLabel,omitempty"`
+	PrefUUID             string                    `json:"prefUUID,omitempty"`
+	RelatedUUIDs         []string                  `json:"relatedUUIDs,omitempty"`
+	SupersededByUUIDs    []string                  `json:"supersededByUUIDs,omitempty"`
+	ImpliedByUUIDs       []string                  `json:"impliedByUUIDs,omitempty"`
+	HasFocusUUIDs        []string                  `json:"hasFocusUUIDs,omitempty"`
+	ScopeNote            string                    `json:"scopeNote,omitempty"`
+	ShortLabel           string                    `json:"shortLabel,omitempty"`
+	Strapline            string                    `json:"strapline,omitempty"`
+	TerminationDate      string                    `json:"terminationDate,omitempty"`
+	TerminationDateEpoch int64                     `json:"terminationDateEpoch,omitempty"`
+	TwitterHandle        string                    `json:"twitterHandle,omitempty"`
+	Types                []string                  `json:"types,omitempty"`
+	UUID                 string                    `json:"uuid,omitempty"`
+	IsDeprecated         bool                      `json:"isDeprecated,omitempty"`
 	// Organisations
-	ProperName                   string                        `json:"properName,omitempty"`
-	ShortName                    string                        `json:"shortName,omitempty"`
-	TradeNames                   []string                      `json:"tradeNames,omitempty"`
-	FormerNames                  []string                      `json:"formerNames,omitempty"`
-	CountryCode                  string                        `json:"countryCode,omitempty"`
-	CountryOfRisk                string                        `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation       string                        `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations          string                        `json:"countryOfOperations,omitempty"`
-	CountryOfRiskUUID            string                        `json:"countryOfRiskUUID,omitempty"`
-	CountryOfIncorporationUUID   string                        `json:"countryOfIncorporationUUID,omitempty"`
-	CountryOfOperationsUUID      string                        `json:"countryOfOperationsUUID,omitempty"`
-	PostalCode                   string                        `json:"postalCode,omitempty"`
-	YearFounded                  int                           `json:"yearFounded,omitempty"`
-	LeiCode                      string                        `json:"leiCode,omitempty"`
-	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
-	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
+	ProperName                   string                                 `json:"properName,omitempty"`
+	ShortName                    string                                 `json:"shortName,omitempty"`
+	TradeNames                   []string                               `json:"tradeNames,omitempty"`
+	FormerNames                  []string                               `json:"formerNames,omitempty"`
+	CountryCode                  string                                 `json:"countryCode,omitempty"`
+	CountryOfRisk                string                                 `json:"countryOfRisk,omitempty"`
+	CountryOfIncorporation       string                                 `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations          string                                 `json:"countryOfOperations,omitempty"`
+	CountryOfRiskUUID            string                                 `json:"countryOfRiskUUID,omitempty"`
+	CountryOfIncorporationUUID   string                                 `json:"countryOfIncorporationUUID,omitempty"`
+	CountryOfOperationsUUID      string                                 `json:"countryOfOperationsUUID,omitempty"`
+	PostalCode                   string                                 `json:"postalCode,omitempty"`
+	YearFounded                  int                                    `json:"yearFounded,omitempty"`
+	LeiCode                      string                                 `json:"leiCode,omitempty"`
+	ParentOrganisation           string                                 `json:"parentOrganisation,omitempty"`
+	NAICSIndustryClassifications []ontology.NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 	// Location
 	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
@@ -387,7 +397,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		IndustryIdentifier: results[0].IndustryIdentifier,
 	}
 
-	var sourceConcepts []Concept
+	var sourceConcepts []ontology.SourceConcept
 	for _, srcConcept := range results[0].SourceRepresentations {
 		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
 		if err != nil {
@@ -395,22 +405,38 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 			return AggregatedConcept{}, false, err
 		}
 
-		concept := Concept{
-			Authority:                    srcConcept.Authority,
-			AuthorityValue:               srcConcept.AuthorityValue,
-			BroaderUUIDs:                 filterSlice(srcConcept.BroaderUUIDs),
-			SupersededByUUIDs:            filterSlice(srcConcept.SupersededByUUIDs),
-			FigiCode:                     srcConcept.FigiCode,
-			IssuedBy:                     srcConcept.IssuedBy,
-			LastModifiedEpoch:            srcConcept.LastModifiedEpoch,
-			MembershipRoles:              cleanMembershipRoles(srcConcept.MembershipRoles),
-			OrganisationUUID:             srcConcept.OrganisationUUID,
-			CountryOfIncorporationUUID:   srcConcept.CountryOfIncorporationUUID,
-			CountryOfRiskUUID:            srcConcept.CountryOfRiskUUID,
-			CountryOfOperationsUUID:      srcConcept.CountryOfOperationsUUID,
-			ParentUUIDs:                  filterSlice(srcConcept.ParentUUIDs),
-			PersonUUID:                   srcConcept.PersonUUID,
-			PrefLabel:                    srcConcept.PrefLabel,
+		// TODO: There should be differentiation between properties of the source nodes and properties of the canonical nodes in the ontology rules
+		concept := ontology.SourceConcept{
+			Authority:      srcConcept.Authority,
+			AuthorityValue: srcConcept.AuthorityValue,
+			//BroaderUUIDs:                 filterSlice(srcConcept.BroaderUUIDs),
+			// TODO: broader is hardcoded until AggregatedConcept is build based on maps of rules and relationships, than we could get rid of the hard-coded property names
+			Relationships: map[string]ontology.ConceptRelationship{
+				"broader": ontology.ConceptRelationship{
+					Name:              "broader",
+					OtherConceptUUIDs: filterSlice(srcConcept.BroaderUUIDs),
+					Properties:        nil,
+				},
+			},
+			SupersededByUUIDs:          filterSlice(srcConcept.SupersededByUUIDs),
+			FigiCode:                   srcConcept.FigiCode,
+			IssuedBy:                   srcConcept.IssuedBy,
+			LastModifiedEpoch:          srcConcept.LastModifiedEpoch,
+			MembershipRoles:            cleanMembershipRoles(srcConcept.MembershipRoles),
+			OrganisationUUID:           srcConcept.OrganisationUUID,
+			CountryOfIncorporationUUID: srcConcept.CountryOfIncorporationUUID,
+			CountryOfRiskUUID:          srcConcept.CountryOfRiskUUID,
+			CountryOfOperationsUUID:    srcConcept.CountryOfOperationsUUID,
+			ParentUUIDs:                filterSlice(srcConcept.ParentUUIDs),
+			PersonUUID:                 srcConcept.PersonUUID,
+			// TODO: again we are hard-coding the property name
+			Properties: map[string]ontology.ConceptProperty{
+				"prefLabel": ontology.ConceptProperty{
+					Name:  "prefLabel",
+					Value: srcConcept.PrefLabel,
+				},
+			},
+			//PrefLabel:                    srcConcept.PrefLabel,
 			RelatedUUIDs:                 filterSlice(srcConcept.RelatedUUIDs),
 			ImpliedByUUIDs:               filterSlice(srcConcept.ImpliedByUUIDs),
 			HasFocusUUIDs:                filterSlice(srcConcept.HasFocusUUIDs),
@@ -555,7 +581,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		queryBatch = append(queryBatch, query)
 	}
 	aggregatedConceptToWrite.AggregatedHash = hashAsString
-	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
+	queryBatch = s.populateConceptQueries(queryBatch, aggregatedConceptToWrite)
 
 	updateRecord.UpdatedIds = updatedUUIDList
 	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
@@ -908,20 +934,31 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 }
 
 //Curate all queries to populate concept nodes
-func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept AggregatedConcept) []*neoism.CypherQuery {
+func (s *ConceptService) populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept AggregatedConcept) []*neoism.CypherQuery {
 	// Create a sourceConcept from the canonical information - WITH NO UUID
-	concept := Concept{
-		Aliases:              aggregatedConcept.Aliases,
-		DescriptionXML:       aggregatedConcept.DescriptionXML,
-		EmailAddress:         aggregatedConcept.EmailAddress,
-		FacebookPage:         aggregatedConcept.FacebookPage,
-		FigiCode:             aggregatedConcept.FigiCode,
-		Hash:                 aggregatedConcept.AggregatedHash,
-		ImageURL:             aggregatedConcept.ImageURL,
-		InceptionDate:        aggregatedConcept.InceptionDate,
-		InceptionDateEpoch:   aggregatedConcept.InceptionDateEpoch,
-		IssuedBy:             aggregatedConcept.IssuedBy,
-		PrefLabel:            aggregatedConcept.PrefLabel,
+	// TODO: when the aggregated concept is described as maps of properties, we won't be hard-coding the property names
+	concept := ontology.SourceConcept{
+		Properties: map[string]ontology.ConceptProperty{
+			"aliases": ontology.ConceptProperty{
+				Name:  "aliases",
+				Value: aggregatedConcept.Aliases,
+			},
+			"prefLabel": ontology.ConceptProperty{
+				Name:  "prefLabel",
+				Value: aggregatedConcept.PrefLabel,
+			},
+		},
+		//Aliases:              aggregatedConcept.Aliases,
+		DescriptionXML:     aggregatedConcept.DescriptionXML,
+		EmailAddress:       aggregatedConcept.EmailAddress,
+		FacebookPage:       aggregatedConcept.FacebookPage,
+		FigiCode:           aggregatedConcept.FigiCode,
+		Hash:               aggregatedConcept.AggregatedHash,
+		ImageURL:           aggregatedConcept.ImageURL,
+		InceptionDate:      aggregatedConcept.InceptionDate,
+		InceptionDateEpoch: aggregatedConcept.InceptionDateEpoch,
+		IssuedBy:           aggregatedConcept.IssuedBy,
+		//PrefLabel:            aggregatedConcept.PrefLabel,
 		ScopeNote:            aggregatedConcept.ScopeNote,
 		ShortLabel:           aggregatedConcept.ShortLabel,
 		Strapline:            aggregatedConcept.Strapline,
@@ -952,11 +989,11 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		IndustryIdentifier: aggregatedConcept.IndustryIdentifier,
 	}
 
-	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
+	queryBatch = append(queryBatch, s.createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
 
 	// Repopulate
 	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
-		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, "", sourceConcept.UUID)...)
+		queryBatch = append(queryBatch, s.createNodeQueries(sourceConcept, "", sourceConcept.UUID)...)
 
 		equivQuery := &neoism.CypherQuery{
 			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
@@ -972,9 +1009,21 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", queryBatch)
 		}
 
-		if len(sourceConcept.BroaderUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", queryBatch)
+		// TODO:
+		availableRelationships, err := s.ont.GetAvailableRelationshipsRules()
+		if err != nil {
+			// TODO: we are panicking!
+			logger.Fatal(err)
 		}
+		for relName, relRule := range availableRelationships {
+			if len(sourceConcept.Relationships[relName].OtherConceptUUIDs) > 0 {
+				queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.Relationships[relName].OtherConceptUUIDs, relRule.NeoName, queryBatch)
+			}
+		}
+
+		//if len(sourceConcept.BroaderUUIDs) > 0 {
+		//	queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", queryBatch)
+		//}
 
 		if len(sourceConcept.SupersededByUUIDs) > 0 {
 			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", queryBatch)
@@ -992,13 +1041,13 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 }
 
 //Create concept nodes
-func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.CypherQuery {
+func (s *ConceptService) createNodeQueries(concept ontology.SourceConcept, prefUUID string, uuid string) []*neoism.CypherQuery {
 	var queryBatch []*neoism.CypherQuery
 	var createConceptQuery *neoism.CypherQuery
 
 	// Leaf or Lone Node
 	if uuid != "" {
-		allProps := setProps(concept, uuid, true)
+		allProps := s.setProps(concept, uuid, true)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 											set n={allprops}
@@ -1010,7 +1059,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		}
 	} else {
 		// Canonical node that doesn't have UUID
-		allProps := setProps(concept, prefUUID, false)
+		allProps := s.setProps(concept, prefUUID, false)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
 											set n={allprops}
@@ -1207,8 +1256,8 @@ func addRelationship(conceptID string, relationshipIDs []string, relationshipTyp
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
-func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
-	allProps := setProps(concept, concept.UUID, false)
+func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept ontology.SourceConcept) *neoism.CypherQuery {
+	allProps := s.setProps(concept, concept.UUID, false)
 	logger.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`
@@ -1249,7 +1298,7 @@ func getLabelsToRemove() string {
 }
 
 //extract uuids of the source concepts
-func getSourceData(sourceConcepts []Concept) map[string]string {
+func getSourceData(sourceConcepts []ontology.SourceConcept) map[string]string {
 	conceptData := make(map[string]string)
 	for _, concept := range sourceConcepts {
 		conceptData[concept.UUID] = concept.Type
@@ -1259,12 +1308,46 @@ func getSourceData(sourceConcepts []Concept) map[string]string {
 
 //This function dictates which properties will be actually
 //written in neo for both canonical and source nodes.
-func setProps(concept Concept, id string, isSource bool) map[string]interface{} {
+func (s *ConceptService) setProps(concept ontology.SourceConcept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 	//common props
-	if concept.PrefLabel != "" {
-		nodeProps["prefLabel"] = concept.PrefLabel
+
+	//TODO:
+	availableProps, err := s.ont.GetAvailablePropertyRules()
+	if err != nil {
+		// TODO: we are panicking
+		logger.Fatal(err)
 	}
+	for name, rule := range availableProps {
+		prop, ok := concept.Properties[name]
+		if !ok {
+			continue
+		}
+		// TODO: more work here for better checking of empty property value
+		if !rule.AllowMultipleValues && rule.Type == "string" {
+			strProp, ok := prop.Value.(string)
+			if !ok {
+				continue
+			}
+			if strProp != "" {
+				nodeProps[name] = strProp
+			}
+		}
+
+		if rule.AllowMultipleValues && rule.Type == "string" {
+			arrProp, ok := prop.Value.([]string)
+			if !ok {
+				continue
+			}
+			if len(arrProp) > 0 {
+				nodeProps[name] = arrProp
+			}
+		}
+	}
+
+	//if concept.PrefLabel != "" {
+	//	nodeProps["prefLabel"] = concept.PrefLabel
+	//}
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 	if concept.FigiCode != "" {
 		nodeProps["figiCode"] = concept.FigiCode
@@ -1285,9 +1368,9 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 	nodeProps["prefUUID"] = id
 	nodeProps["aggregateHash"] = concept.Hash
 
-	if len(concept.Aliases) > 0 {
-		nodeProps["aliases"] = concept.Aliases
-	}
+	//if len(concept.Aliases) > 0 {
+	//	nodeProps["aliases"] = concept.Aliases
+	//}
 	if concept.EmailAddress != "" {
 		nodeProps["emailAddress"] = concept.EmailAddress
 	}
@@ -1414,18 +1497,18 @@ func processMembershipRoles(v interface{}) interface{} {
 		for _, s := range c.SourceRepresentations {
 			processMembershipRoles(s)
 		}
-	case Concept:
+	case ontology.SourceConcept:
 		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
 		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
-	case MembershipRole:
+	case ontology.MembershipRole:
 		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
 		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 	}
 	return v
 }
 
-func cleanMembershipRoles(m []MembershipRole) []MembershipRole {
+func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole {
 	deleted := 0
 	for i := range m {
 		j := i - deleted
@@ -1456,8 +1539,8 @@ func getEpoch(t string) int64 {
 
 // cleanNAICS returns the same slice of NAICSIndustryClassification if all are valid,
 // skips the invalid ones, returns nil if the input slice doesn't have valid NAICSIndustryClassification objects
-func cleanNAICS(naics []NAICSIndustryClassification) []NAICSIndustryClassification {
-	var res []NAICSIndustryClassification
+func cleanNAICS(naics []ontology.NAICSIndustryClassification) []ontology.NAICSIndustryClassification {
+	var res []ontology.NAICSIndustryClassification
 	for _, ic := range naics {
 		if ic.UUID != "" {
 			res = append(res, ic)
@@ -1491,8 +1574,12 @@ func cleanConcept(c AggregatedConcept) AggregatedConcept {
 		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
 			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
 		})
-		sort.SliceStable(c.SourceRepresentations[j].BroaderUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].BroaderUUIDs[k] < c.SourceRepresentations[j].BroaderUUIDs[l]
+		// TODO:
+		//sort.SliceStable(c.SourceRepresentations[j].BroaderUUIDs, func(k, l int) bool {
+		//	return c.SourceRepresentations[j].BroaderUUIDs[k] < c.SourceRepresentations[j].BroaderUUIDs[l]
+		//})
+		sort.SliceStable(c.SourceRepresentations[j].Relationships["broader"].OtherConceptUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].Relationships["broader"].OtherConceptUUIDs[k] < c.SourceRepresentations[j].Relationships["broader"].OtherConceptUUIDs[l]
 		})
 		sort.SliceStable(c.SourceRepresentations[j].RelatedUUIDs, func(k, l int) bool {
 			return c.SourceRepresentations[j].RelatedUUIDs[k] < c.SourceRepresentations[j].RelatedUUIDs[l]
@@ -1526,19 +1613,29 @@ func cleanHash(c AggregatedConcept) AggregatedConcept {
 }
 
 func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
-	var cleanSources []Concept
+	var cleanSources []ontology.SourceConcept
 	for _, source := range c.SourceRepresentations {
-		cleanConcept := Concept{
-			UUID:              source.UUID,
-			PrefLabel:         source.PrefLabel,
-			Type:              source.Type,
-			Authority:         source.Authority,
-			AuthorityValue:    source.AuthorityValue,
-			ParentUUIDs:       source.ParentUUIDs,
-			OrganisationUUID:  source.OrganisationUUID,
-			PersonUUID:        source.PersonUUID,
-			RelatedUUIDs:      source.RelatedUUIDs,
-			BroaderUUIDs:      source.BroaderUUIDs,
+		cleanConcept := ontology.SourceConcept{
+			UUID: source.UUID,
+			//PrefLabel:         source.PrefLabel,
+			// TODO: we add only the prefLabel - we need to have a list of properties that should be written in Neo source node
+			// TODO: the "prefLabel" string should not be hardcoded here
+			Properties: map[string]ontology.ConceptProperty{
+				"prefLabel": source.Properties["prefLabel"],
+			},
+			Type:             source.Type,
+			Authority:        source.Authority,
+			AuthorityValue:   source.AuthorityValue,
+			ParentUUIDs:      source.ParentUUIDs,
+			OrganisationUUID: source.OrganisationUUID,
+			PersonUUID:       source.PersonUUID,
+			RelatedUUIDs:     source.RelatedUUIDs,
+			// TODO: we need to have a list of relationships
+			// TODO: the "broader" string should not be hardcoded here
+			//BroaderUUIDs:      source.BroaderUUIDs,
+			Relationships: map[string]ontology.ConceptRelationship{
+				"broader": source.Relationships["broader"],
+			},
 			SupersededByUUIDs: source.SupersededByUUIDs,
 			ImpliedByUUIDs:    source.ImpliedByUUIDs,
 			HasFocusUUIDs:     source.HasFocusUUIDs,
