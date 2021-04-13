@@ -8,7 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	logger "github.com/Financial-Times/go-logger"
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
@@ -99,7 +100,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 	return result, false, err
 }
 
-func (s *ConceptService) read(uuid string, transID string) (AggregatedConcept, error) {
+func (s *ConceptService) read(uuid string, transID string) (ontology.AggregatedConcept, error) {
 	logEntry := logger.WithTransactionID(transID).WithUUID(uuid)
 
 	var results []neoAggregatedConcept
@@ -108,26 +109,26 @@ func (s *ConceptService) read(uuid string, transID string) (AggregatedConcept, e
 	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		logEntry.WithError(err).Error("Error executing neo4j read query")
-		return AggregatedConcept{}, err
+		return ontology.AggregatedConcept{}, err
 	}
 
 	if len(results) == 0 {
 		logEntry.Info("Concept not found in db")
-		return AggregatedConcept{}, ConceptNotFoundErr
+		return ontology.AggregatedConcept{}, ConceptNotFoundErr
 	}
 
 	aggregatedConcept, err := results[0].Normalized()
 	if err != nil {
 		logEntry.WithError(err).Error("Returned concept had no recognized type")
-		return AggregatedConcept{}, err
+		return ontology.AggregatedConcept{}, err
 	}
 
-	var sourceConcepts []Concept
+	var sourceConcepts []ontology.SourceConcept
 	for _, srcConcept := range results[0].SourceRepresentations {
 		concept, err := srcConcept.Normalize()
 		if err != nil {
 			logEntry.WithError(err).Error("Returned source concept had no recognized type")
-			return AggregatedConcept{}, err
+			return ontology.AggregatedConcept{}, err
 		}
 		sourceConcepts = append(sourceConcepts, concept)
 	}
@@ -138,7 +139,7 @@ func (s *ConceptService) read(uuid string, transID string) (AggregatedConcept, e
 }
 
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
-	concept, ok := thing.(AggregatedConcept)
+	concept, ok := thing.(ontology.AggregatedConcept)
 	if !ok {
 		return nil, errors.New("wrong thing")
 	}
@@ -146,7 +147,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	return s.write(transID, concept)
 }
 
-func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedConcept) (ConceptChanges, error) {
+func (s *ConceptService) write(tid string, aggregatedConceptToWrite ontology.AggregatedConcept) (ConceptChanges, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 
@@ -177,7 +178,7 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedCo
 		exists = false
 	}
 
-	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(AggregatedConcept)
+	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(ontology.AggregatedConcept)
 
 	updateRecord := ConceptChanges{}
 	var queryBatch []*neoism.CypherQuery
@@ -221,7 +222,7 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite AggregatedCo
 	return updateRecord, nil
 }
 
-func (s *ConceptService) getIssuerChangeQueries(tid string, aggregatedConceptToWrite AggregatedConcept) ([]*neoism.CypherQuery, error) {
+func (s *ConceptService) getIssuerChangeQueries(tid string, aggregatedConceptToWrite ontology.AggregatedConcept) ([]*neoism.CypherQuery, error) {
 	var fiRes []map[string]string
 	logEntry := logger.WithTransactionID(tid).WithUUID(aggregatedConceptToWrite.PrefUUID)
 	queryBatch := []*neoism.CypherQuery{}
@@ -277,7 +278,7 @@ func (s *ConceptService) getIssuerChangeQueries(tid string, aggregatedConceptToW
 
 var ConceptNotChangedErr = errors.New("concept not changed")
 
-func (s *ConceptService) handleExistingConcept(tid string, aggregatedConceptToWrite AggregatedConcept, existingConcept AggregatedConcept, requestHash uint64, requestSourceData map[string]string, hashAsString string) ([]*neoism.CypherQuery, ConceptChanges, error) {
+func (s *ConceptService) handleExistingConcept(tid string, aggregatedConceptToWrite ontology.AggregatedConcept, existingConcept ontology.AggregatedConcept, requestHash uint64, requestSourceData map[string]string, hashAsString string) ([]*neoism.CypherQuery, ConceptChanges, error) {
 	logEntry := logger.WithTransactionID(tid).WithUUID(aggregatedConceptToWrite.PrefUUID)
 	updateRecord := ConceptChanges{}
 	if existingConcept.AggregatedHash == "" {
@@ -370,7 +371,7 @@ func (s *ConceptService) handleExistingConcept(tid string, aggregatedConceptToWr
 	return queryBatch, updateRecord, nil
 }
 
-func (s *ConceptService) handleNewConcept(tid string, aggregatedConceptToWrite AggregatedConcept, requestSourceData map[string]string, hashAsString string) ([]*neoism.CypherQuery, ConceptChanges, error) {
+func (s *ConceptService) handleNewConcept(tid string, aggregatedConceptToWrite ontology.AggregatedConcept, requestSourceData map[string]string, hashAsString string) ([]*neoism.CypherQuery, ConceptChanges, error) {
 	uuidsToDelete, changeEvent, err := s.handleTransferConcordance(requestSourceData, hashAsString, aggregatedConceptToWrite, tid)
 	if err != nil {
 		return nil, ConceptChanges{}, err
@@ -402,7 +403,7 @@ func (s *ConceptService) handleNewConcept(tid string, aggregatedConceptToWrite A
 	return queryBatch, updateRecord, nil
 }
 
-func validateObject(aggConcept AggregatedConcept) error {
+func validateObject(aggConcept ontology.AggregatedConcept) error {
 	if aggConcept.PrefLabel == "" {
 		return formatError("prefLabel", aggConcept.PrefUUID)
 	}
@@ -604,7 +605,7 @@ func (s *ConceptService) handleSingleSourceTransfer(updatedSourceID string, upda
 }
 
 //Handle new source nodes that have been added to current concordance
-func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, aggregateHash string, newAggregatedConcept AggregatedConcept, transID string) ([]string, []Event, error) {
+func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, aggregateHash string, newAggregatedConcept ontology.AggregatedConcept, transID string) ([]string, []Event, error) {
 
 	uuidsToDelete := []string{}
 	changeEvents := []Event{}
@@ -635,7 +636,7 @@ func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
 }
 
 //Clear down current concept node
-func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.CypherQuery {
+func (s *ConceptService) clearDownExistingNodes(ac ontology.AggregatedConcept) []*neoism.CypherQuery {
 	acUUID := ac.PrefUUID
 
 	var queryBatch []*neoism.CypherQuery
@@ -686,9 +687,9 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 }
 
 //Curate all queries to populate concept nodes
-func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept AggregatedConcept) []*neoism.CypherQuery {
+func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept ontology.AggregatedConcept) []*neoism.CypherQuery {
 	// Create a sourceConcept from the canonical information - WITH NO UUID
-	concept := Concept{
+	concept := ontology.SourceConcept{
 		Aliases:              aggregatedConcept.Aliases,
 		DescriptionXML:       aggregatedConcept.DescriptionXML,
 		EmailAddress:         aggregatedConcept.EmailAddress,
@@ -770,7 +771,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 }
 
 //Create concept nodes
-func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.CypherQuery {
+func createNodeQueries(concept ontology.SourceConcept, prefUUID string, uuid string) []*neoism.CypherQuery {
 	var queryBatch []*neoism.CypherQuery
 	var createConceptQuery *neoism.CypherQuery
 
@@ -985,7 +986,7 @@ func addRelationship(conceptID string, relationshipIDs []string, relationshipTyp
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
-func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
+func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept ontology.SourceConcept) *neoism.CypherQuery {
 	allProps := setProps(concept, concept.UUID, false)
 	logger.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
@@ -1017,9 +1018,9 @@ func getAllLabels(conceptType string) string {
 //return existing labels
 func getLabelsToRemove() string {
 	var labelsToRemove string
-	for i, conceptType := range conceptLabels {
+	for i, conceptType := range ontology.ConceptLabels {
 		labelsToRemove += conceptType
-		if i+1 < len(conceptLabels) {
+		if i+1 < len(ontology.ConceptLabels) {
 			labelsToRemove += ":"
 		}
 	}
@@ -1027,7 +1028,7 @@ func getLabelsToRemove() string {
 }
 
 //extract uuids of the source concepts
-func getSourceData(sourceConcepts []Concept) map[string]string {
+func getSourceData(sourceConcepts []ontology.SourceConcept) map[string]string {
 	conceptData := make(map[string]string)
 	for _, concept := range sourceConcepts {
 		conceptData[concept.UUID] = concept.Type
@@ -1037,7 +1038,7 @@ func getSourceData(sourceConcepts []Concept) map[string]string {
 
 //This function dictates which properties will be actually
 //written in neo for both canonical and source nodes.
-func setProps(concept Concept, id string, isSource bool) map[string]interface{} {
+func setProps(concept ontology.SourceConcept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 	//common props
 	if concept.PrefLabel != "" {
@@ -1156,7 +1157,7 @@ func setProps(concept Concept, id string, isSource bool) map[string]interface{} 
 
 //DecodeJSON - decode json
 func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
-	sub := AggregatedConcept{}
+	sub := ontology.AggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
@@ -1185,25 +1186,25 @@ func (re requestError) InvalidRequestDetails() string {
 
 func processMembershipRoles(v interface{}) interface{} {
 	switch c := v.(type) {
-	case AggregatedConcept:
+	case ontology.AggregatedConcept:
 		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
 		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
 		for _, s := range c.SourceRepresentations {
 			processMembershipRoles(s)
 		}
-	case Concept:
+	case ontology.SourceConcept:
 		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
 		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
-	case MembershipRole:
+	case ontology.MembershipRole:
 		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
 		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 	}
 	return v
 }
 
-func cleanMembershipRoles(m []MembershipRole) []MembershipRole {
+func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole {
 	deleted := 0
 	for i := range m {
 		j := i - deleted
@@ -1234,8 +1235,8 @@ func getEpoch(t string) int64 {
 
 // cleanNAICS returns the same slice of NAICSIndustryClassification if all are valid,
 // skips the invalid ones, returns nil if the input slice doesn't have valid NAICSIndustryClassification objects
-func cleanNAICS(naics []NAICSIndustryClassification) []NAICSIndustryClassification {
-	var res []NAICSIndustryClassification
+func cleanNAICS(naics []ontology.NAICSIndustryClassification) []ontology.NAICSIndustryClassification {
+	var res []ontology.NAICSIndustryClassification
 	for _, ic := range naics {
 		if ic.UUID != "" {
 			res = append(res, ic)
@@ -1259,7 +1260,7 @@ func filterSlice(a []string) []string {
 	return a
 }
 
-func cleanConcept(c AggregatedConcept) AggregatedConcept {
+func cleanConcept(c ontology.AggregatedConcept) ontology.AggregatedConcept {
 	for j := range c.SourceRepresentations {
 		c.SourceRepresentations[j].LastModifiedEpoch = 0
 		for i := range c.SourceRepresentations[j].MembershipRoles {
@@ -1298,15 +1299,15 @@ func cleanConcept(c AggregatedConcept) AggregatedConcept {
 	return c
 }
 
-func cleanHash(c AggregatedConcept) AggregatedConcept {
+func cleanHash(c ontology.AggregatedConcept) ontology.AggregatedConcept {
 	c.AggregatedHash = ""
 	return c
 }
 
-func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
-	var cleanSources []Concept
+func cleanSourceProperties(c ontology.AggregatedConcept) ontology.AggregatedConcept {
+	var cleanSources []ontology.SourceConcept
 	for _, source := range c.SourceRepresentations {
-		cleanConcept := Concept{
+		cleanConcept := ontology.SourceConcept{
 			UUID:              source.UUID,
 			PrefLabel:         source.PrefLabel,
 			Type:              source.Type,
@@ -1337,7 +1338,7 @@ func cleanSourceProperties(c AggregatedConcept) AggregatedConcept {
 	return c
 }
 
-func getCanonicalAuthority(aggregate AggregatedConcept) string {
+func getCanonicalAuthority(aggregate ontology.AggregatedConcept) string {
 	for _, source := range aggregate.SourceRepresentations {
 		if source.UUID == aggregate.PrefUUID {
 			return source.Authority

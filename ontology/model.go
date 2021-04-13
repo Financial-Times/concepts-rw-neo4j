@@ -1,4 +1,4 @@
-package concepts
+package ontology
 
 type MembershipRole struct {
 	RoleUUID             string `json:"membershipRoleUUID,omitempty"`
@@ -24,7 +24,7 @@ type AggregatedConcept struct {
 	OrganisationUUID      string           `json:"organisationUUID,omitempty"`
 	PersonUUID            string           `json:"personUUID,omitempty"`
 	AggregatedHash        string           `json:"aggregateHash,omitempty"`
-	SourceRepresentations []Concept        `json:"sourceRepresentations,omitempty"`
+	SourceRepresentations []SourceConcept  `json:"sourceRepresentations,omitempty"`
 	MembershipRoles       []MembershipRole `json:"membershipRoles,omitempty"`
 	InceptionDate         string           `json:"inceptionDate,omitempty"`
 	TerminationDate       string           `json:"terminationDate,omitempty"`
@@ -61,8 +61,8 @@ type NAICSIndustryClassification struct {
 	Rank int    `json:"rank,omitempty"`
 }
 
-// Concept - could be any concept genre, subject etc
-type Concept struct {
+// SourceConcept - could be any concept genre, subject etc
+type SourceConcept struct {
 	UUID                 string           `json:"uuid,omitempty"`
 	PrefLabel            string           `json:"prefLabel,omitempty"`
 	Type                 string           `json:"type,omitempty"`
@@ -121,55 +121,7 @@ type Concept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-type ConceptChanges struct {
-	ChangedRecords []Event  `json:"events"`
-	UpdatedIds     []string `json:"updatedIDs"`
-}
-
-type Event struct {
-	ConceptType   string      `json:"type"`
-	ConceptUUID   string      `json:"uuid"`
-	AggregateHash string      `json:"aggregateHash"`
-	TransactionID string      `json:"transactionID"`
-	EventDetails  interface{} `json:"eventDetails"`
-}
-
-type ConceptEvent struct {
-	Type string `json:"eventType"`
-}
-
-type ConcordanceEvent struct {
-	Type  string `json:"eventType"`
-	OldID string `json:"oldID"`
-	NewID string `json:"newID"`
-}
-
-// Map of all the possible node types so we can ensure they all have
-// constraints on the uuid
-var constraintMap = map[string]string{
-	"Thing":                       "uuid",
-	"Concept":                     "uuid",
-	"Classification":              "uuid",
-	"Section":                     "uuid",
-	"Subject":                     "uuid",
-	"SpecialReport":               "uuid",
-	"Location":                    "uuid",
-	"Topic":                       "uuid",
-	"Genre":                       "uuid",
-	"Brand":                       "uuid",
-	"AlphavilleSeries":            "uuid",
-	"PublicCompany":               "uuid",
-	"Person":                      "uuid",
-	"Organisation":                "uuid",
-	"MembershipRole":              "uuid",
-	"BoardRole":                   "uuid",
-	"Membership":                  "uuid",
-	"FinancialInstrument":         "uuid",
-	"IndustryClassification":      "uuid",
-	"NAICSIndustryClassification": "uuid",
-}
-
-var conceptLabels = [...]string{
+var ConceptLabels = [...]string{
 	"Concept",
 	"Classification",
 	"Section",

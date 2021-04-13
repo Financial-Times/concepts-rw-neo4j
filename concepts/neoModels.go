@@ -1,38 +1,64 @@
 package concepts
 
 import (
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/jmcvetta/neoism"
 )
 
+// Map of all the possible node types so we can ensure they all have
+// constraints on the uuid
+var constraintMap = map[string]string{
+	"Thing":                       "uuid",
+	"Concept":                     "uuid",
+	"Classification":              "uuid",
+	"Section":                     "uuid",
+	"Subject":                     "uuid",
+	"SpecialReport":               "uuid",
+	"Location":                    "uuid",
+	"Topic":                       "uuid",
+	"Genre":                       "uuid",
+	"Brand":                       "uuid",
+	"AlphavilleSeries":            "uuid",
+	"PublicCompany":               "uuid",
+	"Person":                      "uuid",
+	"Organisation":                "uuid",
+	"MembershipRole":              "uuid",
+	"BoardRole":                   "uuid",
+	"Membership":                  "uuid",
+	"FinancialInstrument":         "uuid",
+	"IndustryClassification":      "uuid",
+	"NAICSIndustryClassification": "uuid",
+}
+
 type neoAggregatedConcept struct {
-	AggregateHash         string           `json:"aggregateHash,omitempty"`
-	Aliases               []string         `json:"aliases,omitempty"`
-	Authority             string           `json:"authority,omitempty"`
-	AuthorityValue        string           `json:"authorityValue,omitempty"`
-	DescriptionXML        string           `json:"descriptionXML,omitempty"`
-	EmailAddress          string           `json:"emailAddress,omitempty"`
-	FacebookPage          string           `json:"facebookPage,omitempty"`
-	FigiCode              string           `json:"figiCode,omitempty"`
-	ImageURL              string           `json:"imageUrl,omitempty"`
-	InceptionDate         string           `json:"inceptionDate,omitempty"`
-	InceptionDateEpoch    int64            `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy              string           `json:"issuedBy,omitempty"`
-	LastModifiedEpoch     int              `json:"lastModifiedEpoch,omitempty"`
-	MembershipRoles       []MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID      string           `json:"organisationUUID,omitempty"`
-	PersonUUID            string           `json:"personUUID,omitempty"`
-	PrefLabel             string           `json:"prefLabel"`
-	PrefUUID              string           `json:"prefUUID,omitempty"`
-	ScopeNote             string           `json:"scopeNote,omitempty"`
-	ShortLabel            string           `json:"shortLabel,omitempty"`
-	SourceRepresentations []neoConcept     `json:"sourceRepresentations"`
-	Strapline             string           `json:"strapline,omitempty"`
-	TerminationDate       string           `json:"terminationDate,omitempty"`
-	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle         string           `json:"twitterHandle,omitempty"`
-	Types                 []string         `json:"types"`
-	IsDeprecated          bool             `json:"isDeprecated,omitempty"`
+	AggregateHash         string                    `json:"aggregateHash,omitempty"`
+	Aliases               []string                  `json:"aliases,omitempty"`
+	Authority             string                    `json:"authority,omitempty"`
+	AuthorityValue        string                    `json:"authorityValue,omitempty"`
+	DescriptionXML        string                    `json:"descriptionXML,omitempty"`
+	EmailAddress          string                    `json:"emailAddress,omitempty"`
+	FacebookPage          string                    `json:"facebookPage,omitempty"`
+	FigiCode              string                    `json:"figiCode,omitempty"`
+	ImageURL              string                    `json:"imageUrl,omitempty"`
+	InceptionDate         string                    `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch    int64                     `json:"inceptionDateEpoch,omitempty"`
+	IssuedBy              string                    `json:"issuedBy,omitempty"`
+	LastModifiedEpoch     int                       `json:"lastModifiedEpoch,omitempty"`
+	MembershipRoles       []ontology.MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID      string                    `json:"organisationUUID,omitempty"`
+	PersonUUID            string                    `json:"personUUID,omitempty"`
+	PrefLabel             string                    `json:"prefLabel"`
+	PrefUUID              string                    `json:"prefUUID,omitempty"`
+	ScopeNote             string                    `json:"scopeNote,omitempty"`
+	ShortLabel            string                    `json:"shortLabel,omitempty"`
+	SourceRepresentations []neoConcept              `json:"sourceRepresentations"`
+	Strapline             string                    `json:"strapline,omitempty"`
+	TerminationDate       string                    `json:"terminationDate,omitempty"`
+	TerminationDateEpoch  int64                     `json:"terminationDateEpoch,omitempty"`
+	TwitterHandle         string                    `json:"twitterHandle,omitempty"`
+	Types                 []string                  `json:"types"`
+	IsDeprecated          bool                      `json:"isDeprecated,omitempty"`
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
@@ -55,12 +81,12 @@ type neoAggregatedConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (c neoAggregatedConcept) Normalized() (AggregatedConcept, error) {
+func (c neoAggregatedConcept) Normalized() (ontology.AggregatedConcept, error) {
 	typeName, err := mapper.MostSpecificType(c.Types)
 	if err != nil {
-		return AggregatedConcept{}, err
+		return ontology.AggregatedConcept{}, err
 	}
-	return AggregatedConcept{
+	return ontology.AggregatedConcept{
 		AggregatedHash:   c.AggregateHash,
 		Aliases:          c.Aliases,
 		DescriptionXML:   c.DescriptionXML,
@@ -105,55 +131,55 @@ func (c neoAggregatedConcept) Normalized() (AggregatedConcept, error) {
 }
 
 type neoConcept struct {
-	Aliases              []string         `json:"aliases,omitempty"`
-	Authority            string           `json:"authority,omitempty"`
-	AuthorityValue       string           `json:"authorityValue,omitempty"`
-	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
-	DescriptionXML       string           `json:"descriptionXML,omitempty"`
-	EmailAddress         string           `json:"emailAddress,omitempty"`
-	FacebookPage         string           `json:"facebookPage,omitempty"`
-	FigiCode             string           `json:"figiCode,omitempty"`
-	ImageURL             string           `json:"imageUrl,omitempty"`
-	InceptionDate        string           `json:"inceptionDate,omitempty"`
-	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy             string           `json:"issuedBy,omitempty"`
-	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
-	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
-	PersonUUID           string           `json:"personUUID,omitempty"`
-	PrefLabel            string           `json:"prefLabel,omitempty"`
-	PrefUUID             string           `json:"prefUUID,omitempty"`
-	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
-	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
-	ImpliedByUUIDs       []string         `json:"impliedByUUIDs,omitempty"`
-	HasFocusUUIDs        []string         `json:"hasFocusUUIDs,omitempty"`
-	ScopeNote            string           `json:"scopeNote,omitempty"`
-	ShortLabel           string           `json:"shortLabel,omitempty"`
-	Strapline            string           `json:"strapline,omitempty"`
-	TerminationDate      string           `json:"terminationDate,omitempty"`
-	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle        string           `json:"twitterHandle,omitempty"`
-	Types                []string         `json:"types,omitempty"`
-	UUID                 string           `json:"uuid,omitempty"`
-	IsDeprecated         bool             `json:"isDeprecated,omitempty"`
+	Aliases              []string                  `json:"aliases,omitempty"`
+	Authority            string                    `json:"authority,omitempty"`
+	AuthorityValue       string                    `json:"authorityValue,omitempty"`
+	BroaderUUIDs         []string                  `json:"broaderUUIDs,omitempty"`
+	DescriptionXML       string                    `json:"descriptionXML,omitempty"`
+	EmailAddress         string                    `json:"emailAddress,omitempty"`
+	FacebookPage         string                    `json:"facebookPage,omitempty"`
+	FigiCode             string                    `json:"figiCode,omitempty"`
+	ImageURL             string                    `json:"imageUrl,omitempty"`
+	InceptionDate        string                    `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch   int64                     `json:"inceptionDateEpoch,omitempty"`
+	IssuedBy             string                    `json:"issuedBy,omitempty"`
+	LastModifiedEpoch    int                       `json:"lastModifiedEpoch,omitempty"`
+	MembershipRoles      []ontology.MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID     string                    `json:"organisationUUID,omitempty"`
+	ParentUUIDs          []string                  `json:"parentUUIDs,omitempty"`
+	PersonUUID           string                    `json:"personUUID,omitempty"`
+	PrefLabel            string                    `json:"prefLabel,omitempty"`
+	PrefUUID             string                    `json:"prefUUID,omitempty"`
+	RelatedUUIDs         []string                  `json:"relatedUUIDs,omitempty"`
+	SupersededByUUIDs    []string                  `json:"supersededByUUIDs,omitempty"`
+	ImpliedByUUIDs       []string                  `json:"impliedByUUIDs,omitempty"`
+	HasFocusUUIDs        []string                  `json:"hasFocusUUIDs,omitempty"`
+	ScopeNote            string                    `json:"scopeNote,omitempty"`
+	ShortLabel           string                    `json:"shortLabel,omitempty"`
+	Strapline            string                    `json:"strapline,omitempty"`
+	TerminationDate      string                    `json:"terminationDate,omitempty"`
+	TerminationDateEpoch int64                     `json:"terminationDateEpoch,omitempty"`
+	TwitterHandle        string                    `json:"twitterHandle,omitempty"`
+	Types                []string                  `json:"types,omitempty"`
+	UUID                 string                    `json:"uuid,omitempty"`
+	IsDeprecated         bool                      `json:"isDeprecated,omitempty"`
 	// Organisations
-	ProperName                   string                        `json:"properName,omitempty"`
-	ShortName                    string                        `json:"shortName,omitempty"`
-	TradeNames                   []string                      `json:"tradeNames,omitempty"`
-	FormerNames                  []string                      `json:"formerNames,omitempty"`
-	CountryCode                  string                        `json:"countryCode,omitempty"`
-	CountryOfRisk                string                        `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation       string                        `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations          string                        `json:"countryOfOperations,omitempty"`
-	CountryOfRiskUUID            string                        `json:"countryOfRiskUUID,omitempty"`
-	CountryOfIncorporationUUID   string                        `json:"countryOfIncorporationUUID,omitempty"`
-	CountryOfOperationsUUID      string                        `json:"countryOfOperationsUUID,omitempty"`
-	PostalCode                   string                        `json:"postalCode,omitempty"`
-	YearFounded                  int                           `json:"yearFounded,omitempty"`
-	LeiCode                      string                        `json:"leiCode,omitempty"`
-	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
-	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
+	ProperName                   string                                 `json:"properName,omitempty"`
+	ShortName                    string                                 `json:"shortName,omitempty"`
+	TradeNames                   []string                               `json:"tradeNames,omitempty"`
+	FormerNames                  []string                               `json:"formerNames,omitempty"`
+	CountryCode                  string                                 `json:"countryCode,omitempty"`
+	CountryOfRisk                string                                 `json:"countryOfRisk,omitempty"`
+	CountryOfIncorporation       string                                 `json:"countryOfIncorporation,omitempty"`
+	CountryOfOperations          string                                 `json:"countryOfOperations,omitempty"`
+	CountryOfRiskUUID            string                                 `json:"countryOfRiskUUID,omitempty"`
+	CountryOfIncorporationUUID   string                                 `json:"countryOfIncorporationUUID,omitempty"`
+	CountryOfOperationsUUID      string                                 `json:"countryOfOperationsUUID,omitempty"`
+	PostalCode                   string                                 `json:"postalCode,omitempty"`
+	YearFounded                  int                                    `json:"yearFounded,omitempty"`
+	LeiCode                      string                                 `json:"leiCode,omitempty"`
+	ParentOrganisation           string                                 `json:"parentOrganisation,omitempty"`
+	NAICSIndustryClassifications []ontology.NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 	// Location
 	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
@@ -163,13 +189,13 @@ type neoConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (c neoConcept) Normalize() (Concept, error) {
+func (c neoConcept) Normalize() (ontology.SourceConcept, error) {
 	conceptType, err := mapper.MostSpecificType(c.Types)
 	if err != nil {
-		return Concept{}, err
+		return ontology.SourceConcept{}, err
 	}
 
-	return Concept{
+	return ontology.SourceConcept{
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
 		BroaderUUIDs:                 filterSlice(c.BroaderUUIDs),
