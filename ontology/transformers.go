@@ -20,6 +20,7 @@ func TransformFromRelationships(relations []Relationship, label string) []string
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations := []Relationship{}
 	relations = append(relations, TransformToRelationships(BroaderRelation, c.BroaderUUIDs))
+	relations = append(relations, TransformToRelationships(ParentRelation, c.BroaderUUIDs))
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -58,7 +59,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
 		LastModifiedEpoch:            c.LastModifiedEpoch,
-		ParentUUIDs:                  c.ParentUUIDs,
 		RelatedUUIDs:                 c.RelatedUUIDs,
 		SupersededByUUIDs:            c.SupersededByUUIDs,
 		ImpliedByUUIDs:               c.ImpliedByUUIDs,
@@ -118,7 +118,7 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		AuthorityValue:               c.AuthorityValue,
 		LastModifiedEpoch:            c.LastModifiedEpoch,
 		Aliases:                      aliases,
-		ParentUUIDs:                  c.ParentUUIDs,
+		ParentUUIDs:                  TransformFromRelationships(c.Relations, ParentRelation),
 		Strapline:                    strapline,
 		DescriptionXML:               description,
 		ImageURL:                     imageURL,

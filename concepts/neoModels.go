@@ -197,6 +197,7 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 	}
 	var relations []ontology.Relationship
 	relations = append(relations, ontology.TransformToRelationships(ontology.BroaderRelation, filterSlice(c.BroaderUUIDs)))
+	relations = append(relations, ontology.TransformToRelationships(ontology.ParentRelation, filterSlice(c.ParentUUIDs)))
 
 	return ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
@@ -217,7 +218,6 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 		CountryOfIncorporationUUID:   c.CountryOfIncorporationUUID,
 		CountryOfRiskUUID:            c.CountryOfRiskUUID,
 		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
-		ParentUUIDs:                  filterSlice(c.ParentUUIDs),
 		PersonUUID:                   c.PersonUUID,
 		RelatedUUIDs:                 filterSlice(c.RelatedUUIDs),
 		ImpliedByUUIDs:               filterSlice(c.ImpliedByUUIDs),

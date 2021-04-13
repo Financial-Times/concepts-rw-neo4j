@@ -188,6 +188,7 @@ const (
 	IndustryIdentifierProp     = "industryIdentifier"
 
 	BroaderRelation = "HAS_BROADER"
+	ParentRelation  = "HAS_PARENT"
 )
 
 type GenericConcept struct {
@@ -278,7 +279,6 @@ type NewSourceConcept struct {
 	Authority            string           `json:"authority,omitempty"`
 	AuthorityValue       string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
 	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
 	ImpliedByUUIDs       []string         `json:"impliedByUUIDs,omitempty"`

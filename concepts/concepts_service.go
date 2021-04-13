@@ -750,24 +750,40 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			},
 		}
 		queryBatch = append(queryBatch, equivQuery)
-
+		relationMap := map[string]struct {
+			Relationship string
+			ShouldCreate bool
+		}{
+			ontology.BroaderRelation: {
+				Relationship: "HAS_BROADER",
+				ShouldCreate: false,
+			},
+			ontology.ParentRelation: {
+				Relationship: "HAS_PARENT",
+				ShouldCreate: true,
+			},
+		}
 		for _, relation := range sourceConcept.Relations {
-			queryBatch = addRelationship(sourceConcept.UUID, relation.UUIDs, relation.Label, queryBatch)
+			setup, has := relationMap[relation.Label]
+			if !has {
+				continue
+			}
+			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, relation.UUIDs, setup.Relationship, setup.ShouldCreate)...)
 		}
 		if len(sourceConcept.RelatedUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", queryBatch)
+			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", false)...)
 		}
 
 		if len(sourceConcept.SupersededByUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", queryBatch)
+			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", false)...)
 		}
 
 		if len(sourceConcept.ImpliedByUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", queryBatch)
+			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", false)...)
 		}
 
 		if len(sourceConcept.HasFocusUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", queryBatch)
+			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", false)...)
 		}
 	}
 	return queryBatch
@@ -802,19 +818,6 @@ func createNodeQueries(concept ontology.NewSourceConcept, prefUUID string, uuid 
 				"allprops": allProps,
 			},
 		}
-	}
-
-	for _, parentUUID := range concept.ParentUUIDs {
-		writeParent := &neoism.CypherQuery{
-			Statement: `MERGE (o:Thing {uuid: {uuid}})
-						MERGE (parent:Thing {uuid: {parentUUID}})
-						MERGE (o)-[:HAS_PARENT]->(parent)	`,
-			Parameters: neoism.Props{
-				"parentUUID": parentUUID,
-				"uuid":       concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeParent)
 	}
 
 	if concept.OrganisationUUID != "" {
@@ -969,17 +972,27 @@ func createNodeQueries(concept ontology.NewSourceConcept, prefUUID string, uuid 
 }
 
 //Add relationships to concepts
-func addRelationship(conceptID string, relationshipIDs []string, relationshipType string, queryBatch []*neoism.CypherQuery) []*neoism.CypherQuery {
+func addRelationship(conceptID string, relationshipIDs []string, relationshipType string, createOnMissing bool) []*neoism.CypherQuery {
+	const matchStatement = `
+MATCH (concept:Concept {uuid: {uuid}})
+MERGE (other:Thing {uuid: {other_uuid}})
+MERGE (concept)-[:%s]->(other)`
+	const createStatement = `
+MERGE (thing:Thing {uuid: {uuid}})
+MERGE (other:Thing {uuid: {other_uuid}})
+MERGE (thing)-[:%s]->(other)
+`
+	statement := matchStatement
+	if createOnMissing {
+		statement = createStatement
+	}
+	var queryBatch []*neoism.CypherQuery
 	for _, id := range relationshipIDs {
 		addRelationshipQuery := &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`
-						MATCH (o:Concept {uuid: {uuid}})
-						MERGE (p:Thing {uuid: {id}})
-		            	MERGE (o)-[:%s]->(p)`, relationshipType),
+			Statement: fmt.Sprintf(statement, relationshipType),
 			Parameters: map[string]interface{}{
-				"uuid":         conceptID,
-				"id":           id,
-				"relationship": relationshipType,
+				"uuid":       conceptID,
+				"other_uuid": id,
 			},
 		}
 		queryBatch = append(queryBatch, addRelationshipQuery)
@@ -1231,6 +1244,10 @@ func filterSlice(a []string) []string {
 
 func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 
+	relationsToSort := map[string]bool{
+		ontology.BroaderRelation: true,
+		ontology.ParentRelation:  true,
+	}
 	for j := range c.SourceRepresentations {
 		source := &c.SourceRepresentations[j]
 		source.LastModifiedEpoch = 0
@@ -1240,6 +1257,9 @@ func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregated
 		}
 		for i := range c.Relations {
 			relations := &c.Relations[i]
+			if !relationsToSort[relations.Label] {
+				continue
+			}
 			sort.SliceStable(relations.UUIDs, func(k, l int) bool {
 				return relations.UUIDs[k] < relations.UUIDs[l]
 			})
@@ -1325,6 +1345,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	}
 	relationsToKeep := map[string]bool{
 		ontology.BroaderRelation: true,
+		ontology.ParentRelation:  true,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanProps := map[string]interface{}{}
@@ -1348,7 +1369,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			Type:              source.Type,
 			Authority:         source.Authority,
 			AuthorityValue:    source.AuthorityValue,
-			ParentUUIDs:       source.ParentUUIDs,
 			OrganisationUUID:  source.OrganisationUUID,
 			PersonUUID:        source.PersonUUID,
 			RelatedUUIDs:      source.RelatedUUIDs,
