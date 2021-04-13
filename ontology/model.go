@@ -198,6 +198,8 @@ const (
 	CountryOfIncorporationRelation = "COUNTRY_OF_INCORPORATION"
 	CountryOfOperationsRelation    = "COUNTRY_OF_OPERATIONS"
 	ParentOrganisationRelation     = "SUB_ORGANISATION_OF"
+
+	IndustryClassificationRelation = "HAS_INDUSTRY_CLASSIFICATION"
 )
 
 type GenericConcept struct {
@@ -206,8 +208,12 @@ type GenericConcept struct {
 }
 
 type Relationship struct {
-	UUIDs      []string               `json:"uuids"`
-	Label      string                 `json:"label"`
+	Label       string       `json:"label"`
+	Connections []Connection `json:"connections"`
+}
+
+type Connection struct {
+	UUID       string                 `json:"uuid"`
 	Properties map[string]interface{} `json:"properties"`
 }
 
@@ -297,6 +303,4 @@ type NewSourceConcept struct {
 	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
 	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
 	IssuedBy             string           `json:"issuedBy,omitempty"`
-	// Organisations
-	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 }

@@ -1,9 +1,15 @@
 package ontology
 
 func TransformToRelationships(label string, uuids []string) Relationship {
+	var connections []Connection
+	for _, uuid := range uuids {
+		connections = append(connections, Connection{
+			UUID: uuid,
+		})
+	}
 	return Relationship{
-		UUIDs: uuids,
-		Label: label,
+		Label:       label,
+		Connections: connections,
 	}
 }
 
@@ -12,7 +18,12 @@ func TransformFromRelationships(relations []Relationship, label string) []string
 		if rel.Label != label {
 			continue
 		}
-		return rel.UUIDs
+
+		var uuids []string
+		for _, con := range rel.Connections {
+			uuids = append(uuids, con.UUID)
+		}
+		return uuids
 	}
 	return nil
 }
@@ -22,12 +33,54 @@ func TransformFromRelationshipsSingle(relations []Relationship, label string) st
 		if rel.Label != label {
 			continue
 		}
-		if len(rel.UUIDs) == 0 {
+		if len(rel.Connections) == 0 {
 			return ""
 		}
-		return rel.UUIDs[0]
+		return rel.Connections[0].UUID
 	}
 	return ""
+}
+
+const naicsRankField = "rank"
+
+func TransformNAICSToRelationship(naics []NAICSIndustryClassification) Relationship {
+	var connections []Connection
+	for _, n := range naics {
+		connections = append(connections, Connection{
+			UUID: n.UUID,
+			Properties: map[string]interface{}{
+				naicsRankField: n.Rank,
+			},
+		})
+	}
+	return Relationship{
+		Label:       IndustryClassificationRelation,
+		Connections: connections,
+	}
+}
+
+func TransformRelationshipToNAICS(relations []Relationship) []NAICSIndustryClassification {
+	var naics []NAICSIndustryClassification
+	for _, rel := range relations {
+		if rel.Label != IndustryClassificationRelation {
+			continue
+		}
+		for _, con := range rel.Connections {
+			rank := -1
+			if val, ok := con.Properties[naicsRankField]; ok {
+				r, ok := val.(int)
+				if ok {
+					rank = r
+				}
+			}
+			naics = append(naics, NAICSIndustryClassification{
+				UUID: con.UUID,
+				Rank: rank,
+			})
+		}
+
+	}
+	return naics
 }
 
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
@@ -42,6 +95,7 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations = append(relations, TransformToRelationships(CountryOfIncorporationRelation, []string{c.CountryOfIncorporationUUID}))
 	relations = append(relations, TransformToRelationships(CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
 	relations = append(relations, TransformToRelationships(ParentOrganisationRelation, []string{c.ParentOrganisation}))
+	relations = append(relations, TransformNAICSToRelationship(c.NAICSIndustryClassifications))
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -75,21 +129,20 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 			},
 			Relations: relations,
 		},
-		UUID:                         c.UUID,
-		Type:                         c.Type,
-		Authority:                    c.Authority,
-		AuthorityValue:               c.AuthorityValue,
-		LastModifiedEpoch:            c.LastModifiedEpoch,
-		OrganisationUUID:             c.OrganisationUUID,
-		PersonUUID:                   c.PersonUUID,
-		Hash:                         c.Hash,
-		MembershipRoles:              c.MembershipRoles,
-		InceptionDate:                c.InceptionDate,
-		TerminationDate:              c.TerminationDate,
-		InceptionDateEpoch:           c.InceptionDateEpoch,
-		TerminationDateEpoch:         c.TerminationDateEpoch,
-		IssuedBy:                     c.IssuedBy,
-		NAICSIndustryClassifications: c.NAICSIndustryClassifications,
+		UUID:                 c.UUID,
+		Type:                 c.Type,
+		Authority:            c.Authority,
+		AuthorityValue:       c.AuthorityValue,
+		LastModifiedEpoch:    c.LastModifiedEpoch,
+		OrganisationUUID:     c.OrganisationUUID,
+		PersonUUID:           c.PersonUUID,
+		Hash:                 c.Hash,
+		MembershipRoles:      c.MembershipRoles,
+		InceptionDate:        c.InceptionDate,
+		TerminationDate:      c.TerminationDate,
+		InceptionDateEpoch:   c.InceptionDateEpoch,
+		TerminationDateEpoch: c.TerminationDateEpoch,
+		IssuedBy:             c.IssuedBy,
 	}
 	return concept
 }
@@ -170,7 +223,7 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		YearFounded:                  yearFounded,
 		LeiCode:                      leiCode,
 		ParentOrganisation:           TransformFromRelationshipsSingle(c.Relations, ParentOrganisationRelation),
-		NAICSIndustryClassifications: c.NAICSIndustryClassifications,
+		NAICSIndustryClassifications: TransformRelationshipToNAICS(c.Relations),
 		IsDeprecated:                 deprecated,
 		ISO31661:                     iso31661,
 		Salutation:                   salutation,

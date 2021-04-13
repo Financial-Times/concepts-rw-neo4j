@@ -206,6 +206,7 @@ func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfIncorporationRelation, []string{c.CountryOfIncorporationUUID}))
 	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
 	relations = append(relations, ontology.TransformToRelationships(ontology.ParentOrganisationRelation, []string{c.ParentOrganisation}))
+	relations = append(relations, ontology.TransformNAICSToRelationship(cleanNAICS(c.NAICSIndustryClassifications)))
 
 	return ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
@@ -216,16 +217,15 @@ func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 			},
 			Relations: relations,
 		},
-		Authority:                    c.Authority,
-		AuthorityValue:               c.AuthorityValue,
-		IssuedBy:                     c.IssuedBy,
-		LastModifiedEpoch:            c.LastModifiedEpoch,
-		MembershipRoles:              cleanMembershipRoles(c.MembershipRoles),
-		OrganisationUUID:             c.OrganisationUUID,
-		PersonUUID:                   c.PersonUUID,
-		NAICSIndustryClassifications: cleanNAICS(c.NAICSIndustryClassifications),
-		Type:                         conceptType,
-		UUID:                         c.UUID,
+		Authority:         c.Authority,
+		AuthorityValue:    c.AuthorityValue,
+		IssuedBy:          c.IssuedBy,
+		LastModifiedEpoch: c.LastModifiedEpoch,
+		MembershipRoles:   cleanMembershipRoles(c.MembershipRoles),
+		OrganisationUUID:  c.OrganisationUUID,
+		PersonUUID:        c.PersonUUID,
+		Type:              conceptType,
+		UUID:              c.UUID,
 	}, nil
 }
 

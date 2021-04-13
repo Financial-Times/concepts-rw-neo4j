@@ -794,13 +794,17 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				Relationship: "SUB_ORGANISATION_OF",
 				ShouldCreate: true,
 			},
+			ontology.IndustryClassificationRelation: {
+				Relationship: "HAS_INDUSTRY_CLASSIFICATION",
+				ShouldCreate: true,
+			},
 		}
 		for _, relation := range sourceConcept.Relations {
 			setup, has := relationMap[relation.Label]
 			if !has {
 				continue
 			}
-			q := addRelationship(sourceConcept.UUID, relation.UUIDs, setup.Relationship, setup.ShouldCreate)
+			q := addRelationship(sourceConcept.UUID, relation.Connections, setup.Relationship, setup.ShouldCreate)
 			queryBatch = append(queryBatch, q...)
 		}
 	}
@@ -878,24 +882,6 @@ func createNodeQueries(concept ontology.NewSourceConcept, prefUUID string, uuid 
 		queryBatch = append(queryBatch, writeFinIns)
 	}
 
-	if uuid != "" {
-		for _, naics := range concept.NAICSIndustryClassifications {
-			if naics.UUID != "" {
-				writeNAICS := &neoism.CypherQuery{
-					Statement: `MERGE (org:Thing {uuid: {uuid}})
-								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
-								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC)`,
-					Parameters: neoism.Props{
-						"naicsUUID": naics.UUID,
-						"rank":      naics.Rank,
-						"uuid":      concept.UUID,
-					},
-				}
-				queryBatch = append(queryBatch, writeNAICS)
-			}
-		}
-	}
-
 	if uuid != "" && len(concept.MembershipRoles) > 0 {
 		for _, membershipRole := range concept.MembershipRoles {
 			params := neoism.Props{
@@ -940,27 +926,39 @@ func createNodeQueries(concept ontology.NewSourceConcept, prefUUID string, uuid 
 }
 
 //Add relationships to concepts
-func addRelationship(conceptID string, relationshipIDs []string, relationshipType string, createOnMissing bool) []*neoism.CypherQuery {
-	const matchStatement = `
-MATCH (concept:Concept {uuid: {uuid}})
-MERGE (other:Thing {uuid: {other_uuid}})
-MERGE (concept)-[:%s]->(other)`
-	const createStatement = `
-MERGE (thing:Thing {uuid: {uuid}})
-MERGE (other:Thing {uuid: {other_uuid}})
-MERGE (thing)-[:%s]->(other)
-`
-	statement := matchStatement
+func addRelationship(conceptID string, connections []ontology.Connection, relationshipType string, createOnMissing bool) []*neoism.CypherQuery {
+
+	const (
+		findConceptNode  = `MATCH (this:Concept {uuid: {uuid}})`
+		mergeThingNode   = `MERGE (this:Thing {uuid: {uuid}})`
+		mergeOtherNode   = `MERGE (other:Thing {uuid: {other_uuid}})`
+		createRelation   = `MERGE (this)-[rel:%s]->(other)`
+		setRelationProps = `set rel={relation_props}`
+	)
+	var query string
 	if createOnMissing {
-		statement = createStatement
+		query = findConceptNode
+	} else {
+		query = mergeThingNode
 	}
+	query += "\n"
+	query += mergeOtherNode
+	query += "\n"
+	query += createRelation
+	query += "\n"
+
 	var queryBatch []*neoism.CypherQuery
-	for _, id := range relationshipIDs {
+	for _, con := range connections {
+		statement := fmt.Sprintf(query, relationshipType)
+		if con.Properties != nil {
+			statement += setRelationProps
+		}
 		addRelationshipQuery := &neoism.CypherQuery{
-			Statement: fmt.Sprintf(statement, relationshipType),
+			Statement: statement,
 			Parameters: map[string]interface{}{
-				"uuid":       conceptID,
-				"other_uuid": id,
+				"uuid":           conceptID,
+				"other_uuid":     con.UUID,
+				"relation_props": con.Properties,
 			},
 		}
 		queryBatch = append(queryBatch, addRelationshipQuery)
@@ -1232,16 +1230,16 @@ func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregated
 			if !relationsToSort[relations.Label] {
 				continue
 			}
-			sort.SliceStable(relations.UUIDs, func(k, l int) bool {
-				return relations.UUIDs[k] < relations.UUIDs[l]
+			sort.SliceStable(relations.Connections, func(k, l int) bool {
+				return relations.Connections[k].UUID < relations.Connections[l].UUID
 			})
 		}
 		sort.SliceStable(source.MembershipRoles, func(k, l int) bool {
 			return source.MembershipRoles[k].RoleUUID < source.MembershipRoles[l].RoleUUID
 		})
-		sort.SliceStable(source.NAICSIndustryClassifications, func(k, l int) bool {
-			return source.NAICSIndustryClassifications[k].Rank < source.NAICSIndustryClassifications[l].Rank
-		})
+		//sort.SliceStable(source.NAICSIndustryClassifications, func(k, l int) bool {
+		//	return source.NAICSIndustryClassifications[k].Rank < source.NAICSIndustryClassifications[l].Rank
+		//})
 	}
 	for i := range c.MembershipRoles {
 		c.MembershipRoles[i].InceptionDateEpoch = 0
@@ -1314,6 +1312,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 		ontology.CountryOfIncorporationRelation: true,
 		ontology.CountryOfOperationsRelation:    true,
 		ontology.ParentOrganisationRelation:     true,
+		ontology.IndustryClassificationRelation: true,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanProps := map[string]interface{}{}
@@ -1341,8 +1340,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			PersonUUID:       source.PersonUUID,
 			MembershipRoles:  source.MembershipRoles,
 			IssuedBy:         source.IssuedBy,
-			// Organisations
-			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}
