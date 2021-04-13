@@ -22,7 +22,7 @@ import (
 	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
 
-	logger "github.com/Financial-Times/go-logger"
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 )
 
@@ -981,26 +981,7 @@ func TestWriteService(t *testing.T) {
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
 				readConceptAndCompare(t, test.aggregatedConcept, test.testName, test.writtenNotReadFields...)
-
-				sort.Slice(test.updatedConcepts.ChangedRecords, func(i, j int) bool {
-					l, _ := json.Marshal(test.updatedConcepts.ChangedRecords[i])
-					r, _ := json.Marshal(test.updatedConcepts.ChangedRecords[j])
-					c := strings.Compare(string(l), string(r))
-					return c >= 0
-				})
-
-				updatedConcepts := updatedConcepts.(ConceptChanges)
-				sort.Slice(updatedConcepts.ChangedRecords, func(i, j int) bool {
-					l, _ := json.Marshal(updatedConcepts.ChangedRecords[i])
-					r, _ := json.Marshal(updatedConcepts.ChangedRecords[j])
-					c := strings.Compare(string(l), string(r))
-					return c >= 0
-				})
-
-				sort.Strings(test.updatedConcepts.UpdatedIds)
-				sort.Strings(updatedConcepts.UpdatedIds)
-
-				assert.Equal(t, test.updatedConcepts, updatedConcepts, "Test "+test.testName+" failed: Updated uuid list differs from expected")
+				testConceptChanges(t, test.updatedConcepts, updatedConcepts.(ConceptChanges))
 			} else {
 				if err != nil {
 					assert.Error(t, err, "Error was expected")
@@ -1576,65 +1557,45 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 
 	cleanDB(t)
 	for _, scenario := range scenarios {
-		//Write data into db, to set up test scenario
-		_, err := conceptsDriver.Write(scenario.setUpConcept, tid)
-		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
-		verifyAggregateHashIsCorrect(t, scenario.setUpConcept, scenario.testName)
-		//Overwrite data with update
-		output, err := conceptsDriver.Write(scenario.testConcept, tid)
-		if scenario.returnedError != "" {
-			if assert.Error(t, err, "Scenario "+scenario.testName+" failed; should return an error") {
-				assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unknown error")
+		t.Run(scenario.testName, func(t *testing.T) {
+			//Write data into db, to set up test scenario
+			_, err := conceptsDriver.Write(scenario.setUpConcept, tid)
+			assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
+			verifyAggregateHashIsCorrect(t, scenario.setUpConcept, scenario.testName)
+			//Overwrite data with update
+			output, err := conceptsDriver.Write(scenario.testConcept, tid)
+			if scenario.returnedError != "" {
+				if assert.Error(t, err, "Scenario "+scenario.testName+" failed; should return an error") {
+					assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unknown error")
+				}
+				// Do not check the output on error because it sometimes causes test errors
+				return
 			}
-			// Do not check the output on error because it sometimes causes test errors
-			continue
-		}
-		if !assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error") {
-			continue
-		}
+			if !assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error") {
+				return
+			}
 
-		actualChanges := output.(ConceptChanges)
-		sort.Slice(actualChanges.ChangedRecords, func(i, j int) bool {
-			l, _ := json.Marshal(actualChanges.ChangedRecords[i])
-			r, _ := json.Marshal(actualChanges.ChangedRecords[j])
-			c := strings.Compare(string(l), string(r))
-			if c >= 0 {
-				return true
+			actualChanges := output.(ConceptChanges)
+			testConceptChanges(t, scenario.updatedConcepts, actualChanges)
+
+			for _, id := range scenario.uuidsToCheck {
+				conceptIf, found, err := conceptsDriver.Read(id, tid)
+				concept := cleanHash(conceptIf.(AggregatedConcept))
+				if found {
+					assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+					assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+					assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
+					verifyAggregateHashIsCorrect(t, scenario.testConcept, scenario.testName)
+				} else {
+					assert.Equal(t, AggregatedConcept{}, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+					assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
+				}
+				if scenario.customAssertion != nil {
+					scenario.customAssertion(t, concept)
+				}
 			}
-			return false
+			cleanDB(t)
 		})
-		sort.Slice(scenario.updatedConcepts.ChangedRecords, func(i, j int) bool {
-			l, _ := json.Marshal(scenario.updatedConcepts.ChangedRecords[i])
-			r, _ := json.Marshal(scenario.updatedConcepts.ChangedRecords[j])
-			c := strings.Compare(string(l), string(r))
-			if c >= 0 {
-				return true
-			}
-			return false
-		})
-
-		sort.Strings(scenario.updatedConcepts.UpdatedIds)
-		sort.Strings(actualChanges.UpdatedIds)
-
-		assert.Equal(t, scenario.updatedConcepts, actualChanges, "Scenario "+scenario.testName+" failed: Updated uuid list differs from expected")
-
-		for _, id := range scenario.uuidsToCheck {
-			conceptIf, found, err := conceptsDriver.Read(id, tid)
-			concept := cleanHash(conceptIf.(AggregatedConcept))
-			if found {
-				assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
-				assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
-				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
-				verifyAggregateHashIsCorrect(t, scenario.testConcept, scenario.testName)
-			} else {
-				assert.Equal(t, AggregatedConcept{}, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
-				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
-			}
-			if scenario.customAssertion != nil {
-				scenario.customAssertion(t, concept)
-			}
-		}
-		cleanDB(t)
 	}
 }
 
@@ -2133,6 +2094,29 @@ func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName str
 
 	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Unexpected Error occurred", testName))
 	assert.True(t, found, fmt.Sprintf("Test %s failed: Concept has not been found", testName))
+}
+
+func testConceptChanges(t *testing.T, expected ConceptChanges, actual ConceptChanges) {
+	t.Helper()
+
+	normalize := func(changes ConceptChanges) ConceptChanges {
+		sort.Strings(changes.UpdatedIds)
+		sort.Slice(changes.ChangedRecords, func(i, j int) bool {
+			l, _ := json.Marshal(changes.ChangedRecords[i])
+			r, _ := json.Marshal(changes.ChangedRecords[j])
+			c := strings.Compare(string(l), string(r))
+			return c >= 0
+		})
+		return changes
+	}
+	expected = normalize(expected)
+	actual = normalize(actual)
+
+	options := cmpopts.IgnoreFields(Event{}, "AggregateHash")
+	if !cmp.Equal(expected, actual, options) {
+		diff := cmp.Diff(expected, actual, options)
+		t.Errorf("unexpected change events:\n %s", diff)
+	}
 }
 
 func newURL() string {
