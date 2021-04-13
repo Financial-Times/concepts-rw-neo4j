@@ -4,8 +4,27 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
-				PrefLabelProp: c.PrefLabel,
-				AliasesProp:   c.Aliases,
+				PrefLabelProp:              c.PrefLabel,
+				AliasesProp:                c.Aliases,
+				StraplineProp:              c.Strapline,
+				DescriptionProp:            c.DescriptionXML,
+				ImageURLProp:               c.ImageURL,
+				EmailAddressProp:           c.EmailAddress,
+				FacebookPageProp:           c.FacebookPage,
+				TwitterHandleProp:          c.TwitterHandle,
+				ScopeNoteProp:              c.ScopeNote,
+				ShortLabelProp:             c.ShortLabel,
+				FigiCodeProp:               c.FigiCode,
+				ProperNameProp:             c.ProperName,
+				ShortNameProp:              c.ShortName,
+				TradeNamesProp:             c.TradeNames,
+				FormerNamesProp:            c.FormerNames,
+				CountryCodeProp:            c.CountryCode,
+				CountryOfRiskProp:          c.CountryOfRisk,
+				CountryOfIncorporationProp: c.CountryOfIncorporation,
+				CountryOfOperationsProp:    c.CountryOfOperations,
+				PostalCodeProp:             c.PostalCode,
+				YearFoundedProp:            c.YearFounded,
 			},
 		},
 		UUID:                         c.UUID,
@@ -14,14 +33,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		AuthorityValue:               c.AuthorityValue,
 		LastModifiedEpoch:            c.LastModifiedEpoch,
 		ParentUUIDs:                  c.ParentUUIDs,
-		Strapline:                    c.Strapline,
-		DescriptionXML:               c.DescriptionXML,
-		ImageURL:                     c.ImageURL,
-		EmailAddress:                 c.EmailAddress,
-		FacebookPage:                 c.FacebookPage,
-		TwitterHandle:                c.TwitterHandle,
-		ScopeNote:                    c.ScopeNote,
-		ShortLabel:                   c.ShortLabel,
 		BroaderUUIDs:                 c.BroaderUUIDs,
 		RelatedUUIDs:                 c.RelatedUUIDs,
 		SupersededByUUIDs:            c.SupersededByUUIDs,
@@ -35,21 +46,10 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		TerminationDate:              c.TerminationDate,
 		InceptionDateEpoch:           c.InceptionDateEpoch,
 		TerminationDateEpoch:         c.TerminationDateEpoch,
-		FigiCode:                     c.FigiCode,
 		IssuedBy:                     c.IssuedBy,
-		ProperName:                   c.ProperName,
-		ShortName:                    c.ShortName,
-		TradeNames:                   c.TradeNames,
-		FormerNames:                  c.FormerNames,
-		CountryCode:                  c.CountryCode,
-		CountryOfRisk:                c.CountryOfRisk,
-		CountryOfIncorporation:       c.CountryOfIncorporation,
-		CountryOfOperations:          c.CountryOfOperations,
 		CountryOfRiskUUID:            c.CountryOfRiskUUID,
 		CountryOfIncorporationUUID:   c.CountryOfIncorporationUUID,
 		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
-		PostalCode:                   c.PostalCode,
-		YearFounded:                  c.YearFounded,
 		LeiCode:                      c.LeiCode,
 		ParentOrganisation:           c.ParentOrganisation,
 		NAICSIndustryClassifications: c.NAICSIndustryClassifications,
@@ -65,6 +65,26 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 	prefLabel, _ := c.GetPropString(PrefLabelProp)
 	aliases, _ := c.GetPropStringSlice(AliasesProp)
+	strapline, _ := c.GetPropString(StraplineProp)
+	description, _ := c.GetPropString(DescriptionProp)
+	imageURL, _ := c.GetPropString(ImageURLProp)
+	email, _ := c.GetPropString(EmailAddressProp)
+	facebookPage, _ := c.GetPropString(FacebookPageProp)
+	twitter, _ := c.GetPropString(TwitterHandleProp)
+	scopeNote, _ := c.GetPropString(ScopeNoteProp)
+	shortLabel, _ := c.GetPropString(ShortLabelProp)
+	figiCode, _ := c.GetPropString(FigiCodeProp)
+	// organisation
+	properName, _ := c.GetPropString(ProperNameProp)
+	shortName, _ := c.GetPropString(ShortNameProp)
+	tradeNames, _ := c.GetPropStringSlice(TradeNamesProp)
+	formerNames, _ := c.GetPropStringSlice(FormerNamesProp)
+	countryCode, _ := c.GetPropString(CountryCodeProp)
+	countryOfRisk, _ := c.GetPropString(CountryOfRiskProp)
+	countryOfOperations, _ := c.GetPropString(CountryOfOperationsProp)
+	countryOfIncorporation, _ := c.GetPropString(CountryOfIncorporationProp)
+	postalCode, _ := c.GetPropString(PostalCodeProp)
+	yearFounded, _ := c.GetPropInt(YearFoundedProp)
 	concept := SourceConcept{
 		UUID:                         c.UUID,
 		PrefLabel:                    prefLabel,
@@ -74,14 +94,14 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		LastModifiedEpoch:            c.LastModifiedEpoch,
 		Aliases:                      aliases,
 		ParentUUIDs:                  c.ParentUUIDs,
-		Strapline:                    c.Strapline,
-		DescriptionXML:               c.DescriptionXML,
-		ImageURL:                     c.ImageURL,
-		EmailAddress:                 c.EmailAddress,
-		FacebookPage:                 c.FacebookPage,
-		TwitterHandle:                c.TwitterHandle,
-		ScopeNote:                    c.ScopeNote,
-		ShortLabel:                   c.ShortLabel,
+		Strapline:                    strapline,
+		DescriptionXML:               description,
+		ImageURL:                     imageURL,
+		EmailAddress:                 email,
+		FacebookPage:                 facebookPage,
+		TwitterHandle:                twitter,
+		ScopeNote:                    scopeNote,
+		ShortLabel:                   shortLabel,
 		BroaderUUIDs:                 c.BroaderUUIDs,
 		RelatedUUIDs:                 c.RelatedUUIDs,
 		SupersededByUUIDs:            c.SupersededByUUIDs,
@@ -95,21 +115,21 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		TerminationDate:              c.TerminationDate,
 		InceptionDateEpoch:           c.InceptionDateEpoch,
 		TerminationDateEpoch:         c.TerminationDateEpoch,
-		FigiCode:                     c.FigiCode,
+		FigiCode:                     figiCode,
 		IssuedBy:                     c.IssuedBy,
-		ProperName:                   c.ProperName,
-		ShortName:                    c.ShortName,
-		TradeNames:                   c.TradeNames,
-		FormerNames:                  c.FormerNames,
-		CountryCode:                  c.CountryCode,
-		CountryOfRisk:                c.CountryOfRisk,
-		CountryOfIncorporation:       c.CountryOfIncorporation,
-		CountryOfOperations:          c.CountryOfOperations,
+		ProperName:                   properName,
+		ShortName:                    shortName,
+		TradeNames:                   tradeNames,
+		FormerNames:                  formerNames,
+		CountryCode:                  countryCode,
+		CountryOfRisk:                countryOfRisk,
+		CountryOfIncorporation:       countryOfIncorporation,
+		CountryOfOperations:          countryOfOperations,
 		CountryOfRiskUUID:            c.CountryOfRiskUUID,
 		CountryOfIncorporationUUID:   c.CountryOfIncorporationUUID,
 		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
-		PostalCode:                   c.PostalCode,
-		YearFounded:                  c.YearFounded,
+		PostalCode:                   postalCode,
+		YearFounded:                  int(yearFounded),
 		LeiCode:                      c.LeiCode,
 		ParentOrganisation:           c.ParentOrganisation,
 		NAICSIndustryClassifications: c.NAICSIndustryClassifications,
@@ -130,47 +150,47 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 	concept := NewAggregatedConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
-				PrefLabelProp: c.PrefLabel,
-				AliasesProp:   c.Aliases,
+				PrefLabelProp:              c.PrefLabel,
+				AliasesProp:                c.Aliases,
+				StraplineProp:              c.Strapline,
+				DescriptionProp:            c.DescriptionXML,
+				ImageURLProp:               c.ImageURL,
+				EmailAddressProp:           c.EmailAddress,
+				FacebookPageProp:           c.FacebookPage,
+				TwitterHandleProp:          c.TwitterHandle,
+				ScopeNoteProp:              c.ScopeNote,
+				ShortLabelProp:             c.ShortLabel,
+				FigiCodeProp:               c.FigiCode,
+				ProperNameProp:             c.ProperName,
+				ShortNameProp:              c.ShortName,
+				TradeNamesProp:             c.TradeNames,
+				FormerNamesProp:            c.FormerNames,
+				CountryCodeProp:            c.CountryCode,
+				CountryOfRiskProp:          c.CountryOfRisk,
+				CountryOfIncorporationProp: c.CountryOfIncorporation,
+				CountryOfOperationsProp:    c.CountryOfOperations,
+				PostalCodeProp:             c.PostalCode,
+				YearFoundedProp:            c.YearFounded,
 			},
 		},
-		PrefUUID:               c.PrefUUID,
-		Type:                   c.Type,
-		Strapline:              c.Strapline,
-		DescriptionXML:         c.DescriptionXML,
-		ImageURL:               c.ImageURL,
-		EmailAddress:           c.EmailAddress,
-		FacebookPage:           c.FacebookPage,
-		TwitterHandle:          c.TwitterHandle,
-		ScopeNote:              c.ScopeNote,
-		ShortLabel:             c.ShortLabel,
-		OrganisationUUID:       c.OrganisationUUID,
-		PersonUUID:             c.PersonUUID,
-		AggregatedHash:         c.AggregatedHash,
-		SourceRepresentations:  sources,
-		MembershipRoles:        c.MembershipRoles,
-		InceptionDate:          c.InceptionDate,
-		TerminationDate:        c.TerminationDate,
-		InceptionDateEpoch:     c.InceptionDateEpoch,
-		TerminationDateEpoch:   c.TerminationDateEpoch,
-		FigiCode:               c.FigiCode,
-		IssuedBy:               c.IssuedBy,
-		ProperName:             c.ProperName,
-		ShortName:              c.ShortName,
-		TradeNames:             c.TradeNames,
-		FormerNames:            c.FormerNames,
-		CountryCode:            c.CountryCode,
-		CountryOfRisk:          c.CountryOfRisk,
-		CountryOfIncorporation: c.CountryOfIncorporation,
-		CountryOfOperations:    c.CountryOfOperations,
-		PostalCode:             c.PostalCode,
-		YearFounded:            c.YearFounded,
-		LeiCode:                c.LeiCode,
-		IsDeprecated:           c.IsDeprecated,
-		ISO31661:               c.ISO31661,
-		Salutation:             c.Salutation,
-		BirthYear:              c.BirthYear,
-		IndustryIdentifier:     c.IndustryIdentifier,
+		PrefUUID:              c.PrefUUID,
+		Type:                  c.Type,
+		OrganisationUUID:      c.OrganisationUUID,
+		PersonUUID:            c.PersonUUID,
+		AggregatedHash:        c.AggregatedHash,
+		SourceRepresentations: sources,
+		MembershipRoles:       c.MembershipRoles,
+		InceptionDate:         c.InceptionDate,
+		TerminationDate:       c.TerminationDate,
+		InceptionDateEpoch:    c.InceptionDateEpoch,
+		TerminationDateEpoch:  c.TerminationDateEpoch,
+		IssuedBy:              c.IssuedBy,
+		LeiCode:               c.LeiCode,
+		IsDeprecated:          c.IsDeprecated,
+		ISO31661:              c.ISO31661,
+		Salutation:            c.Salutation,
+		BirthYear:             c.BirthYear,
+		IndustryIdentifier:    c.IndustryIdentifier,
 	}
 	return concept
 }
@@ -182,19 +202,39 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 	}
 	prefLabel, _ := c.GetPropString(PrefLabelProp)
 	aliases, _ := c.GetPropStringSlice(AliasesProp)
+	strapline, _ := c.GetPropString(StraplineProp)
+	description, _ := c.GetPropString(DescriptionProp)
+	imageURL, _ := c.GetPropString(ImageURLProp)
+	email, _ := c.GetPropString(EmailAddressProp)
+	facebookPage, _ := c.GetPropString(FacebookPageProp)
+	twitter, _ := c.GetPropString(TwitterHandleProp)
+	scopeNote, _ := c.GetPropString(ScopeNoteProp)
+	shortLabel, _ := c.GetPropString(ShortLabelProp)
+	figiCode, _ := c.GetPropString(FigiCodeProp)
+	// organisation
+	properName, _ := c.GetPropString(ProperNameProp)
+	shortName, _ := c.GetPropString(ShortNameProp)
+	tradeNames, _ := c.GetPropStringSlice(TradeNamesProp)
+	formerNames, _ := c.GetPropStringSlice(FormerNamesProp)
+	countryCode, _ := c.GetPropString(CountryCodeProp)
+	countryOfRisk, _ := c.GetPropString(CountryOfRiskProp)
+	countryOfOperations, _ := c.GetPropString(CountryOfOperationsProp)
+	countryOfIncorporation, _ := c.GetPropString(CountryOfIncorporationProp)
+	postalCode, _ := c.GetPropString(PostalCodeProp)
+	yearFounded, _ := c.GetPropInt(YearFoundedProp)
 	concept := AggregatedConcept{
 		PrefUUID:               c.PrefUUID,
 		PrefLabel:              prefLabel,
 		Type:                   c.Type,
 		Aliases:                aliases,
-		Strapline:              c.Strapline,
-		DescriptionXML:         c.DescriptionXML,
-		ImageURL:               c.ImageURL,
-		EmailAddress:           c.EmailAddress,
-		FacebookPage:           c.FacebookPage,
-		TwitterHandle:          c.TwitterHandle,
-		ScopeNote:              c.ScopeNote,
-		ShortLabel:             c.ShortLabel,
+		Strapline:              strapline,
+		DescriptionXML:         description,
+		ImageURL:               imageURL,
+		EmailAddress:           email,
+		FacebookPage:           facebookPage,
+		TwitterHandle:          twitter,
+		ScopeNote:              scopeNote,
+		ShortLabel:             shortLabel,
 		OrganisationUUID:       c.OrganisationUUID,
 		PersonUUID:             c.PersonUUID,
 		AggregatedHash:         c.AggregatedHash,
@@ -204,18 +244,18 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 		TerminationDate:        c.TerminationDate,
 		InceptionDateEpoch:     c.InceptionDateEpoch,
 		TerminationDateEpoch:   c.TerminationDateEpoch,
-		FigiCode:               c.FigiCode,
+		FigiCode:               figiCode,
 		IssuedBy:               c.IssuedBy,
-		ProperName:             c.ProperName,
-		ShortName:              c.ShortName,
-		TradeNames:             c.TradeNames,
-		FormerNames:            c.FormerNames,
-		CountryCode:            c.CountryCode,
-		CountryOfRisk:          c.CountryOfRisk,
-		CountryOfIncorporation: c.CountryOfIncorporation,
-		CountryOfOperations:    c.CountryOfOperations,
-		PostalCode:             c.PostalCode,
-		YearFounded:            c.YearFounded,
+		ProperName:             properName,
+		ShortName:              shortName,
+		TradeNames:             tradeNames,
+		FormerNames:            formerNames,
+		CountryCode:            countryCode,
+		CountryOfRisk:          countryOfRisk,
+		CountryOfIncorporation: countryOfIncorporation,
+		CountryOfOperations:    countryOfOperations,
+		PostalCode:             postalCode,
+		YearFounded:            int(yearFounded),
 		LeiCode:                c.LeiCode,
 		IsDeprecated:           c.IsDeprecated,
 		ISO31661:               c.ISO31661,

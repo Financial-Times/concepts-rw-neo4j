@@ -694,36 +694,17 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		GenericConcept: ontology.GenericConcept{
 			Properties: map[string]interface{}{},
 		},
-		DescriptionXML:       aggregatedConcept.DescriptionXML,
-		EmailAddress:         aggregatedConcept.EmailAddress,
-		FacebookPage:         aggregatedConcept.FacebookPage,
-		FigiCode:             aggregatedConcept.FigiCode,
 		Hash:                 aggregatedConcept.AggregatedHash,
-		ImageURL:             aggregatedConcept.ImageURL,
 		InceptionDate:        aggregatedConcept.InceptionDate,
 		InceptionDateEpoch:   aggregatedConcept.InceptionDateEpoch,
 		IssuedBy:             aggregatedConcept.IssuedBy,
-		ScopeNote:            aggregatedConcept.ScopeNote,
-		ShortLabel:           aggregatedConcept.ShortLabel,
-		Strapline:            aggregatedConcept.Strapline,
 		TerminationDate:      aggregatedConcept.TerminationDate,
 		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
-		TwitterHandle:        aggregatedConcept.TwitterHandle,
 		Type:                 aggregatedConcept.Type,
 		//TODO deprecated event?
 		IsDeprecated: aggregatedConcept.IsDeprecated,
 		// Organisations
-		ProperName:             aggregatedConcept.ProperName,
-		ShortName:              aggregatedConcept.ShortName,
-		TradeNames:             aggregatedConcept.TradeNames,
-		FormerNames:            aggregatedConcept.FormerNames,
-		CountryCode:            aggregatedConcept.CountryCode,
-		CountryOfIncorporation: aggregatedConcept.CountryOfIncorporation,
-		CountryOfRisk:          aggregatedConcept.CountryOfRisk,
-		CountryOfOperations:    aggregatedConcept.CountryOfOperations,
-		PostalCode:             aggregatedConcept.PostalCode,
-		YearFounded:            aggregatedConcept.YearFounded,
-		LeiCode:                aggregatedConcept.LeiCode,
+		LeiCode: aggregatedConcept.LeiCode,
 		// Person
 		Salutation: aggregatedConcept.Salutation,
 		BirthYear:  aggregatedConcept.BirthYear,
@@ -736,6 +717,25 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 	propertiesToCopy := [...]string{
 		ontology.PrefLabelProp,
 		ontology.AliasesProp,
+		ontology.StraplineProp,
+		ontology.DescriptionProp,
+		ontology.ImageURLProp,
+		ontology.EmailAddressProp,
+		ontology.FacebookPageProp,
+		ontology.FigiCodeProp,
+		ontology.ScopeNoteProp,
+		ontology.ShortLabelProp,
+		ontology.TwitterHandleProp,
+		ontology.ProperNameProp,
+		ontology.ShortNameProp,
+		ontology.TradeNamesProp,
+		ontology.FormerNamesProp,
+		ontology.CountryCodeProp,
+		ontology.CountryOfRiskProp,
+		ontology.CountryOfOperationsProp,
+		ontology.CountryOfIncorporationProp,
+		ontology.PostalCodeProp,
+		ontology.YearFoundedProp,
 	}
 	for _, label := range propertiesToCopy {
 		concept.Properties[label] = aggregatedConcept.Properties[label]
@@ -857,7 +857,6 @@ func createNodeQueries(concept ontology.NewSourceConcept, prefUUID string, uuid 
 						`,
 			Parameters: neoism.Props{
 				"fiUUID":  concept.UUID,
-				"fiCode":  concept.FigiCode,
 				"orgUUID": concept.IssuedBy,
 			},
 		}
@@ -1050,9 +1049,29 @@ func getSourceData(sourceConcepts []ontology.NewSourceConcept) map[string]string
 func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 	//common props
+	// TODO: Check if props are empty not just that they exist
 	propertiesToStore := map[string]string{
-		ontology.PrefLabelProp: "prefLabel", // TODO: Check if "prefLabel" is empty string
-		ontology.AliasesProp:   "aliases",   // TODO: Check if "aliases" is not empty slice
+		ontology.PrefLabelProp:              "prefLabel",              // string
+		ontology.AliasesProp:                "aliases",                // []string
+		ontology.StraplineProp:              "strapline",              // string
+		ontology.DescriptionProp:            "descriptionXML",         // string
+		ontology.ImageURLProp:               "imageUrl",               // string
+		ontology.EmailAddressProp:           "emailAddress",           // string
+		ontology.FacebookPageProp:           "facebookPage",           // string
+		ontology.FigiCodeProp:               "figiCode",               // string
+		ontology.TwitterHandleProp:          "twitterHandle",          // string
+		ontology.ScopeNoteProp:              "scopeNote",              // string
+		ontology.ShortLabelProp:             "shortLabel",             // string
+		ontology.ProperNameProp:             "properName",             // string
+		ontology.ShortNameProp:              "shortName",              // string
+		ontology.FormerNamesProp:            "formerNames",            // []string
+		ontology.TradeNamesProp:             "tradeNames",             // []string
+		ontology.CountryCodeProp:            "countryCode",            // string
+		ontology.CountryOfRiskProp:          "countryOfRisk",          // string
+		ontology.CountryOfOperationsProp:    "countryOfOperations",    // string
+		ontology.CountryOfIncorporationProp: "countryOfIncorporation", // string
+		ontology.PostalCodeProp:             "postalCode",             // string
+		ontology.YearFoundedProp:            "yearFounded",            // int
 	}
 	for label, name := range propertiesToStore {
 		val, has := concept.GetProp(label)
@@ -1063,10 +1082,6 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	}
 
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
-	if concept.FigiCode != "" {
-		nodeProps["figiCode"] = concept.FigiCode
-	}
-
 	if concept.IsDeprecated {
 		nodeProps["isDeprecated"] = true
 	}
@@ -1082,63 +1097,6 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	nodeProps["prefUUID"] = id
 	nodeProps["aggregateHash"] = concept.Hash
 
-	if concept.EmailAddress != "" {
-		nodeProps["emailAddress"] = concept.EmailAddress
-	}
-	if concept.FacebookPage != "" {
-		nodeProps["facebookPage"] = concept.FacebookPage
-	}
-	if concept.TwitterHandle != "" {
-		nodeProps["twitterHandle"] = concept.TwitterHandle
-	}
-	if concept.ScopeNote != "" {
-		nodeProps["scopeNote"] = concept.ScopeNote
-	}
-	if concept.ShortLabel != "" {
-		nodeProps["shortLabel"] = concept.ShortLabel
-	}
-	if concept.DescriptionXML != "" {
-		nodeProps["descriptionXML"] = concept.DescriptionXML
-	}
-	if concept.ImageURL != "" {
-		nodeProps["imageUrl"] = concept.ImageURL
-	}
-	if concept.Strapline != "" {
-		nodeProps["strapline"] = concept.Strapline
-	}
-	if concept.FigiCode != "" {
-		nodeProps["figiCode"] = concept.FigiCode
-	}
-	if concept.ProperName != "" {
-		nodeProps["properName"] = concept.ProperName
-	}
-	if concept.ShortName != "" {
-		nodeProps["shortName"] = concept.ShortName
-	}
-	if len(concept.FormerNames) > 0 {
-		nodeProps["formerNames"] = concept.FormerNames
-	}
-	if len(concept.TradeNames) > 0 {
-		nodeProps["tradeNames"] = concept.TradeNames
-	}
-	if concept.CountryCode != "" {
-		nodeProps["countryCode"] = concept.CountryCode
-	}
-	if concept.CountryOfIncorporation != "" {
-		nodeProps["countryOfIncorporation"] = concept.CountryOfIncorporation
-	}
-	if concept.CountryOfRisk != "" {
-		nodeProps["countryOfRisk"] = concept.CountryOfRisk
-	}
-	if concept.CountryOfOperations != "" {
-		nodeProps["countryOfOperations"] = concept.CountryOfOperations
-	}
-	if concept.PostalCode != "" {
-		nodeProps["postalCode"] = concept.PostalCode
-	}
-	if concept.YearFounded > 0 {
-		nodeProps["yearFounded"] = concept.YearFounded
-	}
 	if concept.LeiCode != "" {
 		nodeProps["leiCode"] = concept.LeiCode
 	}
@@ -1362,6 +1320,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	var cleanSources []ontology.NewSourceConcept
 	propertiesToKeep := [...]string{
 		ontology.PrefLabelProp,
+		ontology.FigiCodeProp,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewSourceConcept{
@@ -1382,7 +1341,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			HasFocusUUIDs:     source.HasFocusUUIDs,
 			MembershipRoles:   source.MembershipRoles,
 			IssuedBy:          source.IssuedBy,
-			FigiCode:          source.FigiCode,
 			IsDeprecated:      source.IsDeprecated,
 			// Organisations
 			ParentOrganisation:           source.ParentOrganisation,

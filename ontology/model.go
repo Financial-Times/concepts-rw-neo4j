@@ -158,8 +158,28 @@ var authorities = []string{
 }
 
 const (
-	PrefLabelProp = "prefLabel"
-	AliasesProp   = "aliases"
+	PrefLabelProp     = "prefLabel"
+	AliasesProp       = "aliases"
+	StraplineProp     = "strapline"
+	DescriptionProp   = "descriptionXML"
+	ImageURLProp      = "_imageUrl"
+	EmailAddressProp  = "emailAddress"
+	FacebookPageProp  = "facebookPage"
+	TwitterHandleProp = "twitterHandle"
+	ScopeNoteProp     = "scopeNote"
+	ShortLabelProp    = "shortLabel"
+	FigiCodeProp      = "figiCode"
+	// Organisations
+	ProperNameProp             = "properName"
+	ShortNameProp              = "shortName"
+	TradeNamesProp             = "tradeNames"
+	FormerNamesProp            = "formerNames"
+	CountryCodeProp            = "countryCode"
+	CountryOfRiskProp          = "countryOfRisk"
+	CountryOfIncorporationProp = "countryOfIncorporation"
+	CountryOfOperationsProp    = "countryOfOperations"
+	PostalCodeProp             = "postalCode"
+	YearFoundedProp            = "yearFounded"
 )
 
 type GenericConcept struct {
@@ -201,18 +221,34 @@ func (c GenericConcept) GetPropStringSlice(label string) ([]string, bool) {
 	return prop, true
 }
 
+func (c GenericConcept) GetPropInt(label string) (int64, bool) {
+	val, has := c.GetProp(label)
+	if !has {
+		return 0, false
+	}
+	prop, is := val.(int64)
+	if !is {
+		return 0, false
+	}
+	return prop, true
+}
+
+func (c GenericConcept) GetPropBool(label string) (bool, bool) {
+	val, has := c.GetProp(label)
+	if !has {
+		return false, false
+	}
+	prop, is := val.(bool)
+	if !is {
+		return false, false
+	}
+	return prop, true
+}
+
 type NewAggregatedConcept struct {
 	GenericConcept
 	PrefUUID              string             `json:"prefUUID,omitempty"`
 	Type                  string             `json:"type,omitempty"`
-	Strapline             string             `json:"strapline,omitempty"`
-	DescriptionXML        string             `json:"descriptionXML,omitempty"`
-	ImageURL              string             `json:"_imageUrl,omitempty"`
-	EmailAddress          string             `json:"emailAddress,omitempty"`
-	FacebookPage          string             `json:"facebookPage,omitempty"`
-	TwitterHandle         string             `json:"twitterHandle,omitempty"`
-	ScopeNote             string             `json:"scopeNote,omitempty"`
-	ShortLabel            string             `json:"shortLabel,omitempty"`
 	OrganisationUUID      string             `json:"organisationUUID,omitempty"`
 	PersonUUID            string             `json:"personUUID,omitempty"`
 	AggregatedHash        string             `json:"aggregateHash,omitempty"`
@@ -222,21 +258,10 @@ type NewAggregatedConcept struct {
 	TerminationDate       string             `json:"terminationDate,omitempty"`
 	InceptionDateEpoch    int64              `json:"inceptionDateEpoch,omitempty"`
 	TerminationDateEpoch  int64              `json:"terminationDateEpoch,omitempty"`
-	FigiCode              string             `json:"figiCode,omitempty"`
 	IssuedBy              string             `json:"issuedBy,omitempty"`
-	// Organisations
-	ProperName             string   `json:"properName,omitempty"`
-	ShortName              string   `json:"shortName,omitempty"`
-	TradeNames             []string `json:"tradeNames,omitempty"`
-	FormerNames            []string `json:"formerNames,omitempty"`
-	CountryCode            string   `json:"countryCode,omitempty"`
-	CountryOfRisk          string   `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations    string   `json:"countryOfOperations,omitempty"`
-	PostalCode             string   `json:"postalCode,omitempty"`
-	YearFounded            int      `json:"yearFounded,omitempty"`
-	LeiCode                string   `json:"leiCode,omitempty"`
-	IsDeprecated           bool     `json:"isDeprecated,omitempty"`
+
+	LeiCode      string `json:"leiCode,omitempty"`
+	IsDeprecated bool   `json:"isDeprecated,omitempty"`
 	// Location
 	ISO31661 string `json:"iso31661,omitempty"`
 	// Person
@@ -255,14 +280,6 @@ type NewSourceConcept struct {
 	AuthorityValue       string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
 	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
-	Strapline            string           `json:"strapline,omitempty"`
-	DescriptionXML       string           `json:"descriptionXML,omitempty"`
-	ImageURL             string           `json:"_imageUrl,omitempty"`
-	EmailAddress         string           `json:"emailAddress,omitempty"`
-	FacebookPage         string           `json:"facebookPage,omitempty"`
-	TwitterHandle        string           `json:"twitterHandle,omitempty"`
-	ScopeNote            string           `json:"scopeNote,omitempty"`
-	ShortLabel           string           `json:"shortLabel,omitempty"`
 	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
 	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
@@ -276,22 +293,11 @@ type NewSourceConcept struct {
 	TerminationDate      string           `json:"terminationDate,omitempty"`
 	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
 	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
-	FigiCode             string           `json:"figiCode,omitempty"`
 	IssuedBy             string           `json:"issuedBy,omitempty"`
 	// Organisations
-	ProperName                   string                        `json:"properName,omitempty"`
-	ShortName                    string                        `json:"shortName,omitempty"`
-	TradeNames                   []string                      `json:"tradeNames,omitempty"`
-	FormerNames                  []string                      `json:"formerNames,omitempty"`
-	CountryCode                  string                        `json:"countryCode,omitempty"`
-	CountryOfRisk                string                        `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation       string                        `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations          string                        `json:"countryOfOperations,omitempty"`
 	CountryOfRiskUUID            string                        `json:"countryOfRiskUUID,omitempty"`
 	CountryOfIncorporationUUID   string                        `json:"countryOfIncorporationUUID,omitempty"`
 	CountryOfOperationsUUID      string                        `json:"countryOfOperationsUUID,omitempty"`
-	PostalCode                   string                        `json:"postalCode,omitempty"`
-	YearFounded                  int                           `json:"yearFounded,omitempty"`
 	LeiCode                      string                        `json:"leiCode,omitempty"`
 	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
 	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
