@@ -20,7 +20,11 @@ func TransformFromRelationships(relations []Relationship, label string) []string
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations := []Relationship{}
 	relations = append(relations, TransformToRelationships(BroaderRelation, c.BroaderUUIDs))
-	relations = append(relations, TransformToRelationships(ParentRelation, c.BroaderUUIDs))
+	relations = append(relations, TransformToRelationships(ParentRelation, c.ParentUUIDs))
+	relations = append(relations, TransformToRelationships(ImpliedByRelation, c.ImpliedByUUIDs))
+	relations = append(relations, TransformToRelationships(HasFocusRelation, c.HasFocusUUIDs))
+	relations = append(relations, TransformToRelationships(IsRelatedRelation, c.RelatedUUIDs))
+	relations = append(relations, TransformToRelationships(SupersededByRelation, c.SupersededByUUIDs))
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -59,10 +63,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
 		LastModifiedEpoch:            c.LastModifiedEpoch,
-		RelatedUUIDs:                 c.RelatedUUIDs,
-		SupersededByUUIDs:            c.SupersededByUUIDs,
-		ImpliedByUUIDs:               c.ImpliedByUUIDs,
-		HasFocusUUIDs:                c.HasFocusUUIDs,
 		OrganisationUUID:             c.OrganisationUUID,
 		PersonUUID:                   c.PersonUUID,
 		Hash:                         c.Hash,
@@ -128,10 +128,10 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		ScopeNote:                    scopeNote,
 		ShortLabel:                   shortLabel,
 		BroaderUUIDs:                 TransformFromRelationships(c.Relations, BroaderRelation),
-		RelatedUUIDs:                 c.RelatedUUIDs,
-		SupersededByUUIDs:            c.SupersededByUUIDs,
-		ImpliedByUUIDs:               c.ImpliedByUUIDs,
-		HasFocusUUIDs:                c.HasFocusUUIDs,
+		RelatedUUIDs:                 TransformFromRelationships(c.Relations, IsRelatedRelation),
+		SupersededByUUIDs:            TransformFromRelationships(c.Relations, SupersededByRelation),
+		ImpliedByUUIDs:               TransformFromRelationships(c.Relations, ImpliedByRelation),
+		HasFocusUUIDs:                TransformFromRelationships(c.Relations, HasFocusRelation),
 		OrganisationUUID:             c.OrganisationUUID,
 		PersonUUID:                   c.PersonUUID,
 		Hash:                         c.Hash,

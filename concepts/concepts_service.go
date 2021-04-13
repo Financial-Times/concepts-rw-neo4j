@@ -126,7 +126,7 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 
 	var sourceConcepts []ontology.NewSourceConcept
 	for _, srcConcept := range results[0].SourceRepresentations {
-		concept, err := srcConcept.ТоSourceConcept()
+		concept, err := srcConcept.ToSourceConcept()
 		if err != nil {
 			logEntry.WithError(err).Error("Returned source concept had no recognized type")
 			return ontology.NewAggregatedConcept{}, err
@@ -762,28 +762,30 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				Relationship: "HAS_PARENT",
 				ShouldCreate: true,
 			},
+			ontology.ImpliedByRelation: {
+				Relationship: "IMPLIED_BY",
+				ShouldCreate: false,
+			},
+			ontology.HasFocusRelation: {
+				Relationship: "HAS_FOCUS",
+				ShouldCreate: false,
+			},
+			ontology.IsRelatedRelation: {
+				Relationship: "IS_RELATED_TO",
+				ShouldCreate: false,
+			},
+			ontology.SupersededByRelation: {
+				Relationship: "SUPERSEDED_BY",
+				ShouldCreate: false,
+			},
 		}
 		for _, relation := range sourceConcept.Relations {
 			setup, has := relationMap[relation.Label]
 			if !has {
 				continue
 			}
-			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, relation.UUIDs, setup.Relationship, setup.ShouldCreate)...)
-		}
-		if len(sourceConcept.RelatedUUIDs) > 0 {
-			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", false)...)
-		}
-
-		if len(sourceConcept.SupersededByUUIDs) > 0 {
-			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", false)...)
-		}
-
-		if len(sourceConcept.ImpliedByUUIDs) > 0 {
-			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", false)...)
-		}
-
-		if len(sourceConcept.HasFocusUUIDs) > 0 {
-			queryBatch = append(queryBatch, addRelationship(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", false)...)
+			q := addRelationship(sourceConcept.UUID, relation.UUIDs, setup.Relationship, setup.ShouldCreate)
+			queryBatch = append(queryBatch, q...)
 		}
 	}
 	return queryBatch
@@ -1245,8 +1247,12 @@ func filterSlice(a []string) []string {
 func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 
 	relationsToSort := map[string]bool{
-		ontology.BroaderRelation: true,
-		ontology.ParentRelation:  true,
+		ontology.BroaderRelation:      true,
+		ontology.ParentRelation:       true,
+		ontology.ImpliedByRelation:    true,
+		ontology.HasFocusRelation:     true,
+		ontology.IsRelatedRelation:    true,
+		ontology.SupersededByRelation: true,
 	}
 	for j := range c.SourceRepresentations {
 		source := &c.SourceRepresentations[j]
@@ -1266,18 +1272,6 @@ func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregated
 		}
 		sort.SliceStable(source.MembershipRoles, func(k, l int) bool {
 			return source.MembershipRoles[k].RoleUUID < source.MembershipRoles[l].RoleUUID
-		})
-		sort.SliceStable(source.RelatedUUIDs, func(k, l int) bool {
-			return source.RelatedUUIDs[k] < source.RelatedUUIDs[l]
-		})
-		sort.SliceStable(source.SupersededByUUIDs, func(k, l int) bool {
-			return source.SupersededByUUIDs[k] < source.SupersededByUUIDs[l]
-		})
-		sort.SliceStable(source.ImpliedByUUIDs, func(k, l int) bool {
-			return source.ImpliedByUUIDs[k] < source.ImpliedByUUIDs[l]
-		})
-		sort.SliceStable(source.HasFocusUUIDs, func(k, l int) bool {
-			return source.HasFocusUUIDs[k] < source.HasFocusUUIDs[l]
 		})
 		sort.SliceStable(source.NAICSIndustryClassifications, func(k, l int) bool {
 			return source.NAICSIndustryClassifications[k].Rank < source.NAICSIndustryClassifications[l].Rank
@@ -1344,8 +1338,12 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 		ontology.IsDeprecatedProp,
 	}
 	relationsToKeep := map[string]bool{
-		ontology.BroaderRelation: true,
-		ontology.ParentRelation:  true,
+		ontology.BroaderRelation:      true,
+		ontology.ParentRelation:       true,
+		ontology.ImpliedByRelation:    true,
+		ontology.HasFocusRelation:     true,
+		ontology.IsRelatedRelation:    true,
+		ontology.SupersededByRelation: true,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanProps := map[string]interface{}{}
@@ -1365,18 +1363,14 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 				Properties: cleanProps,
 				Relations:  cleanRelations,
 			},
-			UUID:              source.UUID,
-			Type:              source.Type,
-			Authority:         source.Authority,
-			AuthorityValue:    source.AuthorityValue,
-			OrganisationUUID:  source.OrganisationUUID,
-			PersonUUID:        source.PersonUUID,
-			RelatedUUIDs:      source.RelatedUUIDs,
-			SupersededByUUIDs: source.SupersededByUUIDs,
-			ImpliedByUUIDs:    source.ImpliedByUUIDs,
-			HasFocusUUIDs:     source.HasFocusUUIDs,
-			MembershipRoles:   source.MembershipRoles,
-			IssuedBy:          source.IssuedBy,
+			UUID:             source.UUID,
+			Type:             source.Type,
+			Authority:        source.Authority,
+			AuthorityValue:   source.AuthorityValue,
+			OrganisationUUID: source.OrganisationUUID,
+			PersonUUID:       source.PersonUUID,
+			MembershipRoles:  source.MembershipRoles,
+			IssuedBy:         source.IssuedBy,
 			// Organisations
 			ParentOrganisation:           source.ParentOrganisation,
 			CountryOfOperationsUUID:      source.CountryOfOperationsUUID,

@@ -190,7 +190,7 @@ type neoConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
+func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 	conceptType, err := mapper.MostSpecificType(c.Types)
 	if err != nil {
 		return ontology.NewSourceConcept{}, err
@@ -198,6 +198,10 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 	var relations []ontology.Relationship
 	relations = append(relations, ontology.TransformToRelationships(ontology.BroaderRelation, filterSlice(c.BroaderUUIDs)))
 	relations = append(relations, ontology.TransformToRelationships(ontology.ParentRelation, filterSlice(c.ParentUUIDs)))
+	relations = append(relations, ontology.TransformToRelationships(ontology.ImpliedByRelation, filterSlice(c.ImpliedByUUIDs)))
+	relations = append(relations, ontology.TransformToRelationships(ontology.HasFocusRelation, filterSlice(c.HasFocusUUIDs)))
+	relations = append(relations, ontology.TransformToRelationships(ontology.SupersededByRelation, filterSlice(c.SupersededByUUIDs)))
+	relations = append(relations, ontology.TransformToRelationships(ontology.IsRelatedRelation, filterSlice(c.RelatedUUIDs)))
 
 	return ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
@@ -210,7 +214,6 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 		},
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
-		SupersededByUUIDs:            filterSlice(c.SupersededByUUIDs),
 		IssuedBy:                     c.IssuedBy,
 		LastModifiedEpoch:            c.LastModifiedEpoch,
 		MembershipRoles:              cleanMembershipRoles(c.MembershipRoles),
@@ -219,9 +222,6 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 		CountryOfRiskUUID:            c.CountryOfRiskUUID,
 		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
 		PersonUUID:                   c.PersonUUID,
-		RelatedUUIDs:                 filterSlice(c.RelatedUUIDs),
-		ImpliedByUUIDs:               filterSlice(c.ImpliedByUUIDs),
-		HasFocusUUIDs:                filterSlice(c.HasFocusUUIDs),
 		NAICSIndustryClassifications: cleanNAICS(c.NAICSIndustryClassifications),
 		Type:                         conceptType,
 		UUID:                         c.UUID,

@@ -187,8 +187,12 @@ const (
 	BirthYearProp              = "birthYear"
 	IndustryIdentifierProp     = "industryIdentifier"
 
-	BroaderRelation = "HAS_BROADER"
-	ParentRelation  = "HAS_PARENT"
+	BroaderRelation      = "HAS_BROADER"
+	ParentRelation       = "HAS_PARENT"
+	ImpliedByRelation    = "IMPLIED_BY"
+	HasFocusRelation     = "HAS_FOCUS"
+	IsRelatedRelation    = "IS_RELATED_TO"
+	SupersededByRelation = "SUPERSEDED_BY"
 )
 
 type GenericConcept struct {
@@ -279,10 +283,6 @@ type NewSourceConcept struct {
 	Authority            string           `json:"authority,omitempty"`
 	AuthorityValue       string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
-	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
-	ImpliedByUUIDs       []string         `json:"impliedByUUIDs,omitempty"`
-	HasFocusUUIDs        []string         `json:"hasFocusUUIDs,omitempty"`
 	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
 	PersonUUID           string           `json:"personUUID,omitempty"`
 	Hash                 string           `json:"hash,omitempty"`
