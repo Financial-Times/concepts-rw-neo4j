@@ -90,7 +90,8 @@ var ConceptNotFoundErr = errors.New("concept not found")
 
 //Read - read service
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
-	result, err := s.read(uuid, transID)
+	concept, err := s.read(uuid, transID)
+	result := ontology.TransformToOldAggregateConcept(concept)
 	if err == nil {
 		return result, true, nil
 	}
@@ -100,7 +101,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 	return result, false, err
 }
 
-func (s *ConceptService) read(uuid string, transID string) (ontology.AggregatedConcept, error) {
+func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, error) {
 	logEntry := logger.WithTransactionID(transID).WithUUID(uuid)
 
 	var results []neoAggregatedConcept
@@ -109,33 +110,33 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.AggregatedC
 	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		logEntry.WithError(err).Error("Error executing neo4j read query")
-		return ontology.AggregatedConcept{}, err
+		return ontology.NewAggregatedConcept{}, err
 	}
 
 	if len(results) == 0 {
 		logEntry.Info("Concept not found in db")
-		return ontology.AggregatedConcept{}, ConceptNotFoundErr
+		return ontology.NewAggregatedConcept{}, ConceptNotFoundErr
 	}
 
-	aggregatedConcept, err := results[0].Normalized()
+	aggregatedConcept, err := results[0].ToAggregateConcept()
 	if err != nil {
 		logEntry.WithError(err).Error("Returned concept had no recognized type")
-		return ontology.AggregatedConcept{}, err
+		return ontology.NewAggregatedConcept{}, err
 	}
 
-	var sourceConcepts []ontology.SourceConcept
+	var sourceConcepts []ontology.NewSourceConcept
 	for _, srcConcept := range results[0].SourceRepresentations {
-		concept, err := srcConcept.Normalize()
+		concept, err := srcConcept.ТоSourceConcept()
 		if err != nil {
 			logEntry.WithError(err).Error("Returned source concept had no recognized type")
-			return ontology.AggregatedConcept{}, err
+			return ontology.NewAggregatedConcept{}, err
 		}
 		sourceConcepts = append(sourceConcepts, concept)
 	}
 
 	aggregatedConcept.SourceRepresentations = sourceConcepts
 	logEntry.Debugf("Returned concept is %v", aggregatedConcept)
-	return cleanConcept(aggregatedConcept), nil
+	return sortSourceRelations(aggregatedConcept), nil
 }
 
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -169,7 +170,7 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite ontology.Agg
 		return ConceptChanges{}, err
 	}
 	exists := true
-	existingConcept, err := s.read(aggregatedConceptToWrite.PrefUUID, tid)
+	iExistingConcept, _, err := s.Read(aggregatedConceptToWrite.PrefUUID, tid)
 	if err != nil {
 		if !errors.Is(err, ConceptNotFoundErr) {
 			logEntry.WithError(err).Error("Read request for existing concordance resulted in error")
@@ -177,7 +178,7 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite ontology.Agg
 		}
 		exists = false
 	}
-
+	existingConcept := iExistingConcept.(ontology.AggregatedConcept)
 	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(ontology.AggregatedConcept)
 
 	updateRecord := ConceptChanges{}
@@ -1260,6 +1261,45 @@ func filterSlice(a []string) []string {
 	return a
 }
 
+func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
+	for j := range c.SourceRepresentations {
+		source := &c.SourceRepresentations[j]
+		source.LastModifiedEpoch = 0
+		for i := range c.SourceRepresentations[j].MembershipRoles {
+			source.MembershipRoles[i].InceptionDateEpoch = 0
+			source.MembershipRoles[i].TerminationDateEpoch = 0
+		}
+		sort.SliceStable(source.MembershipRoles, func(k, l int) bool {
+			return source.MembershipRoles[k].RoleUUID < source.MembershipRoles[l].RoleUUID
+		})
+		sort.SliceStable(source.BroaderUUIDs, func(k, l int) bool {
+			return source.BroaderUUIDs[k] < source.BroaderUUIDs[l]
+		})
+		sort.SliceStable(source.RelatedUUIDs, func(k, l int) bool {
+			return source.RelatedUUIDs[k] < source.RelatedUUIDs[l]
+		})
+		sort.SliceStable(source.SupersededByUUIDs, func(k, l int) bool {
+			return source.SupersededByUUIDs[k] < source.SupersededByUUIDs[l]
+		})
+		sort.SliceStable(source.ImpliedByUUIDs, func(k, l int) bool {
+			return source.ImpliedByUUIDs[k] < source.ImpliedByUUIDs[l]
+		})
+		sort.SliceStable(source.HasFocusUUIDs, func(k, l int) bool {
+			return source.HasFocusUUIDs[k] < source.HasFocusUUIDs[l]
+		})
+		sort.SliceStable(source.NAICSIndustryClassifications, func(k, l int) bool {
+			return source.NAICSIndustryClassifications[k].Rank < source.NAICSIndustryClassifications[l].Rank
+		})
+	}
+	for i := range c.MembershipRoles {
+		c.MembershipRoles[i].InceptionDateEpoch = 0
+		c.MembershipRoles[i].TerminationDateEpoch = 0
+	}
+	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
+		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
+	})
+	return c
+}
 func cleanConcept(c ontology.AggregatedConcept) ontology.AggregatedConcept {
 	for j := range c.SourceRepresentations {
 		c.SourceRepresentations[j].LastModifiedEpoch = 0

@@ -81,12 +81,12 @@ type neoAggregatedConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (c neoAggregatedConcept) Normalized() (ontology.AggregatedConcept, error) {
+func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcept, error) {
 	typeName, err := mapper.MostSpecificType(c.Types)
 	if err != nil {
-		return ontology.AggregatedConcept{}, err
+		return ontology.NewAggregatedConcept{}, err
 	}
-	return ontology.AggregatedConcept{
+	return ontology.NewAggregatedConcept{
 		AggregatedHash:   c.AggregateHash,
 		Aliases:          c.Aliases,
 		DescriptionXML:   c.DescriptionXML,
@@ -189,13 +189,13 @@ type neoConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (c neoConcept) Normalize() (ontology.SourceConcept, error) {
+func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 	conceptType, err := mapper.MostSpecificType(c.Types)
 	if err != nil {
-		return ontology.SourceConcept{}, err
+		return ontology.NewSourceConcept{}, err
 	}
 
-	return ontology.SourceConcept{
+	return ontology.NewSourceConcept{
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
 		BroaderUUIDs:                 filterSlice(c.BroaderUUIDs),
