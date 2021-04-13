@@ -157,6 +157,10 @@ var authorities = []string{
 	"NAICS",
 }
 
+const (
+	PrefLabelProp = "prefLabel"
+)
+
 type GenericConcept struct {
 	Properties map[string]interface{} `json:"properties"`
 
@@ -167,10 +171,26 @@ type GenericConcept struct {
 	} `json:"relationships"`
 }
 
+func (c GenericConcept) GetProp(label string) (interface{}, bool) {
+	val, has := c.Properties[label]
+	return val, has
+}
+
+func (c GenericConcept) GetPropString(label string) (string, bool) {
+	val, has := c.GetProp(label)
+	if !has {
+		return "", false
+	}
+	prop, is := val.(string)
+	if !is {
+		return "", false
+	}
+	return prop, true
+}
+
 type NewAggregatedConcept struct {
 	GenericConcept
 	PrefUUID              string             `json:"prefUUID,omitempty"`
-	PrefLabel             string             `json:"prefLabel,omitempty"`
 	Type                  string             `json:"type,omitempty"`
 	Aliases               []string           `json:"aliases,omitempty"`
 	Strapline             string             `json:"strapline,omitempty"`
@@ -218,7 +238,6 @@ type NewAggregatedConcept struct {
 type NewSourceConcept struct {
 	GenericConcept
 	UUID                 string           `json:"uuid,omitempty"`
-	PrefLabel            string           `json:"prefLabel,omitempty"`
 	Type                 string           `json:"type,omitempty"`
 	Authority            string           `json:"authority,omitempty"`
 	AuthorityValue       string           `json:"authorityValue,omitempty"`

@@ -404,7 +404,8 @@ func (s *ConceptService) handleNewConcept(tid string, aggregatedConceptToWrite o
 }
 
 func validateObject(aggConcept ontology.NewAggregatedConcept) error {
-	if aggConcept.PrefLabel == "" {
+	prefLabel, ok := aggConcept.GetPropString(ontology.PrefLabelProp)
+	if !ok || prefLabel == "" {
 		return formatError("prefLabel", aggConcept.PrefUUID)
 	}
 	if _, ok := constraintMap[aggConcept.Type]; !ok {
@@ -690,6 +691,9 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
 	// Create a sourceConcept from the canonical information - WITH NO UUID
 	concept := ontology.NewSourceConcept{
+		GenericConcept: ontology.GenericConcept{
+			Properties: map[string]interface{}{},
+		},
 		Aliases:              aggregatedConcept.Aliases,
 		DescriptionXML:       aggregatedConcept.DescriptionXML,
 		EmailAddress:         aggregatedConcept.EmailAddress,
@@ -700,7 +704,6 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		InceptionDate:        aggregatedConcept.InceptionDate,
 		InceptionDateEpoch:   aggregatedConcept.InceptionDateEpoch,
 		IssuedBy:             aggregatedConcept.IssuedBy,
-		PrefLabel:            aggregatedConcept.PrefLabel,
 		ScopeNote:            aggregatedConcept.ScopeNote,
 		ShortLabel:           aggregatedConcept.ShortLabel,
 		Strapline:            aggregatedConcept.Strapline,
@@ -731,6 +734,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		IndustryIdentifier: aggregatedConcept.IndustryIdentifier,
 	}
 
+	propertiesToCopy := [...]string{ontology.PrefLabelProp}
+	for _, label := range propertiesToCopy {
+		concept.Properties[label] = aggregatedConcept.Properties[label]
+	}
 	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
 
 	// Repopulate
@@ -1041,9 +1048,17 @@ func getSourceData(sourceConcepts []ontology.NewSourceConcept) map[string]string
 func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 	//common props
-	if concept.PrefLabel != "" {
-		nodeProps["prefLabel"] = concept.PrefLabel
+	propertiesToStore := map[string]string{
+		ontology.PrefLabelProp: "prefLabel",
 	}
+	for label, name := range propertiesToStore {
+		val, has := concept.GetProp(label)
+		if !has {
+			continue
+		}
+		nodeProps[name] = val
+	}
+
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 	if concept.FigiCode != "" {
 		nodeProps["figiCode"] = concept.FigiCode
@@ -1345,10 +1360,15 @@ func cleanHash(c ontology.AggregatedConcept) ontology.AggregatedConcept {
 
 func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	var cleanSources []ontology.NewSourceConcept
+	propertiesToKeep := [...]string{
+		ontology.PrefLabelProp,
+	}
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewSourceConcept{
+			GenericConcept: ontology.GenericConcept{
+				Properties: map[string]interface{}{},
+			},
 			UUID:              source.UUID,
-			PrefLabel:         source.PrefLabel,
 			Type:              source.Type,
 			Authority:         source.Authority,
 			AuthorityValue:    source.AuthorityValue,
@@ -1370,6 +1390,9 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			CountryOfIncorporationUUID:   source.CountryOfIncorporationUUID,
 			CountryOfRiskUUID:            source.CountryOfRiskUUID,
 			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
+		}
+		for _, label := range propertiesToKeep {
+			cleanConcept.Properties[label] = source.Properties[label]
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

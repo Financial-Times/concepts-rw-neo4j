@@ -2,9 +2,12 @@ package ontology
 
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	concept := NewSourceConcept{
-		GenericConcept:               GenericConcept{},
+		GenericConcept: GenericConcept{
+			Properties: map[string]interface{}{
+				PrefLabelProp: c.PrefLabel,
+			},
+		},
 		UUID:                         c.UUID,
-		PrefLabel:                    c.PrefLabel,
 		Type:                         c.Type,
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
@@ -60,9 +63,10 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 }
 
 func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
+	prefLabel, _ := c.GetPropString(PrefLabelProp)
 	concept := SourceConcept{
 		UUID:                         c.UUID,
-		PrefLabel:                    c.PrefLabel,
+		PrefLabel:                    prefLabel,
 		Type:                         c.Type,
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
@@ -123,9 +127,12 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 		sources = append(sources, TransformToNewSourceConcept(s))
 	}
 	concept := NewAggregatedConcept{
-		GenericConcept:         GenericConcept{},
+		GenericConcept: GenericConcept{
+			Properties: map[string]interface{}{
+				PrefLabelProp: c.PrefLabel,
+			},
+		},
 		PrefUUID:               c.PrefUUID,
-		PrefLabel:              c.PrefLabel,
 		Type:                   c.Type,
 		Aliases:                c.Aliases,
 		Strapline:              c.Strapline,
@@ -172,9 +179,10 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 	for _, s := range c.SourceRepresentations {
 		sources = append(sources, TransformToOldSourceConcept(s))
 	}
+	prefLabel, _ := c.GetPropString(PrefLabelProp)
 	concept := AggregatedConcept{
 		PrefUUID:               c.PrefUUID,
-		PrefLabel:              c.PrefLabel,
+		PrefLabel:              prefLabel,
 		Type:                   c.Type,
 		Aliases:                c.Aliases,
 		Strapline:              c.Strapline,

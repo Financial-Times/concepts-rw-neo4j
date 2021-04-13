@@ -87,6 +87,11 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 		return ontology.NewAggregatedConcept{}, err
 	}
 	return ontology.NewAggregatedConcept{
+		GenericConcept: ontology.GenericConcept{
+			Properties: map[string]interface{}{
+				ontology.PrefLabelProp: c.PrefLabel,
+			},
+		},
 		AggregatedHash:   c.AggregateHash,
 		Aliases:          c.Aliases,
 		DescriptionXML:   c.DescriptionXML,
@@ -99,7 +104,6 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 		MembershipRoles:  cleanMembershipRoles(c.MembershipRoles),
 		OrganisationUUID: c.OrganisationUUID,
 		PersonUUID:       c.PersonUUID,
-		PrefLabel:        c.PrefLabel,
 		PrefUUID:         c.PrefUUID,
 		ScopeNote:        c.ScopeNote,
 		ShortLabel:       c.ShortLabel,
@@ -196,6 +200,11 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 	}
 
 	return ontology.NewSourceConcept{
+		GenericConcept: ontology.GenericConcept{
+			Properties: map[string]interface{}{
+				ontology.PrefLabelProp: c.PrefLabel,
+			},
+		},
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
 		BroaderUUIDs:                 filterSlice(c.BroaderUUIDs),
@@ -210,7 +219,6 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
 		ParentUUIDs:                  filterSlice(c.ParentUUIDs),
 		PersonUUID:                   c.PersonUUID,
-		PrefLabel:                    c.PrefLabel,
 		RelatedUUIDs:                 filterSlice(c.RelatedUUIDs),
 		ImpliedByUUIDs:               filterSlice(c.ImpliedByUUIDs),
 		HasFocusUUIDs:                filterSlice(c.HasFocusUUIDs),
