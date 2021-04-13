@@ -1043,9 +1043,14 @@ func getSourceData(sourceConcepts []ontology.NewSourceConcept) map[string]string
 //written in neo for both canonical and source nodes.
 func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
-	//common props
 	// TODO: Check if props are empty not just that they exist
-	propertiesToStore := map[string]string{
+	sourceNodePropertiesToStore := map[string]string{
+		ontology.PrefLabelProp:    "prefLabel",    // string
+		ontology.FigiCodeProp:     "figiCode",     // string
+		ontology.IsDeprecatedProp: "isDeprecated", // bool
+	}
+
+	canonicalNodePropertiesToStore := map[string]string{
 		ontology.PrefLabelProp:              "prefLabel",              // string
 		ontology.AliasesProp:                "aliases",                // []string
 		ontology.StraplineProp:              "strapline",              // string
@@ -1074,7 +1079,9 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 		ontology.ISO31661Prop:               "iso31661",               // string
 		ontology.IndustryIdentifierProp:     "industryIdentifier",     // string
 	}
-	for label, name := range propertiesToStore {
+
+	//common props
+	for label, name := range sourceNodePropertiesToStore {
 		val, has := concept.GetProp(label)
 		if !has {
 			continue
@@ -1092,6 +1099,13 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 		return nodeProps
 	}
 	//canonical specific props
+	for label, name := range canonicalNodePropertiesToStore {
+		val, has := concept.GetProp(label)
+		if !has {
+			continue
+		}
+		nodeProps[name] = val
+	}
 	nodeProps["prefUUID"] = id
 	nodeProps["aggregateHash"] = concept.Hash
 
