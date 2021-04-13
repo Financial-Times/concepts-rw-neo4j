@@ -186,16 +186,19 @@ const (
 	SalutationProp             = "salutation"
 	BirthYearProp              = "birthYear"
 	IndustryIdentifierProp     = "industryIdentifier"
+
+	BroaderRelation = "HAS_BROADER"
 )
 
 type GenericConcept struct {
 	Properties map[string]interface{} `json:"properties"`
+	Relations  []Relationship         `json:"relationships"`
+}
 
-	Relationships []struct {
-		UUID       string                 `json:"uuid"`
-		Label      string                 `json:"label"`
-		Properties map[string]interface{} `json:"properties"`
-	} `json:"relationships"`
+type Relationship struct {
+	UUIDs      []string               `json:"uuids"`
+	Label      string                 `json:"label"`
+	Properties map[string]interface{} `json:"properties"`
 }
 
 func (c GenericConcept) GetProp(label string) (interface{}, bool) {
@@ -276,7 +279,6 @@ type NewSourceConcept struct {
 	AuthorityValue       string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
 	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
-	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
 	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
 	ImpliedByUUIDs       []string         `json:"impliedByUUIDs,omitempty"`

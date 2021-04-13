@@ -195,6 +195,8 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 	if err != nil {
 		return ontology.NewSourceConcept{}, err
 	}
+	var relations []ontology.Relationship
+	relations = append(relations, ontology.TransformToRelationships(ontology.BroaderRelation, filterSlice(c.BroaderUUIDs)))
 
 	return ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
@@ -203,10 +205,10 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 				ontology.FigiCodeProp:     c.FigiCode,
 				ontology.IsDeprecatedProp: c.IsDeprecated,
 			},
+			Relations: relations,
 		},
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
-		BroaderUUIDs:                 filterSlice(c.BroaderUUIDs),
 		SupersededByUUIDs:            filterSlice(c.SupersededByUUIDs),
 		IssuedBy:                     c.IssuedBy,
 		LastModifiedEpoch:            c.LastModifiedEpoch,

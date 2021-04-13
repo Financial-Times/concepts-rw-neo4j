@@ -1,6 +1,25 @@
 package ontology
 
+func TransformToRelationships(label string, uuids []string) Relationship {
+	return Relationship{
+		UUIDs: uuids,
+		Label: label,
+	}
+}
+
+func TransformFromRelationships(relations []Relationship, label string) []string {
+	for _, rel := range relations {
+		if rel.Label != label {
+			continue
+		}
+		return rel.UUIDs
+	}
+	return nil
+}
+
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
+	relations := []Relationship{}
+	relations = append(relations, TransformToRelationships(BroaderRelation, c.BroaderUUIDs))
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -32,6 +51,7 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 				BirthYearProp:              c.BirthYear,
 				IndustryIdentifierProp:     c.IndustryIdentifier,
 			},
+			Relations: relations,
 		},
 		UUID:                         c.UUID,
 		Type:                         c.Type,
@@ -39,7 +59,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		AuthorityValue:               c.AuthorityValue,
 		LastModifiedEpoch:            c.LastModifiedEpoch,
 		ParentUUIDs:                  c.ParentUUIDs,
-		BroaderUUIDs:                 c.BroaderUUIDs,
 		RelatedUUIDs:                 c.RelatedUUIDs,
 		SupersededByUUIDs:            c.SupersededByUUIDs,
 		ImpliedByUUIDs:               c.ImpliedByUUIDs,
@@ -108,7 +127,7 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		TwitterHandle:                twitter,
 		ScopeNote:                    scopeNote,
 		ShortLabel:                   shortLabel,
-		BroaderUUIDs:                 c.BroaderUUIDs,
+		BroaderUUIDs:                 TransformFromRelationships(c.Relations, BroaderRelation),
 		RelatedUUIDs:                 c.RelatedUUIDs,
 		SupersededByUUIDs:            c.SupersededByUUIDs,
 		ImpliedByUUIDs:               c.ImpliedByUUIDs,

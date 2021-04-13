@@ -751,12 +751,11 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		}
 		queryBatch = append(queryBatch, equivQuery)
 
+		for _, relation := range sourceConcept.Relations {
+			queryBatch = addRelationship(sourceConcept.UUID, relation.UUIDs, relation.Label, queryBatch)
+		}
 		if len(sourceConcept.RelatedUUIDs) > 0 {
 			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", queryBatch)
-		}
-
-		if len(sourceConcept.BroaderUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", queryBatch)
 		}
 
 		if len(sourceConcept.SupersededByUUIDs) > 0 {
@@ -1231,6 +1230,7 @@ func filterSlice(a []string) []string {
 }
 
 func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
+
 	for j := range c.SourceRepresentations {
 		source := &c.SourceRepresentations[j]
 		source.LastModifiedEpoch = 0
@@ -1238,11 +1238,14 @@ func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregated
 			source.MembershipRoles[i].InceptionDateEpoch = 0
 			source.MembershipRoles[i].TerminationDateEpoch = 0
 		}
+		for i := range c.Relations {
+			relations := &c.Relations[i]
+			sort.SliceStable(relations.UUIDs, func(k, l int) bool {
+				return relations.UUIDs[k] < relations.UUIDs[l]
+			})
+		}
 		sort.SliceStable(source.MembershipRoles, func(k, l int) bool {
 			return source.MembershipRoles[k].RoleUUID < source.MembershipRoles[l].RoleUUID
-		})
-		sort.SliceStable(source.BroaderUUIDs, func(k, l int) bool {
-			return source.BroaderUUIDs[k] < source.BroaderUUIDs[l]
 		})
 		sort.SliceStable(source.RelatedUUIDs, func(k, l int) bool {
 			return source.RelatedUUIDs[k] < source.RelatedUUIDs[l]
@@ -1320,10 +1323,26 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 		ontology.FigiCodeProp,
 		ontology.IsDeprecatedProp,
 	}
+	relationsToKeep := map[string]bool{
+		ontology.BroaderRelation: true,
+	}
 	for _, source := range c.SourceRepresentations {
+		cleanProps := map[string]interface{}{}
+		for _, label := range propertiesToKeep {
+			cleanProps[label] = source.Properties[label]
+		}
+
+		var cleanRelations []ontology.Relationship
+		for _, rel := range source.Relations {
+			if relationsToKeep[rel.Label] {
+				cleanRelations = append(cleanRelations, rel)
+			}
+		}
+
 		cleanConcept := ontology.NewSourceConcept{
 			GenericConcept: ontology.GenericConcept{
-				Properties: map[string]interface{}{},
+				Properties: cleanProps,
+				Relations:  cleanRelations,
 			},
 			UUID:              source.UUID,
 			Type:              source.Type,
@@ -1333,7 +1352,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			OrganisationUUID:  source.OrganisationUUID,
 			PersonUUID:        source.PersonUUID,
 			RelatedUUIDs:      source.RelatedUUIDs,
-			BroaderUUIDs:      source.BroaderUUIDs,
 			SupersededByUUIDs: source.SupersededByUUIDs,
 			ImpliedByUUIDs:    source.ImpliedByUUIDs,
 			HasFocusUUIDs:     source.HasFocusUUIDs,
@@ -1345,9 +1363,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			CountryOfIncorporationUUID:   source.CountryOfIncorporationUUID,
 			CountryOfRiskUUID:            source.CountryOfRiskUUID,
 			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
-		}
-		for _, label := range propertiesToKeep {
-			cleanConcept.Properties[label] = source.Properties[label]
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}
