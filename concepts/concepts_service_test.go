@@ -1049,7 +1049,8 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 func TestWriteMemberships_FixOldData(t *testing.T) {
 	defer cleanDB(t)
 
-	queries := createNodeQueries(getConcept(t, "old-membership.json"), "", membershipUUID)
+	newConcept := ontology.TransformToNewSourceConcept(getConcept(t, "old-membership.json"))
+	queries := createNodeQueries(newConcept, "", membershipUUID)
 	err := db.CypherBatch(queries)
 	assert.NoError(t, err, "Failed to write source")
 
@@ -1819,7 +1820,7 @@ func TestTransferConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, _, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "1234", ontology.AggregatedConcept{}, "")
+		returnedQueryList, _, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "1234", ontology.NewAggregatedConcept{}, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
 			assert.NotEmpty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
@@ -1908,7 +1909,8 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, _, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "1234", scenario.targetConcordance, "")
+		newConcordance := ontology.TransformToNewAggregateConcept(scenario.targetConcordance)
+		returnedQueryList, _, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, "1234", newConcordance, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
 			assert.NotEmpty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
@@ -2057,7 +2059,7 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		err := validateObject(scenario.aggConcept)
+		err := validateObject(ontology.TransformToNewAggregateConcept(scenario.aggConcept))
 		if err != nil {
 			assert.Contains(t, err.Error(), scenario.returnedError, scenario.testName)
 		} else {
@@ -2085,8 +2087,8 @@ func readConceptAndCompare(t *testing.T, payload ontology.AggregatedConcept, tes
 	actual := actualIf.(ontology.AggregatedConcept)
 
 	actual = cleanHash(cleanConcept(actual))
-	clean := cleanSourceProperties(payload)
-	expected := cleanHash(cleanConcept(clean))
+	cleanNew := cleanSourceProperties(ontology.TransformToNewAggregateConcept(payload))
+	expected := cleanHash(cleanConcept(ontology.TransformToOldAggregateConcept(cleanNew)))
 
 	cmpOptions := cmpopts.IgnoreFields(ontology.SourceConcept{}, ignoredFields...)
 	if !cmp.Equal(expected, actual, cmpOptions) {
@@ -2302,8 +2304,8 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept ontology.AggregatedConce
 	}
 	err := db.CypherBatch([]*neoism.CypherQuery{query})
 	assert.NoError(t, err, fmt.Sprintf("Error while retrieving concept hash"))
-
-	conceptHash, _ := hashstructure.Hash(cleanSourceProperties(concept), nil)
+	conceptHash, _ := hashstructure.Hash(cleanSourceProperties(
+		ontology.TransformToNewAggregateConcept(concept)), nil)
 	hashAsString := strconv.FormatUint(conceptHash, 10)
 	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))
 }
