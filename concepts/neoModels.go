@@ -202,6 +202,9 @@ func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 	relations = append(relations, ontology.TransformToRelationships(ontology.HasFocusRelation, filterSlice(c.HasFocusUUIDs)))
 	relations = append(relations, ontology.TransformToRelationships(ontology.SupersededByRelation, filterSlice(c.SupersededByUUIDs)))
 	relations = append(relations, ontology.TransformToRelationships(ontology.IsRelatedRelation, filterSlice(c.RelatedUUIDs)))
+	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfRiskRelation, []string{c.CountryOfRiskUUID}))
+	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfIncorporationRelation, []string{c.CountryOfIncorporationUUID}))
+	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
 
 	return ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
@@ -218,9 +221,6 @@ func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 		LastModifiedEpoch:            c.LastModifiedEpoch,
 		MembershipRoles:              cleanMembershipRoles(c.MembershipRoles),
 		OrganisationUUID:             c.OrganisationUUID,
-		CountryOfIncorporationUUID:   c.CountryOfIncorporationUUID,
-		CountryOfRiskUUID:            c.CountryOfRiskUUID,
-		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
 		PersonUUID:                   c.PersonUUID,
 		NAICSIndustryClassifications: cleanNAICS(c.NAICSIndustryClassifications),
 		Type:                         conceptType,

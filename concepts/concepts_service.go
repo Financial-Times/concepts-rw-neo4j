@@ -778,6 +778,18 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				Relationship: "SUPERSEDED_BY",
 				ShouldCreate: false,
 			},
+			ontology.CountryOfRiskRelation: {
+				Relationship: "COUNTRY_OF_RISK",
+				ShouldCreate: true,
+			},
+			ontology.CountryOfIncorporationRelation: {
+				Relationship: "COUNTRY_OF_INCORPORATION",
+				ShouldCreate: true,
+			},
+			ontology.CountryOfOperationsRelation: {
+				Relationship: "COUNTRY_OF_OPERATIONS",
+				ShouldCreate: true,
+			},
 		}
 		for _, relation := range sourceConcept.Relations {
 			setup, has := relationMap[relation.Label]
@@ -873,43 +885,6 @@ func createNodeQueries(concept ontology.NewSourceConcept, prefUUID string, uuid 
 			},
 		}
 		queryBatch = append(queryBatch, writeParentOrganisation)
-	}
-
-	if uuid != "" && concept.CountryOfRiskUUID != "" {
-		writeCountryOfRisk := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (org)-[:COUNTRY_OF_RISK]->(location)`,
-			Parameters: neoism.Props{
-				"locUUID": concept.CountryOfRiskUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeCountryOfRisk)
-	}
-	if uuid != "" && concept.CountryOfIncorporationUUID != "" {
-		writeCountryOfIncorporation := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (org)-[:COUNTRY_OF_INCORPORATION]->(location)`,
-			Parameters: neoism.Props{
-				"locUUID": concept.CountryOfIncorporationUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeCountryOfIncorporation)
-	}
-	if uuid != "" && concept.CountryOfOperationsUUID != "" {
-		writeCountryOfOperations := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (org)-[:COUNTRY_OF_OPERATIONS]->(location)`,
-			Parameters: neoism.Props{
-				"locUUID": concept.CountryOfOperationsUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeCountryOfOperations)
 	}
 
 	if uuid != "" {
@@ -1338,12 +1313,15 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 		ontology.IsDeprecatedProp,
 	}
 	relationsToKeep := map[string]bool{
-		ontology.BroaderRelation:      true,
-		ontology.ParentRelation:       true,
-		ontology.ImpliedByRelation:    true,
-		ontology.HasFocusRelation:     true,
-		ontology.IsRelatedRelation:    true,
-		ontology.SupersededByRelation: true,
+		ontology.BroaderRelation:                true,
+		ontology.ParentRelation:                 true,
+		ontology.ImpliedByRelation:              true,
+		ontology.HasFocusRelation:               true,
+		ontology.IsRelatedRelation:              true,
+		ontology.SupersededByRelation:           true,
+		ontology.CountryOfRiskRelation:          true,
+		ontology.CountryOfIncorporationRelation: true,
+		ontology.CountryOfOperationsRelation:    true,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanProps := map[string]interface{}{}
@@ -1373,9 +1351,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			IssuedBy:         source.IssuedBy,
 			// Organisations
 			ParentOrganisation:           source.ParentOrganisation,
-			CountryOfOperationsUUID:      source.CountryOfOperationsUUID,
-			CountryOfIncorporationUUID:   source.CountryOfIncorporationUUID,
-			CountryOfRiskUUID:            source.CountryOfRiskUUID,
 			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
 		}
 		cleanSources = append(cleanSources, cleanConcept)

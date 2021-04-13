@@ -193,6 +193,10 @@ const (
 	HasFocusRelation     = "HAS_FOCUS"
 	IsRelatedRelation    = "IS_RELATED_TO"
 	SupersededByRelation = "SUPERSEDED_BY"
+
+	CountryOfRiskRelation          = "COUNTRY_OF_RISK"
+	CountryOfIncorporationRelation = "COUNTRY_OF_INCORPORATION"
+	CountryOfOperationsRelation    = "COUNTRY_OF_OPERATIONS"
 )
 
 type GenericConcept struct {
@@ -293,9 +297,6 @@ type NewSourceConcept struct {
 	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
 	IssuedBy             string           `json:"issuedBy,omitempty"`
 	// Organisations
-	CountryOfRiskUUID            string                        `json:"countryOfRiskUUID,omitempty"`
-	CountryOfIncorporationUUID   string                        `json:"countryOfIncorporationUUID,omitempty"`
-	CountryOfOperationsUUID      string                        `json:"countryOfOperationsUUID,omitempty"`
 	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
 	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 }

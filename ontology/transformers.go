@@ -17,6 +17,19 @@ func TransformFromRelationships(relations []Relationship, label string) []string
 	return nil
 }
 
+func TransformFromRelationshipsSingle(relations []Relationship, label string) string {
+	for _, rel := range relations {
+		if rel.Label != label {
+			continue
+		}
+		if len(rel.UUIDs) == 0 {
+			return ""
+		}
+		return rel.UUIDs[0]
+	}
+	return ""
+}
+
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations := []Relationship{}
 	relations = append(relations, TransformToRelationships(BroaderRelation, c.BroaderUUIDs))
@@ -25,6 +38,9 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations = append(relations, TransformToRelationships(HasFocusRelation, c.HasFocusUUIDs))
 	relations = append(relations, TransformToRelationships(IsRelatedRelation, c.RelatedUUIDs))
 	relations = append(relations, TransformToRelationships(SupersededByRelation, c.SupersededByUUIDs))
+	relations = append(relations, TransformToRelationships(CountryOfRiskRelation, []string{c.CountryOfRiskUUID}))
+	relations = append(relations, TransformToRelationships(CountryOfIncorporationRelation, []string{c.CountryOfIncorporationUUID}))
+	relations = append(relations, TransformToRelationships(CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -72,9 +88,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		InceptionDateEpoch:           c.InceptionDateEpoch,
 		TerminationDateEpoch:         c.TerminationDateEpoch,
 		IssuedBy:                     c.IssuedBy,
-		CountryOfRiskUUID:            c.CountryOfRiskUUID,
-		CountryOfIncorporationUUID:   c.CountryOfIncorporationUUID,
-		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
 		ParentOrganisation:           c.ParentOrganisation,
 		NAICSIndustryClassifications: c.NAICSIndustryClassifications,
 	}
@@ -150,9 +163,9 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		CountryOfRisk:                countryOfRisk,
 		CountryOfIncorporation:       countryOfIncorporation,
 		CountryOfOperations:          countryOfOperations,
-		CountryOfRiskUUID:            c.CountryOfRiskUUID,
-		CountryOfIncorporationUUID:   c.CountryOfIncorporationUUID,
-		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
+		CountryOfRiskUUID:            TransformFromRelationshipsSingle(c.Relations, CountryOfRiskRelation),
+		CountryOfIncorporationUUID:   TransformFromRelationshipsSingle(c.Relations, CountryOfIncorporationRelation),
+		CountryOfOperationsUUID:      TransformFromRelationshipsSingle(c.Relations, CountryOfOperationsRelation),
 		PostalCode:                   postalCode,
 		YearFounded:                  yearFounded,
 		LeiCode:                      leiCode,
