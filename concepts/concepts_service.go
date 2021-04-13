@@ -701,17 +701,6 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		TerminationDate:      aggregatedConcept.TerminationDate,
 		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
 		Type:                 aggregatedConcept.Type,
-		//TODO deprecated event?
-		IsDeprecated: aggregatedConcept.IsDeprecated,
-		// Organisations
-		LeiCode: aggregatedConcept.LeiCode,
-		// Person
-		Salutation: aggregatedConcept.Salutation,
-		BirthYear:  aggregatedConcept.BirthYear,
-		// Location
-		ISO31661: aggregatedConcept.ISO31661,
-		// Industry Classification
-		IndustryIdentifier: aggregatedConcept.IndustryIdentifier,
 	}
 
 	propertiesToCopy := [...]string{
@@ -736,6 +725,12 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		ontology.CountryOfIncorporationProp,
 		ontology.PostalCodeProp,
 		ontology.YearFoundedProp,
+		ontology.LeiCodeProp,
+		ontology.IsDeprecatedProp, //TODO deprecated event?
+		ontology.SalutationProp,
+		ontology.BirthYearProp,
+		ontology.ISO31661Prop,
+		ontology.IndustryIdentifierProp,
 	}
 	for _, label := range propertiesToCopy {
 		concept.Properties[label] = aggregatedConcept.Properties[label]
@@ -1072,6 +1067,12 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 		ontology.CountryOfIncorporationProp: "countryOfIncorporation", // string
 		ontology.PostalCodeProp:             "postalCode",             // string
 		ontology.YearFoundedProp:            "yearFounded",            // int
+		ontology.LeiCodeProp:                "leiCode",                // string
+		ontology.IsDeprecatedProp:           "isDeprecated",           // bool
+		ontology.SalutationProp:             "salutation",             // string
+		ontology.BirthYearProp:              "birthYear",              // int
+		ontology.ISO31661Prop:               "iso31661",               // string
+		ontology.IndustryIdentifierProp:     "industryIdentifier",     // string
 	}
 	for label, name := range propertiesToStore {
 		val, has := concept.GetProp(label)
@@ -1082,9 +1083,6 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	}
 
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
-	if concept.IsDeprecated {
-		nodeProps["isDeprecated"] = true
-	}
 	//source specific props
 	if isSource {
 		nodeProps["uuid"] = id
@@ -1097,9 +1095,6 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	nodeProps["prefUUID"] = id
 	nodeProps["aggregateHash"] = concept.Hash
 
-	if concept.LeiCode != "" {
-		nodeProps["leiCode"] = concept.LeiCode
-	}
 	if concept.InceptionDate != "" {
 		nodeProps["inceptionDate"] = concept.InceptionDate
 	}
@@ -1111,18 +1106,6 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	}
 	if concept.TerminationDateEpoch > 0 {
 		nodeProps["terminationDateEpoch"] = concept.TerminationDateEpoch
-	}
-	if concept.Salutation != "" {
-		nodeProps["salutation"] = concept.Salutation
-	}
-	if concept.BirthYear > 0 {
-		nodeProps["birthYear"] = concept.BirthYear
-	}
-	if concept.ISO31661 != "" {
-		nodeProps["iso31661"] = concept.ISO31661
-	}
-	if concept.IndustryIdentifier != "" {
-		nodeProps["industryIdentifier"] = concept.IndustryIdentifier
 	}
 
 	return nodeProps
@@ -1321,6 +1304,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	propertiesToKeep := [...]string{
 		ontology.PrefLabelProp,
 		ontology.FigiCodeProp,
+		ontology.IsDeprecatedProp,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewSourceConcept{
@@ -1341,7 +1325,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			HasFocusUUIDs:     source.HasFocusUUIDs,
 			MembershipRoles:   source.MembershipRoles,
 			IssuedBy:          source.IssuedBy,
-			IsDeprecated:      source.IsDeprecated,
 			// Organisations
 			ParentOrganisation:           source.ParentOrganisation,
 			CountryOfOperationsUUID:      source.CountryOfOperationsUUID,

@@ -111,6 +111,12 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 				ontology.CountryOfOperationsProp:    c.CountryOfOperations,
 				ontology.PostalCodeProp:             c.PostalCode,
 				ontology.YearFoundedProp:            c.YearFounded,
+				ontology.LeiCodeProp:                c.LeiCode,
+				ontology.IsDeprecatedProp:           c.IsDeprecated,
+				ontology.SalutationProp:             c.Salutation,
+				ontology.BirthYearProp:              c.BirthYear,
+				ontology.ISO31661Prop:               c.ISO31661,
+				ontology.IndustryIdentifierProp:     c.IndustryIdentifier,
 			},
 		},
 		AggregatedHash:   c.AggregateHash,
@@ -122,15 +128,6 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 		PrefUUID:         c.PrefUUID,
 		TerminationDate:  c.TerminationDate,
 		Type:             typeName,
-		IsDeprecated:     c.IsDeprecated,
-		LeiCode:          c.LeiCode,
-		// Person
-		Salutation: c.Salutation,
-		BirthYear:  c.BirthYear,
-		// Location
-		ISO31661: c.ISO31661,
-		// Industry Classification
-		IndustryIdentifier: c.IndustryIdentifier,
 	}, nil
 }
 
@@ -202,8 +199,9 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 	return ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
 			Properties: map[string]interface{}{
-				ontology.PrefLabelProp: c.PrefLabel,
-				ontology.FigiCodeProp:  c.FigiCode,
+				ontology.PrefLabelProp:    c.PrefLabel,
+				ontology.FigiCodeProp:     c.FigiCode,
+				ontology.IsDeprecatedProp: c.IsDeprecated,
 			},
 		},
 		Authority:                    c.Authority,
@@ -225,7 +223,6 @@ func (c neoConcept) ТоSourceConcept() (ontology.NewSourceConcept, error) {
 		NAICSIndustryClassifications: cleanNAICS(c.NAICSIndustryClassifications),
 		Type:                         conceptType,
 		UUID:                         c.UUID,
-		IsDeprecated:                 c.IsDeprecated,
 		// Organisations
 		ParentOrganisation: c.ParentOrganisation,
 	}, nil

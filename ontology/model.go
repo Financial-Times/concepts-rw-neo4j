@@ -180,6 +180,12 @@ const (
 	CountryOfOperationsProp    = "countryOfOperations"
 	PostalCodeProp             = "postalCode"
 	YearFoundedProp            = "yearFounded"
+	LeiCodeProp                = "leiCode"
+	IsDeprecatedProp           = "isDeprecated"
+	ISO31661Prop               = "iso31661"
+	SalutationProp             = "salutation"
+	BirthYearProp              = "birthYear"
+	IndustryIdentifierProp     = "industryIdentifier"
 )
 
 type GenericConcept struct {
@@ -221,12 +227,12 @@ func (c GenericConcept) GetPropStringSlice(label string) ([]string, bool) {
 	return prop, true
 }
 
-func (c GenericConcept) GetPropInt(label string) (int64, bool) {
+func (c GenericConcept) GetPropInt(label string) (int, bool) {
 	val, has := c.GetProp(label)
 	if !has {
 		return 0, false
 	}
-	prop, is := val.(int64)
+	prop, is := val.(int)
 	if !is {
 		return 0, false
 	}
@@ -259,16 +265,6 @@ type NewAggregatedConcept struct {
 	InceptionDateEpoch    int64              `json:"inceptionDateEpoch,omitempty"`
 	TerminationDateEpoch  int64              `json:"terminationDateEpoch,omitempty"`
 	IssuedBy              string             `json:"issuedBy,omitempty"`
-
-	LeiCode      string `json:"leiCode,omitempty"`
-	IsDeprecated bool   `json:"isDeprecated,omitempty"`
-	// Location
-	ISO31661 string `json:"iso31661,omitempty"`
-	// Person
-	Salutation string `json:"salutation,omitempty"`
-	BirthYear  int    `json:"birthYear,omitempty"`
-	// Industry Classifications
-	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
 // SourceConcept - could be any concept genre, subject etc
@@ -298,15 +294,6 @@ type NewSourceConcept struct {
 	CountryOfRiskUUID            string                        `json:"countryOfRiskUUID,omitempty"`
 	CountryOfIncorporationUUID   string                        `json:"countryOfIncorporationUUID,omitempty"`
 	CountryOfOperationsUUID      string                        `json:"countryOfOperationsUUID,omitempty"`
-	LeiCode                      string                        `json:"leiCode,omitempty"`
 	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
 	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
-	IsDeprecated                 bool                          `json:"isDeprecated,omitempty"`
-	// Location
-	ISO31661 string `json:"iso31661,omitempty"`
-	// Person
-	Salutation string `json:"salutation,omitempty"`
-	BirthYear  int    `json:"birthYear,omitempty"`
-	// Industry Classifications
-	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }

@@ -25,6 +25,12 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 				CountryOfOperationsProp:    c.CountryOfOperations,
 				PostalCodeProp:             c.PostalCode,
 				YearFoundedProp:            c.YearFounded,
+				LeiCodeProp:                c.LeiCode,
+				IsDeprecatedProp:           c.IsDeprecated,
+				ISO31661Prop:               c.ISO31661,
+				SalutationProp:             c.Salutation,
+				BirthYearProp:              c.BirthYear,
+				IndustryIdentifierProp:     c.IndustryIdentifier,
 			},
 		},
 		UUID:                         c.UUID,
@@ -50,14 +56,8 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		CountryOfRiskUUID:            c.CountryOfRiskUUID,
 		CountryOfIncorporationUUID:   c.CountryOfIncorporationUUID,
 		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
-		LeiCode:                      c.LeiCode,
 		ParentOrganisation:           c.ParentOrganisation,
 		NAICSIndustryClassifications: c.NAICSIndustryClassifications,
-		IsDeprecated:                 c.IsDeprecated,
-		ISO31661:                     c.ISO31661,
-		Salutation:                   c.Salutation,
-		BirthYear:                    c.BirthYear,
-		IndustryIdentifier:           c.IndustryIdentifier,
 	}
 	return concept
 }
@@ -85,6 +85,12 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 	countryOfIncorporation, _ := c.GetPropString(CountryOfIncorporationProp)
 	postalCode, _ := c.GetPropString(PostalCodeProp)
 	yearFounded, _ := c.GetPropInt(YearFoundedProp)
+	leiCode, _ := c.GetPropString(LeiCodeProp)
+	deprecated, _ := c.GetPropBool(IsDeprecatedProp)
+	iso31661, _ := c.GetPropString(ISO31661Prop)
+	salutation, _ := c.GetPropString(SalutationProp)
+	birthYear, _ := c.GetPropInt(BirthYearProp)
+	industryIdentifier, _ := c.GetPropString(IndustryIdentifierProp)
 	concept := SourceConcept{
 		UUID:                         c.UUID,
 		PrefLabel:                    prefLabel,
@@ -129,15 +135,15 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		CountryOfIncorporationUUID:   c.CountryOfIncorporationUUID,
 		CountryOfOperationsUUID:      c.CountryOfOperationsUUID,
 		PostalCode:                   postalCode,
-		YearFounded:                  int(yearFounded),
-		LeiCode:                      c.LeiCode,
+		YearFounded:                  yearFounded,
+		LeiCode:                      leiCode,
 		ParentOrganisation:           c.ParentOrganisation,
 		NAICSIndustryClassifications: c.NAICSIndustryClassifications,
-		IsDeprecated:                 c.IsDeprecated,
-		ISO31661:                     c.ISO31661,
-		Salutation:                   c.Salutation,
-		BirthYear:                    c.BirthYear,
-		IndustryIdentifier:           c.IndustryIdentifier,
+		IsDeprecated:                 deprecated,
+		ISO31661:                     iso31661,
+		Salutation:                   salutation,
+		BirthYear:                    birthYear,
+		IndustryIdentifier:           industryIdentifier,
 	}
 	return concept
 }
@@ -171,6 +177,12 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 				CountryOfOperationsProp:    c.CountryOfOperations,
 				PostalCodeProp:             c.PostalCode,
 				YearFoundedProp:            c.YearFounded,
+				LeiCodeProp:                c.LeiCode,
+				IsDeprecatedProp:           c.IsDeprecated,
+				ISO31661Prop:               c.ISO31661,
+				SalutationProp:             c.Salutation,
+				BirthYearProp:              c.BirthYear,
+				IndustryIdentifierProp:     c.IndustryIdentifier,
 			},
 		},
 		PrefUUID:              c.PrefUUID,
@@ -185,12 +197,6 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 		InceptionDateEpoch:    c.InceptionDateEpoch,
 		TerminationDateEpoch:  c.TerminationDateEpoch,
 		IssuedBy:              c.IssuedBy,
-		LeiCode:               c.LeiCode,
-		IsDeprecated:          c.IsDeprecated,
-		ISO31661:              c.ISO31661,
-		Salutation:            c.Salutation,
-		BirthYear:             c.BirthYear,
-		IndustryIdentifier:    c.IndustryIdentifier,
 	}
 	return concept
 }
@@ -222,6 +228,12 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 	countryOfIncorporation, _ := c.GetPropString(CountryOfIncorporationProp)
 	postalCode, _ := c.GetPropString(PostalCodeProp)
 	yearFounded, _ := c.GetPropInt(YearFoundedProp)
+	leiCode, _ := c.GetPropString(LeiCodeProp)
+	deprecated, _ := c.GetPropBool(IsDeprecatedProp)
+	iso31661, _ := c.GetPropString(ISO31661Prop)
+	salutation, _ := c.GetPropString(SalutationProp)
+	birthYear, _ := c.GetPropInt(BirthYearProp)
+	industryIdentifier, _ := c.GetPropString(IndustryIdentifierProp)
 	concept := AggregatedConcept{
 		PrefUUID:               c.PrefUUID,
 		PrefLabel:              prefLabel,
@@ -255,13 +267,13 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 		CountryOfIncorporation: countryOfIncorporation,
 		CountryOfOperations:    countryOfOperations,
 		PostalCode:             postalCode,
-		YearFounded:            int(yearFounded),
-		LeiCode:                c.LeiCode,
-		IsDeprecated:           c.IsDeprecated,
-		ISO31661:               c.ISO31661,
-		Salutation:             c.Salutation,
-		BirthYear:              c.BirthYear,
-		IndustryIdentifier:     c.IndustryIdentifier,
+		YearFounded:            yearFounded,
+		LeiCode:                leiCode,
+		IsDeprecated:           deprecated,
+		ISO31661:               iso31661,
+		Salutation:             salutation,
+		BirthYear:              birthYear,
+		IndustryIdentifier:     industryIdentifier,
 	}
 	return concept
 }
