@@ -790,6 +790,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				Relationship: "COUNTRY_OF_OPERATIONS",
 				ShouldCreate: true,
 			},
+			ontology.ParentOrganisationRelation: {
+				Relationship: "SUB_ORGANISATION_OF",
+				ShouldCreate: true,
+			},
 		}
 		for _, relation := range sourceConcept.Relations {
 			setup, has := relationMap[relation.Label]
@@ -872,19 +876,6 @@ func createNodeQueries(concept ontology.NewSourceConcept, prefUUID string, uuid 
 			},
 		}
 		queryBatch = append(queryBatch, writeFinIns)
-	}
-
-	if uuid != "" && concept.ParentOrganisation != "" {
-		writeParentOrganisation := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (parentOrg:Thing {uuid: {orgUUID}})
-							MERGE (org)-[:SUB_ORGANISATION_OF]->(parentOrg)`,
-			Parameters: neoism.Props{
-				"orgUUID": concept.ParentOrganisation,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeParentOrganisation)
 	}
 
 	if uuid != "" {
@@ -1322,6 +1313,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 		ontology.CountryOfRiskRelation:          true,
 		ontology.CountryOfIncorporationRelation: true,
 		ontology.CountryOfOperationsRelation:    true,
+		ontology.ParentOrganisationRelation:     true,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanProps := map[string]interface{}{}
@@ -1350,7 +1342,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			MembershipRoles:  source.MembershipRoles,
 			IssuedBy:         source.IssuedBy,
 			// Organisations
-			ParentOrganisation:           source.ParentOrganisation,
 			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
 		}
 		cleanSources = append(cleanSources, cleanConcept)

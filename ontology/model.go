@@ -197,6 +197,7 @@ const (
 	CountryOfRiskRelation          = "COUNTRY_OF_RISK"
 	CountryOfIncorporationRelation = "COUNTRY_OF_INCORPORATION"
 	CountryOfOperationsRelation    = "COUNTRY_OF_OPERATIONS"
+	ParentOrganisationRelation     = "SUB_ORGANISATION_OF"
 )
 
 type GenericConcept struct {
@@ -297,6 +298,5 @@ type NewSourceConcept struct {
 	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
 	IssuedBy             string           `json:"issuedBy,omitempty"`
 	// Organisations
-	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
 	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 }

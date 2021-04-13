@@ -41,6 +41,7 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations = append(relations, TransformToRelationships(CountryOfRiskRelation, []string{c.CountryOfRiskUUID}))
 	relations = append(relations, TransformToRelationships(CountryOfIncorporationRelation, []string{c.CountryOfIncorporationUUID}))
 	relations = append(relations, TransformToRelationships(CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
+	relations = append(relations, TransformToRelationships(ParentOrganisationRelation, []string{c.ParentOrganisation}))
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -88,7 +89,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		InceptionDateEpoch:           c.InceptionDateEpoch,
 		TerminationDateEpoch:         c.TerminationDateEpoch,
 		IssuedBy:                     c.IssuedBy,
-		ParentOrganisation:           c.ParentOrganisation,
 		NAICSIndustryClassifications: c.NAICSIndustryClassifications,
 	}
 	return concept
@@ -169,7 +169,7 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		PostalCode:                   postalCode,
 		YearFounded:                  yearFounded,
 		LeiCode:                      leiCode,
-		ParentOrganisation:           c.ParentOrganisation,
+		ParentOrganisation:           TransformFromRelationshipsSingle(c.Relations, ParentOrganisationRelation),
 		NAICSIndustryClassifications: c.NAICSIndustryClassifications,
 		IsDeprecated:                 deprecated,
 		ISO31661:                     iso31661,
