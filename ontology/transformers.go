@@ -5,6 +5,7 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
 				PrefLabelProp: c.PrefLabel,
+				AliasesProp:   c.Aliases,
 			},
 		},
 		UUID:                         c.UUID,
@@ -12,7 +13,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
 		LastModifiedEpoch:            c.LastModifiedEpoch,
-		Aliases:                      c.Aliases,
 		ParentUUIDs:                  c.ParentUUIDs,
 		Strapline:                    c.Strapline,
 		DescriptionXML:               c.DescriptionXML,
@@ -64,6 +64,7 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 
 func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 	prefLabel, _ := c.GetPropString(PrefLabelProp)
+	aliases, _ := c.GetPropStringSlice(AliasesProp)
 	concept := SourceConcept{
 		UUID:                         c.UUID,
 		PrefLabel:                    prefLabel,
@@ -71,7 +72,7 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		Authority:                    c.Authority,
 		AuthorityValue:               c.AuthorityValue,
 		LastModifiedEpoch:            c.LastModifiedEpoch,
-		Aliases:                      c.Aliases,
+		Aliases:                      aliases,
 		ParentUUIDs:                  c.ParentUUIDs,
 		Strapline:                    c.Strapline,
 		DescriptionXML:               c.DescriptionXML,
@@ -130,11 +131,11 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
 				PrefLabelProp: c.PrefLabel,
+				AliasesProp:   c.Aliases,
 			},
 		},
 		PrefUUID:               c.PrefUUID,
 		Type:                   c.Type,
-		Aliases:                c.Aliases,
 		Strapline:              c.Strapline,
 		DescriptionXML:         c.DescriptionXML,
 		ImageURL:               c.ImageURL,
@@ -180,11 +181,12 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 		sources = append(sources, TransformToOldSourceConcept(s))
 	}
 	prefLabel, _ := c.GetPropString(PrefLabelProp)
+	aliases, _ := c.GetPropStringSlice(AliasesProp)
 	concept := AggregatedConcept{
 		PrefUUID:               c.PrefUUID,
 		PrefLabel:              prefLabel,
 		Type:                   c.Type,
-		Aliases:                c.Aliases,
+		Aliases:                aliases,
 		Strapline:              c.Strapline,
 		DescriptionXML:         c.DescriptionXML,
 		ImageURL:               c.ImageURL,

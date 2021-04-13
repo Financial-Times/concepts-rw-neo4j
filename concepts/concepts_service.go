@@ -694,7 +694,6 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		GenericConcept: ontology.GenericConcept{
 			Properties: map[string]interface{}{},
 		},
-		Aliases:              aggregatedConcept.Aliases,
 		DescriptionXML:       aggregatedConcept.DescriptionXML,
 		EmailAddress:         aggregatedConcept.EmailAddress,
 		FacebookPage:         aggregatedConcept.FacebookPage,
@@ -734,7 +733,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		IndustryIdentifier: aggregatedConcept.IndustryIdentifier,
 	}
 
-	propertiesToCopy := [...]string{ontology.PrefLabelProp}
+	propertiesToCopy := [...]string{
+		ontology.PrefLabelProp,
+		ontology.AliasesProp,
+	}
 	for _, label := range propertiesToCopy {
 		concept.Properties[label] = aggregatedConcept.Properties[label]
 	}
@@ -1049,7 +1051,8 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	nodeProps := map[string]interface{}{}
 	//common props
 	propertiesToStore := map[string]string{
-		ontology.PrefLabelProp: "prefLabel",
+		ontology.PrefLabelProp: "prefLabel", // TODO: Check if "prefLabel" is empty string
+		ontology.AliasesProp:   "aliases",   // TODO: Check if "aliases" is not empty slice
 	}
 	for label, name := range propertiesToStore {
 		val, has := concept.GetProp(label)
@@ -1079,9 +1082,6 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	nodeProps["prefUUID"] = id
 	nodeProps["aggregateHash"] = concept.Hash
 
-	if len(concept.Aliases) > 0 {
-		nodeProps["aliases"] = concept.Aliases
-	}
 	if concept.EmailAddress != "" {
 		nodeProps["emailAddress"] = concept.EmailAddress
 	}

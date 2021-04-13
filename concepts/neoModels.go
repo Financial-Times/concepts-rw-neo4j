@@ -90,10 +90,10 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 		GenericConcept: ontology.GenericConcept{
 			Properties: map[string]interface{}{
 				ontology.PrefLabelProp: c.PrefLabel,
+				ontology.AliasesProp:   c.Aliases,
 			},
 		},
 		AggregatedHash:   c.AggregateHash,
-		Aliases:          c.Aliases,
 		DescriptionXML:   c.DescriptionXML,
 		EmailAddress:     c.EmailAddress,
 		FacebookPage:     c.FacebookPage,

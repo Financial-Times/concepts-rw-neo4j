@@ -159,6 +159,7 @@ var authorities = []string{
 
 const (
 	PrefLabelProp = "prefLabel"
+	AliasesProp   = "aliases"
 )
 
 type GenericConcept struct {
@@ -188,11 +189,22 @@ func (c GenericConcept) GetPropString(label string) (string, bool) {
 	return prop, true
 }
 
+func (c GenericConcept) GetPropStringSlice(label string) ([]string, bool) {
+	val, has := c.GetProp(label)
+	if !has {
+		return nil, false
+	}
+	prop, is := val.([]string)
+	if !is {
+		return nil, false
+	}
+	return prop, true
+}
+
 type NewAggregatedConcept struct {
 	GenericConcept
 	PrefUUID              string             `json:"prefUUID,omitempty"`
 	Type                  string             `json:"type,omitempty"`
-	Aliases               []string           `json:"aliases,omitempty"`
 	Strapline             string             `json:"strapline,omitempty"`
 	DescriptionXML        string             `json:"descriptionXML,omitempty"`
 	ImageURL              string             `json:"_imageUrl,omitempty"`
@@ -242,7 +254,6 @@ type NewSourceConcept struct {
 	Authority            string           `json:"authority,omitempty"`
 	AuthorityValue       string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	Aliases              []string         `json:"aliases,omitempty"`
 	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
 	Strapline            string           `json:"strapline,omitempty"`
 	DescriptionXML       string           `json:"descriptionXML,omitempty"`
