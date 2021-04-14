@@ -199,6 +199,7 @@ const (
 	IsRelatedRelation       = "IS_RELATED_TO"
 	SupersededByRelation    = "SUPERSEDED_BY"
 	HasOrganisationRelation = "HAS_ORGANISATION"
+	HasMemberRelation       = "HAS_MEMBER"
 
 	CountryOfRiskRelation          = "COUNTRY_OF_RISK"
 	CountryOfIncorporationRelation = "COUNTRY_OF_INCORPORATION"
@@ -313,7 +314,6 @@ type NewSourceConcept struct {
 	Authority         string           `json:"authority,omitempty"`
 	AuthorityValue    string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch int              `json:"lastModifiedEpoch,omitempty"`
-	PersonUUID        string           `json:"personUUID,omitempty"`
 	Hash              string           `json:"hash,omitempty"`
 	MembershipRoles   []MembershipRole `json:"membershipRoles,omitempty"`
 	IssuedBy          string           `json:"issuedBy,omitempty"`

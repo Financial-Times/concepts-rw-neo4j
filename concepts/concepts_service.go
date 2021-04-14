@@ -814,6 +814,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				Relationship: "HAS_ORGANISATION",
 				ShouldCreate: true,
 			},
+			ontology.HasMemberRelation: {
+				Relationship: "HAS_MEMBER",
+				ShouldCreate: true,
+			},
 		}
 		for _, relation := range sourceConcept.Relations {
 			setup, has := relationMap[relation.Label]
@@ -841,19 +845,6 @@ func createNodeQueries(concept ontology.NewSourceConcept, uuid string) []*neoism
 			"uuid":     uuid,
 			"allprops": allProps,
 		},
-	}
-
-	if concept.PersonUUID != "" {
-		writePerson := &neoism.CypherQuery{
-			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-						MERGE (person:Thing {uuid: {personUUID}})
-						MERGE (membership)-[:HAS_MEMBER]->(person)`,
-			Parameters: neoism.Props{
-				"personUUID": concept.PersonUUID,
-				"uuid":       concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writePerson)
 	}
 
 	if uuid != "" && concept.IssuedBy != "" {
@@ -1291,6 +1282,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 		ontology.ParentOrganisationRelation:     true,
 		ontology.IndustryClassificationRelation: true,
 		ontology.HasOrganisationRelation:        true,
+		ontology.HasMemberRelation:              true,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanProps := map[string]interface{}{}
@@ -1314,7 +1306,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			Type:            source.Type,
 			Authority:       source.Authority,
 			AuthorityValue:  source.AuthorityValue,
-			PersonUUID:      source.PersonUUID,
 			MembershipRoles: source.MembershipRoles,
 			IssuedBy:        source.IssuedBy,
 		}

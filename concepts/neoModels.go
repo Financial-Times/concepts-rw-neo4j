@@ -206,6 +206,7 @@ func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 	relations = append(relations, ontology.TransformToRelationships(ontology.ParentOrganisationRelation, []string{c.ParentOrganisation}))
 	relations = append(relations, ontology.TransformNAICSToRelationship(cleanNAICS(c.NAICSIndustryClassifications)))
 	relations = append(relations, ontology.TransformToRelationships(ontology.HasOrganisationRelation, []string{c.OrganisationUUID}))
+	relations = append(relations, ontology.TransformToRelationships(ontology.HasMemberRelation, []string{c.PersonUUID}))
 
 	return ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
@@ -221,7 +222,6 @@ func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 		IssuedBy:          c.IssuedBy,
 		LastModifiedEpoch: c.LastModifiedEpoch,
 		MembershipRoles:   cleanMembershipRoles(c.MembershipRoles),
-		PersonUUID:        c.PersonUUID,
 		Type:              conceptType,
 		UUID:              c.UUID,
 	}, nil

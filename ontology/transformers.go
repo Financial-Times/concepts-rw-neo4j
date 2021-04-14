@@ -99,6 +99,7 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations = append(relations, TransformToRelationships(ParentOrganisationRelation, []string{c.ParentOrganisation}))
 	relations = append(relations, TransformNAICSToRelationship(c.NAICSIndustryClassifications))
 	relations = append(relations, TransformToRelationships(HasOrganisationRelation, []string{c.OrganisationUUID}))
+	relations = append(relations, TransformToRelationships(HasMemberRelation, []string{c.PersonUUID}))
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -140,7 +141,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		Authority:         c.Authority,
 		AuthorityValue:    c.AuthorityValue,
 		LastModifiedEpoch: c.LastModifiedEpoch,
-		PersonUUID:        c.PersonUUID,
 		Hash:              c.Hash,
 		MembershipRoles:   c.MembershipRoles,
 		IssuedBy:          c.IssuedBy,
@@ -207,7 +207,7 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		ImpliedByUUIDs:               TransformFromRelationships(c.Relations, ImpliedByRelation),
 		HasFocusUUIDs:                TransformFromRelationships(c.Relations, HasFocusRelation),
 		OrganisationUUID:             TransformFromRelationshipsSingle(c.Relations, HasOrganisationRelation),
-		PersonUUID:                   c.PersonUUID,
+		PersonUUID:                   TransformFromRelationshipsSingle(c.Relations, HasMemberRelation),
 		Hash:                         c.Hash,
 		MembershipRoles:              c.MembershipRoles,
 		InceptionDate:                inceptionDate,
@@ -358,8 +358,12 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 
 	personUUID := ""
 	for _, s := range c.SourceRepresentations {
-		if s.PersonUUID != "" {
-			personUUID = s.PersonUUID
+		if !s.HasRelationships(HasMemberRelation) {
+			continue
+		}
+		rels := s.GetRelationships(HasMemberRelation)
+		if len(rels) != 0 && len(rels[0].Connections) != 0 {
+			personUUID = rels[0].Connections[0].UUID
 		}
 	}
 	concept := AggregatedConcept{
