@@ -155,57 +155,74 @@ func TransformRelationshipToMembershipRole(relations []Relationship) []Membershi
 	return roles
 }
 
+var propertyLabelToConceptField = map[string]string{
+	PrefLabelProp:              "prefLabel",
+	AliasesProp:                "aliases",
+	StraplineProp:              "strapline",
+	DescriptionProp:            "descriptionXML",
+	ImageURLProp:               "_imageUrl",
+	EmailAddressProp:           "emailAddress",
+	FacebookPageProp:           "facebookPage",
+	TwitterHandleProp:          "twitterHandle",
+	ScopeNoteProp:              "scopeNote",
+	ShortLabelProp:             "shortLabel",
+	InceptionDateProp:          "inceptionDate",
+	TerminationDateProp:        "terminationDate",
+	InceptionDateEpochProp:     "inceptionDateEpoch",
+	TerminationDateEpochProp:   "terminationDateEpoch",
+	FigiCodeProp:               "figiCode",
+	ProperNameProp:             "properName",
+	ShortNameProp:              "shortName",
+	TradeNamesProp:             "tradeNames",
+	FormerNamesProp:            "formerNames",
+	CountryCodeProp:            "countryCode",
+	CountryOfRiskProp:          "countryOfRisk",
+	CountryOfIncorporationProp: "countryOfIncorporation",
+	CountryOfOperationsProp:    "countryOfOperations",
+	PostalCodeProp:             "postalCode",
+	YearFoundedProp:            "yearFounded",
+	LeiCodeProp:                "leiCode",
+	IsDeprecatedProp:           "isDeprecated",
+	ISO31661Prop:               "iso31661",
+	SalutationProp:             "salutation",
+	BirthYearProp:              "birthYear",
+	IndustryIdentifierProp:     "industryIdentifier",
+}
+var relationshipMapping = map[string]struct {
+	Field  string
+	Single bool
+}{
+	ParentRelation:                 {Field: "parentUUIDs", Single: false},
+	BroaderRelation:                {Field: "broaderUUIDs", Single: false},
+	IsRelatedRelation:              {Field: "relatedUUIDs", Single: false},
+	SupersededByRelation:           {Field: "supersededByUUIDs", Single: false},
+	ImpliedByRelation:              {Field: "impliedByUUIDs", Single: false},
+	HasFocusRelation:               {Field: "hasFocusUUIDs", Single: false},
+	HasOrganisationRelation:        {Field: "organisationUUID", Single: true},
+	HasMemberRelation:              {Field: "personUUID", Single: true},
+	CountryOfRiskRelation:          {Field: "countryOfRiskUUID", Single: true},
+	CountryOfIncorporationRelation: {Field: "countryOfIncorporationUUID", Single: true},
+	CountryOfOperationsRelation:    {Field: "countryOfOperationsUUID", Single: true},
+	ParentOrganisationRelation:     {Field: "parentOrganisation", Single: true},
+}
+
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
-	relations := []Relationship{}
-	relations = append(relations, TransformToRelationships(BroaderRelation, c.BroaderUUIDs))
-	relations = append(relations, TransformToRelationships(ParentRelation, c.ParentUUIDs))
-	relations = append(relations, TransformToRelationships(ImpliedByRelation, c.ImpliedByUUIDs))
-	relations = append(relations, TransformToRelationships(HasFocusRelation, c.HasFocusUUIDs))
-	relations = append(relations, TransformToRelationships(IsRelatedRelation, c.RelatedUUIDs))
-	relations = append(relations, TransformToRelationships(SupersededByRelation, c.SupersededByUUIDs))
-	relations = append(relations, TransformToRelationships(CountryOfRiskRelation, []string{c.CountryOfRiskUUID}))
-	relations = append(relations, TransformToRelationships(CountryOfIncorporationRelation, []string{c.CountryOfIncorporationUUID}))
-	relations = append(relations, TransformToRelationships(CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
-	relations = append(relations, TransformToRelationships(ParentOrganisationRelation, []string{c.ParentOrganisation}))
-	relations = append(relations, TransformNAICSToRelationship(c.NAICSIndustryClassifications))
-	relations = append(relations, TransformToRelationships(HasOrganisationRelation, []string{c.OrganisationUUID}))
-	relations = append(relations, TransformToRelationships(HasMemberRelation, []string{c.PersonUUID}))
-	relations = append(relations, TransformMembershipRoleToRelationship(c.MembershipRoles))
+	data, _ := json.Marshal(c)
+	var store map[string]interface{}
+	_ = json.Unmarshal(data, &store)
+
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
-				PrefLabelProp:              c.PrefLabel,
-				AliasesProp:                c.Aliases,
-				StraplineProp:              c.Strapline,
-				DescriptionProp:            c.DescriptionXML,
-				ImageURLProp:               c.ImageURL,
-				EmailAddressProp:           c.EmailAddress,
-				FacebookPageProp:           c.FacebookPage,
-				TwitterHandleProp:          c.TwitterHandle,
-				ScopeNoteProp:              c.ScopeNote,
-				ShortLabelProp:             c.ShortLabel,
-				FigiCodeProp:               c.FigiCode,
-				ProperNameProp:             c.ProperName,
-				ShortNameProp:              c.ShortName,
-				TradeNamesProp:             c.TradeNames,
-				FormerNamesProp:            c.FormerNames,
-				CountryCodeProp:            c.CountryCode,
-				CountryOfRiskProp:          c.CountryOfRisk,
-				CountryOfIncorporationProp: c.CountryOfIncorporation,
-				CountryOfOperationsProp:    c.CountryOfOperations,
-				PostalCodeProp:             c.PostalCode,
-				YearFoundedProp:            c.YearFounded,
-				LeiCodeProp:                c.LeiCode,
-				IsDeprecatedProp:           c.IsDeprecated,
-				ISO31661Prop:               c.ISO31661,
-				SalutationProp:             c.Salutation,
-				BirthYearProp:              c.BirthYear,
-				IndustryIdentifierProp:     c.IndustryIdentifier,
-
-				InceptionDateProp:   c.InceptionDate,
-				TerminationDateProp: c.TerminationDate,
+				InceptionDateProp:        c.InceptionDate,
+				TerminationDateProp:      c.TerminationDate,
+				InceptionDateEpochProp:   TransformDateToUnix(c.InceptionDate),
+				TerminationDateEpochProp: TransformDateToUnix(c.TerminationDate),
 			},
-			Relations: relations,
+			Relations: []Relationship{
+				TransformNAICSToRelationship(c.NAICSIndustryClassifications),
+				TransformMembershipRoleToRelationship(c.MembershipRoles),
+			},
 		},
 		UUID:              c.UUID,
 		Type:              c.Type,
@@ -215,66 +232,32 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		Hash:              c.Hash,
 		IssuedBy:          c.IssuedBy,
 	}
-	// setup
-	// this code needs to be performed before serialising the concept
-	concept.Properties[InceptionDateEpochProp] = TransformDateToUnix(c.InceptionDate)
-	concept.Properties[TerminationDateEpochProp] = TransformDateToUnix(c.TerminationDate)
+
+	for prop, label := range propertyLabelToConceptField {
+		val, has := store[label]
+		if has {
+			concept.Properties[prop] = val
+		}
+	}
+	for rel, setup := range relationshipMapping {
+		val, has := store[setup.Field]
+		if !has {
+			continue
+		}
+		var uuids []string
+		if setup.Single {
+			uuids = append(uuids, val.(string))
+		} else {
+			for _, v := range val.([]interface{}) {
+				uuids = append(uuids, v.(string))
+			}
+		}
+		concept.Relations = append(concept.Relations, TransformToRelationships(rel, uuids))
+	}
 	return concept
 }
 
 func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
-
-	propertyLabelToConceptField := map[string]string{
-		PrefLabelProp:              "prefLabel",
-		AliasesProp:                "aliases",
-		StraplineProp:              "strapline",
-		DescriptionProp:            "descriptionXML",
-		ImageURLProp:               "_imageUrl",
-		EmailAddressProp:           "emailAddress",
-		FacebookPageProp:           "facebookPage",
-		TwitterHandleProp:          "twitterHandle",
-		ScopeNoteProp:              "scopeNote",
-		ShortLabelProp:             "shortLabel",
-		InceptionDateProp:          "inceptionDate",
-		TerminationDateProp:        "terminationDate",
-		InceptionDateEpochProp:     "inceptionDateEpoch",
-		TerminationDateEpochProp:   "terminationDateEpoch",
-		FigiCodeProp:               "figiCode",
-		ProperNameProp:             "properName",
-		ShortNameProp:              "shortName",
-		TradeNamesProp:             "tradeNames",
-		FormerNamesProp:            "formerNames",
-		CountryCodeProp:            "countryCode",
-		CountryOfRiskProp:          "countryOfRisk",
-		CountryOfIncorporationProp: "countryOfIncorporation",
-		CountryOfOperationsProp:    "countryOfOperations",
-		PostalCodeProp:             "postalCode",
-		YearFoundedProp:            "yearFounded",
-		LeiCodeProp:                "leiCode",
-		IsDeprecatedProp:           "isDeprecated",
-		ISO31661Prop:               "iso31661",
-		SalutationProp:             "salutation",
-		BirthYearProp:              "birthYear",
-		IndustryIdentifierProp:     "industryIdentifier",
-	}
-	relations := map[string]struct {
-		Field  string
-		Single bool
-	}{
-		ParentRelation:                 {Field: "parentUUIDs", Single: false},
-		BroaderRelation:                {Field: "broaderUUIDs", Single: false},
-		IsRelatedRelation:              {Field: "relatedUUIDs", Single: false},
-		SupersededByRelation:           {Field: "supersededByUUIDs", Single: false},
-		ImpliedByRelation:              {Field: "impliedByUUIDs", Single: false},
-		HasFocusRelation:               {Field: "hasFocusUUIDs", Single: false},
-		HasOrganisationRelation:        {Field: "organisationUUID", Single: true},
-		HasMemberRelation:              {Field: "personUUID", Single: true},
-		CountryOfRiskRelation:          {Field: "countryOfRiskUUID", Single: true},
-		CountryOfIncorporationRelation: {Field: "countryOfIncorporationUUID", Single: true},
-		CountryOfOperationsRelation:    {Field: "countryOfOperationsUUID", Single: true},
-		ParentOrganisationRelation:     {Field: "parentOrganisation", Single: true},
-	}
-
 	inceptionDate, _ := c.GetPropString(InceptionDateProp)
 	terminationDate, _ := c.GetPropString(TerminationDateProp)
 	store := map[string]interface{}{
@@ -300,7 +283,7 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 			store[label] = val
 		}
 	}
-	for rel, setup := range relations {
+	for rel, setup := range relationshipMapping {
 		var val interface{}
 		if setup.Single {
 			val = TransformFromRelationshipsSingle(c.Relations, rel)
