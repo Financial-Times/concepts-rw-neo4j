@@ -192,12 +192,13 @@ const (
 	InceptionDateEpochProp   = "inceptionDateEpoch"
 	TerminationDateEpochProp = "terminationDateEpoch"
 
-	BroaderRelation      = "HAS_BROADER"
-	ParentRelation       = "HAS_PARENT"
-	ImpliedByRelation    = "IMPLIED_BY"
-	HasFocusRelation     = "HAS_FOCUS"
-	IsRelatedRelation    = "IS_RELATED_TO"
-	SupersededByRelation = "SUPERSEDED_BY"
+	BroaderRelation         = "HAS_BROADER"
+	ParentRelation          = "HAS_PARENT"
+	ImpliedByRelation       = "IMPLIED_BY"
+	HasFocusRelation        = "HAS_FOCUS"
+	IsRelatedRelation       = "IS_RELATED_TO"
+	SupersededByRelation    = "SUPERSEDED_BY"
+	HasOrganisationRelation = "HAS_ORGANISATION"
 
 	CountryOfRiskRelation          = "COUNTRY_OF_RISK"
 	CountryOfIncorporationRelation = "COUNTRY_OF_INCORPORATION"
@@ -275,6 +276,25 @@ func (c GenericConcept) GetPropBool(label string) (bool, bool) {
 	return prop, true
 }
 
+func (c GenericConcept) GetRelationships(label string) []Relationship {
+	var result []Relationship
+	for _, rel := range c.Relations {
+		if rel.Label == label {
+			result = append(result, rel)
+		}
+	}
+	return result
+}
+
+func (c GenericConcept) HasRelationships(label string) bool {
+	for _, rel := range c.Relations {
+		if rel.Label == label {
+			return true
+		}
+	}
+	return false
+}
+
 type NewAggregatedConcept struct {
 	GenericConcept
 	PrefUUID              string             `json:"prefUUID,omitempty"`
@@ -293,7 +313,6 @@ type NewSourceConcept struct {
 	Authority         string           `json:"authority,omitempty"`
 	AuthorityValue    string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch int              `json:"lastModifiedEpoch,omitempty"`
-	OrganisationUUID  string           `json:"organisationUUID,omitempty"`
 	PersonUUID        string           `json:"personUUID,omitempty"`
 	Hash              string           `json:"hash,omitempty"`
 	MembershipRoles   []MembershipRole `json:"membershipRoles,omitempty"`

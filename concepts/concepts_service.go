@@ -810,6 +810,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				Relationship: "HAS_INDUSTRY_CLASSIFICATION",
 				ShouldCreate: true,
 			},
+			ontology.HasOrganisationRelation: {
+				Relationship: "HAS_ORGANISATION",
+				ShouldCreate: true,
+			},
 		}
 		for _, relation := range sourceConcept.Relations {
 			setup, has := relationMap[relation.Label]
@@ -837,19 +841,6 @@ func createNodeQueries(concept ontology.NewSourceConcept, uuid string) []*neoism
 			"uuid":     uuid,
 			"allprops": allProps,
 		},
-	}
-
-	if concept.OrganisationUUID != "" {
-		writeOrganisation := &neoism.CypherQuery{
-			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-						MERGE (org:Thing {uuid: {orgUUID}})
-						MERGE (membership)-[:HAS_ORGANISATION]->(org)`,
-			Parameters: neoism.Props{
-				"orgUUID": concept.OrganisationUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeOrganisation)
 	}
 
 	if concept.PersonUUID != "" {
@@ -1299,6 +1290,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 		ontology.CountryOfOperationsRelation:    true,
 		ontology.ParentOrganisationRelation:     true,
 		ontology.IndustryClassificationRelation: true,
+		ontology.HasOrganisationRelation:        true,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanProps := map[string]interface{}{}
@@ -1318,14 +1310,13 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 				Properties: cleanProps,
 				Relations:  cleanRelations,
 			},
-			UUID:             source.UUID,
-			Type:             source.Type,
-			Authority:        source.Authority,
-			AuthorityValue:   source.AuthorityValue,
-			OrganisationUUID: source.OrganisationUUID,
-			PersonUUID:       source.PersonUUID,
-			MembershipRoles:  source.MembershipRoles,
-			IssuedBy:         source.IssuedBy,
+			UUID:            source.UUID,
+			Type:            source.Type,
+			Authority:       source.Authority,
+			AuthorityValue:  source.AuthorityValue,
+			PersonUUID:      source.PersonUUID,
+			MembershipRoles: source.MembershipRoles,
+			IssuedBy:        source.IssuedBy,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

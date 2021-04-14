@@ -98,6 +98,7 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations = append(relations, TransformToRelationships(CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
 	relations = append(relations, TransformToRelationships(ParentOrganisationRelation, []string{c.ParentOrganisation}))
 	relations = append(relations, TransformNAICSToRelationship(c.NAICSIndustryClassifications))
+	relations = append(relations, TransformToRelationships(HasOrganisationRelation, []string{c.OrganisationUUID}))
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -139,7 +140,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		Authority:         c.Authority,
 		AuthorityValue:    c.AuthorityValue,
 		LastModifiedEpoch: c.LastModifiedEpoch,
-		OrganisationUUID:  c.OrganisationUUID,
 		PersonUUID:        c.PersonUUID,
 		Hash:              c.Hash,
 		MembershipRoles:   c.MembershipRoles,
@@ -206,7 +206,7 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		SupersededByUUIDs:            TransformFromRelationships(c.Relations, SupersededByRelation),
 		ImpliedByUUIDs:               TransformFromRelationships(c.Relations, ImpliedByRelation),
 		HasFocusUUIDs:                TransformFromRelationships(c.Relations, HasFocusRelation),
-		OrganisationUUID:             c.OrganisationUUID,
+		OrganisationUUID:             TransformFromRelationshipsSingle(c.Relations, HasOrganisationRelation),
 		PersonUUID:                   c.PersonUUID,
 		Hash:                         c.Hash,
 		MembershipRoles:              c.MembershipRoles,
@@ -347,10 +347,15 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 
 	orgUUID := ""
 	for _, s := range c.SourceRepresentations {
-		if s.OrganisationUUID != "" {
-			orgUUID = s.OrganisationUUID
+		if !s.HasRelationships(HasOrganisationRelation) {
+			continue
+		}
+		orgRels := s.GetRelationships(HasOrganisationRelation)
+		if len(orgRels) != 0 && len(orgRels[0].Connections) != 0 {
+			orgUUID = orgRels[0].Connections[0].UUID
 		}
 	}
+
 	personUUID := ""
 	for _, s := range c.SourceRepresentations {
 		if s.PersonUUID != "" {
