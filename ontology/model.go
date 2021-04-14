@@ -274,7 +274,6 @@ type NewAggregatedConcept struct {
 	GenericConcept
 	PrefUUID              string             `json:"prefUUID,omitempty"`
 	Type                  string             `json:"type,omitempty"`
-	PersonUUID            string             `json:"personUUID,omitempty"`
 	AggregatedHash        string             `json:"aggregateHash,omitempty"`
 	SourceRepresentations []NewSourceConcept `json:"sourceRepresentations,omitempty"`
 	MembershipRoles       []MembershipRole   `json:"membershipRoles,omitempty"`

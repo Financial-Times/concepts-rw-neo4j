@@ -123,7 +123,6 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 		InceptionDate:   c.InceptionDate,
 		IssuedBy:        c.IssuedBy,
 		MembershipRoles: cleanMembershipRoles(c.MembershipRoles),
-		PersonUUID:      c.PersonUUID,
 		PrefUUID:        c.PrefUUID,
 		TerminationDate: c.TerminationDate,
 		Type:            typeName,

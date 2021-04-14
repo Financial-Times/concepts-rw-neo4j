@@ -238,15 +238,15 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 	for _, s := range c.SourceRepresentations {
 		sources = append(sources, TransformToNewSourceConcept(s))
 	}
-	// fields missing from the new aggregate node, but present as source node
-	orgUUIDFound := false
+	// this code does nothing, it is here just to remind me for properties
+	// that have representation in the old format but not the new one
 	for _, s := range c.SourceRepresentations {
 		if s.OrganisationUUID == c.OrganisationUUID {
-			orgUUIDFound = true
+			continue
 		}
-	}
-	if orgUUIDFound {
-
+		if s.PersonUUID == c.PersonUUID {
+			continue
+		}
 	}
 
 	concept := NewAggregatedConcept{
@@ -283,7 +283,6 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 		},
 		PrefUUID:              c.PrefUUID,
 		Type:                  c.Type,
-		PersonUUID:            c.PersonUUID,
 		AggregatedHash:        c.AggregatedHash,
 		SourceRepresentations: sources,
 		MembershipRoles:       c.MembershipRoles,
@@ -336,6 +335,12 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 			orgUUID = s.OrganisationUUID
 		}
 	}
+	personUUID := ""
+	for _, s := range c.SourceRepresentations {
+		if s.PersonUUID != "" {
+			personUUID = s.PersonUUID
+		}
+	}
 	concept := AggregatedConcept{
 		PrefUUID:               c.PrefUUID,
 		PrefLabel:              prefLabel,
@@ -350,7 +355,7 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 		ScopeNote:              scopeNote,
 		ShortLabel:             shortLabel,
 		OrganisationUUID:       orgUUID,
-		PersonUUID:             c.PersonUUID,
+		PersonUUID:             personUUID,
 		AggregatedHash:         c.AggregatedHash,
 		SourceRepresentations:  sources,
 		MembershipRoles:        c.MembershipRoles,
