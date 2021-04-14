@@ -1050,7 +1050,7 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 	defer cleanDB(t)
 
 	newConcept := ontology.TransformToNewSourceConcept(getConcept(t, "old-membership.json"))
-	queries := createNodeQueries(newConcept, "", membershipUUID)
+	queries := createNodeQueries(newConcept, membershipUUID)
 	err := db.CypherBatch(queries)
 	assert.NoError(t, err, "Failed to write source")
 

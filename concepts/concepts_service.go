@@ -703,7 +703,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		Type:                 aggregatedConcept.Type,
 	}
 
-	propertiesToCopy := [...]string{
+	canonicalNodeProperties := [...]string{
 		ontology.PrefLabelProp,
 		ontology.AliasesProp,
 		ontology.StraplineProp,
@@ -732,14 +732,25 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		ontology.ISO31661Prop,
 		ontology.IndustryIdentifierProp,
 	}
-	for _, label := range propertiesToCopy {
+	for _, label := range canonicalNodeProperties {
 		concept.Properties[label] = aggregatedConcept.Properties[label]
 	}
-	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
+	// Canonical node that doesn't have UUID
+	canonicalProps := setProps(concept, aggregatedConcept.PrefUUID, false)
+	createConceptQuery := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
+											set n={allprops}
+											set n :%s`, getAllLabels(concept.Type)),
+		Parameters: map[string]interface{}{
+			"prefUUID": aggregatedConcept.PrefUUID,
+			"allprops": canonicalProps,
+		},
+	}
+	queryBatch = append(queryBatch, createConceptQuery)
 
 	// Repopulate
 	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
-		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, "", sourceConcept.UUID)...)
+		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, sourceConcept.UUID)...)
 
 		equivQuery := &neoism.CypherQuery{
 			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
@@ -812,34 +823,19 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 }
 
 //Create concept nodes
-func createNodeQueries(concept ontology.NewSourceConcept, prefUUID string, uuid string) []*neoism.CypherQuery {
+func createNodeQueries(concept ontology.NewSourceConcept, uuid string) []*neoism.CypherQuery {
 	var queryBatch []*neoism.CypherQuery
 	var createConceptQuery *neoism.CypherQuery
 
-	// Leaf or Lone Node
-	if uuid != "" {
-		allProps := setProps(concept, uuid, true)
-		createConceptQuery = &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
+	allProps := setProps(concept, uuid, true)
+	createConceptQuery = &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 											set n={allprops}
 											set n :%s`, getAllLabels(concept.Type)),
-			Parameters: map[string]interface{}{
-				"uuid":     uuid,
-				"allprops": allProps,
-			},
-		}
-	} else {
-		// Canonical node that doesn't have UUID
-		allProps := setProps(concept, prefUUID, false)
-		createConceptQuery = &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
-											set n={allprops}
-											set n :%s`, getAllLabels(concept.Type)),
-			Parameters: map[string]interface{}{
-				"prefUUID": prefUUID,
-				"allprops": allProps,
-			},
-		}
+		Parameters: map[string]interface{}{
+			"uuid":     uuid,
+			"allprops": allProps,
+		},
 	}
 
 	if concept.OrganisationUUID != "" {
