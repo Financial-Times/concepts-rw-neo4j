@@ -255,6 +255,9 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 		if s.PersonUUID == c.PersonUUID {
 			continue
 		}
+		if len(c.MembershipRoles) != 0 {
+			continue
+		}
 	}
 
 	concept := NewAggregatedConcept{
@@ -296,9 +299,7 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 		Type:                  c.Type,
 		AggregatedHash:        c.AggregatedHash,
 		SourceRepresentations: sources,
-		MembershipRoles:       c.MembershipRoles,
-
-		IssuedBy: c.IssuedBy,
+		IssuedBy:              c.IssuedBy,
 	}
 
 	// setup
@@ -366,6 +367,15 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 			personUUID = rels[0].Connections[0].UUID
 		}
 	}
+	var roles []MembershipRole
+	for _, s := range c.SourceRepresentations {
+		for _, r := range s.MembershipRoles {
+			if r.RoleUUID == "" {
+				continue
+			}
+			roles = append(roles, r)
+		}
+	}
 	concept := AggregatedConcept{
 		PrefUUID:               c.PrefUUID,
 		PrefLabel:              prefLabel,
@@ -383,7 +393,7 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 		PersonUUID:             personUUID,
 		AggregatedHash:         c.AggregatedHash,
 		SourceRepresentations:  sources,
-		MembershipRoles:        c.MembershipRoles,
+		MembershipRoles:        roles,
 		InceptionDate:          inceptionDate,
 		TerminationDate:        terminationDate,
 		InceptionDateEpoch:     TransformDateToUnix(inceptionDate),

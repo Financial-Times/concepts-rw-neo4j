@@ -121,11 +121,10 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 				ontology.TerminationDateProp:        c.TerminationDate,
 			},
 		},
-		AggregatedHash:  c.AggregateHash,
-		IssuedBy:        c.IssuedBy,
-		MembershipRoles: cleanMembershipRoles(c.MembershipRoles),
-		PrefUUID:        c.PrefUUID,
-		Type:            typeName,
+		AggregatedHash: c.AggregateHash,
+		IssuedBy:       c.IssuedBy,
+		PrefUUID:       c.PrefUUID,
+		Type:           typeName,
 	}, nil
 }
 

@@ -302,7 +302,6 @@ type NewAggregatedConcept struct {
 	Type                  string             `json:"type,omitempty"`
 	AggregatedHash        string             `json:"aggregateHash,omitempty"`
 	SourceRepresentations []NewSourceConcept `json:"sourceRepresentations,omitempty"`
-	MembershipRoles       []MembershipRole   `json:"membershipRoles,omitempty"`
 	IssuedBy              string             `json:"issuedBy,omitempty"`
 }
 

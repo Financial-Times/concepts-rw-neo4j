@@ -1107,7 +1107,6 @@ func (re requestError) InvalidRequestDetails() string {
 func processMembershipRoles(v interface{}) interface{} {
 	switch c := v.(type) {
 	case ontology.NewAggregatedConcept:
-		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
 		for _, s := range c.SourceRepresentations {
 			processMembershipRoles(s)
 		}
@@ -1209,10 +1208,10 @@ func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregated
 		//	return source.NAICSIndustryClassifications[k].Rank < source.NAICSIndustryClassifications[l].Rank
 		//})
 	}
-	for i := range c.MembershipRoles {
-		c.MembershipRoles[i].InceptionDateEpoch = 0
-		c.MembershipRoles[i].TerminationDateEpoch = 0
-	}
+	//for i := range c.MembershipRoles {
+	//	c.MembershipRoles[i].InceptionDateEpoch = 0
+	//	c.MembershipRoles[i].TerminationDateEpoch = 0
+	//}
 	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
 		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
 	})
