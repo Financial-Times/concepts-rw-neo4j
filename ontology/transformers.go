@@ -85,6 +85,67 @@ func TransformRelationshipToNAICS(relations []Relationship) []NAICSIndustryClass
 	return naics
 }
 
+const (
+	inceptionDateField        = "inceptionDate"
+	inceptionDateEpochField   = "inceptionDateEpoch"
+	terminationDateField      = "terminationDate"
+	terminationDateEpochField = "terminationDateEpoch"
+)
+
+func TransformMembershipRoleToRelationship(roles []MembershipRole) Relationship {
+	var connections []Connection
+	for _, r := range roles {
+		var (
+			inceptionDateEpoch   int64
+			terminationDateEpoch int64
+		)
+
+		if r.InceptionDate != "" {
+			inceptionDateEpoch = TransformDateToUnix(r.InceptionDate)
+		}
+		if r.TerminationDate != "" {
+			terminationDateEpoch = TransformDateToUnix(r.TerminationDate)
+		}
+		connections = append(connections, Connection{
+			UUID: r.RoleUUID,
+			Properties: map[string]interface{}{
+				inceptionDateField:        r.InceptionDate,
+				inceptionDateEpochField:   inceptionDateEpoch,
+				terminationDateField:      r.TerminationDate,
+				terminationDateEpochField: terminationDateEpoch,
+			},
+		})
+	}
+	return Relationship{
+		Label:       HasMembershipRoleRelation,
+		Connections: connections,
+	}
+}
+
+func TransformRelationshipToMembershipRole(relations []Relationship) []MembershipRole {
+	var roles []MembershipRole
+	for _, rel := range relations {
+		if rel.Label != HasMembershipRoleRelation {
+			continue
+		}
+		for _, con := range rel.Connections {
+			if con.UUID == "" {
+				continue
+			}
+
+			inceptionDate, _ := con.GetPropString(inceptionDateField)
+			terminationDate, _ := con.GetPropString(terminationDateField)
+			roles = append(roles, MembershipRole{
+				RoleUUID:        con.UUID,
+				InceptionDate:   inceptionDate,
+				TerminationDate: terminationDate,
+			})
+		}
+
+	}
+	return roles
+}
+
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations := []Relationship{}
 	relations = append(relations, TransformToRelationships(BroaderRelation, c.BroaderUUIDs))
@@ -100,6 +161,7 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	relations = append(relations, TransformNAICSToRelationship(c.NAICSIndustryClassifications))
 	relations = append(relations, TransformToRelationships(HasOrganisationRelation, []string{c.OrganisationUUID}))
 	relations = append(relations, TransformToRelationships(HasMemberRelation, []string{c.PersonUUID}))
+	relations = append(relations, TransformMembershipRoleToRelationship(c.MembershipRoles))
 	concept := NewSourceConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -142,7 +204,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		AuthorityValue:    c.AuthorityValue,
 		LastModifiedEpoch: c.LastModifiedEpoch,
 		Hash:              c.Hash,
-		MembershipRoles:   c.MembershipRoles,
 		IssuedBy:          c.IssuedBy,
 	}
 	// setup
@@ -209,7 +270,7 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		OrganisationUUID:             TransformFromRelationshipsSingle(c.Relations, HasOrganisationRelation),
 		PersonUUID:                   TransformFromRelationshipsSingle(c.Relations, HasMemberRelation),
 		Hash:                         c.Hash,
-		MembershipRoles:              c.MembershipRoles,
+		MembershipRoles:              TransformRelationshipToMembershipRole(c.Relations),
 		InceptionDate:                inceptionDate,
 		TerminationDate:              terminationDate,
 		InceptionDateEpoch:           TransformDateToUnix(inceptionDate),
@@ -369,12 +430,10 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 	}
 	var roles []MembershipRole
 	for _, s := range c.SourceRepresentations {
-		for _, r := range s.MembershipRoles {
-			if r.RoleUUID == "" {
-				continue
-			}
-			roles = append(roles, r)
+		if !s.HasRelationships(HasMembershipRoleRelation) {
+			continue
 		}
+		roles = append(roles, TransformRelationshipToMembershipRole(s.Relations)...)
 	}
 	concept := AggregatedConcept{
 		PrefUUID:               c.PrefUUID,

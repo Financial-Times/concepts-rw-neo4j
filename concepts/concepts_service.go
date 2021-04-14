@@ -136,7 +136,7 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 
 	aggregatedConcept.SourceRepresentations = sourceConcepts
 	logEntry.Debugf("Returned concept is %v", aggregatedConcept)
-	return sortSourceRelations(aggregatedConcept), nil
+	return cleanAndSortAggregateConcept(aggregatedConcept), nil
 }
 
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -178,7 +178,6 @@ func (s *ConceptService) write(tid string, aggregatedConceptToWrite ontology.New
 		}
 		exists = false
 	}
-	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(ontology.NewAggregatedConcept)
 
 	updateRecord := ConceptChanges{}
 	var queryBatch []*neoism.CypherQuery
@@ -818,6 +817,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				Relationship: "HAS_MEMBER",
 				ShouldCreate: true,
 			},
+			ontology.HasMembershipRoleRelation: {
+				Relationship: "HAS_ROLE",
+				ShouldCreate: true,
+			},
 		}
 		for _, relation := range sourceConcept.Relations {
 			setup, has := relationMap[relation.Label]
@@ -859,46 +862,6 @@ func createNodeQueries(concept ontology.NewSourceConcept, uuid string) []*neoism
 			},
 		}
 		queryBatch = append(queryBatch, writeFinIns)
-	}
-
-	if uuid != "" && len(concept.MembershipRoles) > 0 {
-		for _, membershipRole := range concept.MembershipRoles {
-			params := neoism.Props{
-				"inceptionDate":        nil,
-				"inceptionDateEpoch":   nil,
-				"terminationDate":      nil,
-				"terminationDateEpoch": nil,
-				"roleUUID":             membershipRole.RoleUUID,
-				"nodeUUID":             concept.UUID,
-			}
-			if membershipRole.InceptionDate != "" {
-				params["inceptionDate"] = membershipRole.InceptionDate
-			}
-			if membershipRole.InceptionDateEpoch > 0 {
-				params["inceptionDateEpoch"] = membershipRole.InceptionDateEpoch
-			}
-			if membershipRole.TerminationDate != "" {
-				params["terminationDate"] = membershipRole.TerminationDate
-			}
-			if membershipRole.TerminationDateEpoch > 0 {
-				params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
-			}
-			writeParent := &neoism.CypherQuery{
-				Statement: `MERGE (node:Thing{uuid: {nodeUUID}})
-							MERGE (role:Thing{uuid: {roleUUID}})
-								ON CREATE SET
-									role.uuid = {roleUUID}
-							MERGE (node)-[rel:HAS_ROLE]->(role)
-								ON CREATE SET
-									rel.inceptionDate = {inceptionDate},
-									rel.inceptionDateEpoch = {inceptionDateEpoch},
-									rel.terminationDate = {terminationDate},
-									rel.terminationDateEpoch = {terminationDateEpoch}
-							`,
-				Parameters: params,
-			}
-			queryBatch = append(queryBatch, writeParent)
-		}
 	}
 	queryBatch = append(queryBatch, createConceptQuery)
 	return queryBatch
@@ -1104,21 +1067,6 @@ func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }
 
-func processMembershipRoles(v interface{}) interface{} {
-	switch c := v.(type) {
-	case ontology.NewAggregatedConcept:
-		for _, s := range c.SourceRepresentations {
-			processMembershipRoles(s)
-		}
-	case ontology.NewSourceConcept:
-		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
-	case ontology.MembershipRole:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
-	}
-	return v
-}
-
 func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole {
 	deleted := 0
 	for i := range m {
@@ -1175,43 +1123,46 @@ func filterSlice(a []string) []string {
 	return a
 }
 
-func sortSourceRelations(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
+func cleanAndSortAggregateConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
+
+	deniedRelationProperties := map[string][]string{
+		ontology.HasMembershipRoleRelation: {
+			ontology.InceptionDateEpochProp,
+			ontology.TerminationDateEpochProp,
+		},
+	}
 
 	relationsToSort := map[string]bool{
-		ontology.BroaderRelation:      true,
-		ontology.ParentRelation:       true,
-		ontology.ImpliedByRelation:    true,
-		ontology.HasFocusRelation:     true,
-		ontology.IsRelatedRelation:    true,
-		ontology.SupersededByRelation: true,
+		ontology.BroaderRelation:           true,
+		ontology.ParentRelation:            true,
+		ontology.ImpliedByRelation:         true,
+		ontology.HasFocusRelation:          true,
+		ontology.IsRelatedRelation:         true,
+		ontology.SupersededByRelation:      true,
+		ontology.HasMembershipRoleRelation: true,
 	}
 	for j := range c.SourceRepresentations {
 		source := &c.SourceRepresentations[j]
 		source.LastModifiedEpoch = 0
-		for i := range c.SourceRepresentations[j].MembershipRoles {
-			source.MembershipRoles[i].InceptionDateEpoch = 0
-			source.MembershipRoles[i].TerminationDateEpoch = 0
-		}
-		for i := range c.Relations {
-			relations := &c.Relations[i]
-			if !relationsToSort[relations.Label] {
+		for i := range source.Relations {
+			rel := &source.Relations[i]
+			if propsToClean, has := deniedRelationProperties[rel.Label]; has {
+				for k := range rel.Connections {
+					con := &rel.Connections[k]
+					for _, prop := range propsToClean {
+						delete(con.Properties, prop)
+					}
+				}
+			}
+
+			if !relationsToSort[rel.Label] {
 				continue
 			}
-			sort.SliceStable(relations.Connections, func(k, l int) bool {
-				return relations.Connections[k].UUID < relations.Connections[l].UUID
+			sort.SliceStable(rel.Connections, func(k, l int) bool {
+				return rel.Connections[k].UUID < rel.Connections[l].UUID
 			})
 		}
-		sort.SliceStable(source.MembershipRoles, func(k, l int) bool {
-			return source.MembershipRoles[k].RoleUUID < source.MembershipRoles[l].RoleUUID
-		})
-		//sort.SliceStable(source.NAICSIndustryClassifications, func(k, l int) bool {
-		//	return source.NAICSIndustryClassifications[k].Rank < source.NAICSIndustryClassifications[l].Rank
-		//})
 	}
-	//for i := range c.MembershipRoles {
-	//	c.MembershipRoles[i].InceptionDateEpoch = 0
-	//	c.MembershipRoles[i].TerminationDateEpoch = 0
-	//}
 	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
 		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
 	})
@@ -1282,6 +1233,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 		ontology.IndustryClassificationRelation: true,
 		ontology.HasOrganisationRelation:        true,
 		ontology.HasMemberRelation:              true,
+		ontology.HasMembershipRoleRelation:      true,
 	}
 	for _, source := range c.SourceRepresentations {
 		cleanProps := map[string]interface{}{}
@@ -1301,12 +1253,11 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 				Properties: cleanProps,
 				Relations:  cleanRelations,
 			},
-			UUID:            source.UUID,
-			Type:            source.Type,
-			Authority:       source.Authority,
-			AuthorityValue:  source.AuthorityValue,
-			MembershipRoles: source.MembershipRoles,
-			IssuedBy:        source.IssuedBy,
+			UUID:           source.UUID,
+			Type:           source.Type,
+			Authority:      source.Authority,
+			AuthorityValue: source.AuthorityValue,
+			IssuedBy:       source.IssuedBy,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

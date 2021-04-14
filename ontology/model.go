@@ -201,6 +201,8 @@ const (
 	HasOrganisationRelation = "HAS_ORGANISATION"
 	HasMemberRelation       = "HAS_MEMBER"
 
+	HasMembershipRoleRelation = "HAS_ROLE"
+
 	CountryOfRiskRelation          = "COUNTRY_OF_RISK"
 	CountryOfIncorporationRelation = "COUNTRY_OF_INCORPORATION"
 	CountryOfOperationsRelation    = "COUNTRY_OF_OPERATIONS"
@@ -222,6 +224,18 @@ type Relationship struct {
 type Connection struct {
 	UUID       string                 `json:"uuid"`
 	Properties map[string]interface{} `json:"properties"`
+}
+
+func (c Connection) GetPropString(label string) (string, bool) {
+	val, has := c.Properties[label]
+	if !has {
+		return "", false
+	}
+	prop, is := val.(string)
+	if !is {
+		return "", false
+	}
+	return prop, true
 }
 
 func (c GenericConcept) GetProp(label string) (interface{}, bool) {
@@ -308,12 +322,11 @@ type NewAggregatedConcept struct {
 // SourceConcept - could be any concept genre, subject etc
 type NewSourceConcept struct {
 	GenericConcept
-	UUID              string           `json:"uuid,omitempty"`
-	Type              string           `json:"type,omitempty"`
-	Authority         string           `json:"authority,omitempty"`
-	AuthorityValue    string           `json:"authorityValue,omitempty"`
-	LastModifiedEpoch int              `json:"lastModifiedEpoch,omitempty"`
-	Hash              string           `json:"hash,omitempty"`
-	MembershipRoles   []MembershipRole `json:"membershipRoles,omitempty"`
-	IssuedBy          string           `json:"issuedBy,omitempty"`
+	UUID              string `json:"uuid,omitempty"`
+	Type              string `json:"type,omitempty"`
+	Authority         string `json:"authority,omitempty"`
+	AuthorityValue    string `json:"authorityValue,omitempty"`
+	LastModifiedEpoch int    `json:"lastModifiedEpoch,omitempty"`
+	Hash              string `json:"hash,omitempty"`
+	IssuedBy          string `json:"issuedBy,omitempty"`
 }
