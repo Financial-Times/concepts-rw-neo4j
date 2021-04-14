@@ -119,15 +119,14 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 				ontology.IndustryIdentifierProp:     c.IndustryIdentifier,
 			},
 		},
-		AggregatedHash:   c.AggregateHash,
-		InceptionDate:    c.InceptionDate,
-		IssuedBy:         c.IssuedBy,
-		MembershipRoles:  cleanMembershipRoles(c.MembershipRoles),
-		OrganisationUUID: c.OrganisationUUID,
-		PersonUUID:       c.PersonUUID,
-		PrefUUID:         c.PrefUUID,
-		TerminationDate:  c.TerminationDate,
-		Type:             typeName,
+		AggregatedHash:  c.AggregateHash,
+		InceptionDate:   c.InceptionDate,
+		IssuedBy:        c.IssuedBy,
+		MembershipRoles: cleanMembershipRoles(c.MembershipRoles),
+		PersonUUID:      c.PersonUUID,
+		PrefUUID:        c.PrefUUID,
+		TerminationDate: c.TerminationDate,
+		Type:            typeName,
 	}, nil
 }
 

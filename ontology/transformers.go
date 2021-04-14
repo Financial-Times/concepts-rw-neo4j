@@ -238,6 +238,17 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 	for _, s := range c.SourceRepresentations {
 		sources = append(sources, TransformToNewSourceConcept(s))
 	}
+	// fields missing from the new aggregate node, but present as source node
+	orgUUIDFound := false
+	for _, s := range c.SourceRepresentations {
+		if s.OrganisationUUID == c.OrganisationUUID {
+			orgUUIDFound = true
+		}
+	}
+	if orgUUIDFound {
+
+	}
+
 	concept := NewAggregatedConcept{
 		GenericConcept: GenericConcept{
 			Properties: map[string]interface{}{
@@ -272,7 +283,6 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 		},
 		PrefUUID:              c.PrefUUID,
 		Type:                  c.Type,
-		OrganisationUUID:      c.OrganisationUUID,
 		PersonUUID:            c.PersonUUID,
 		AggregatedHash:        c.AggregatedHash,
 		SourceRepresentations: sources,
@@ -319,6 +329,13 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 	salutation, _ := c.GetPropString(SalutationProp)
 	birthYear, _ := c.GetPropInt(BirthYearProp)
 	industryIdentifier, _ := c.GetPropString(IndustryIdentifierProp)
+
+	orgUUID := ""
+	for _, s := range c.SourceRepresentations {
+		if s.OrganisationUUID != "" {
+			orgUUID = s.OrganisationUUID
+		}
+	}
 	concept := AggregatedConcept{
 		PrefUUID:               c.PrefUUID,
 		PrefLabel:              prefLabel,
@@ -332,7 +349,7 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 		TwitterHandle:          twitter,
 		ScopeNote:              scopeNote,
 		ShortLabel:             shortLabel,
-		OrganisationUUID:       c.OrganisationUUID,
+		OrganisationUUID:       orgUUID,
 		PersonUUID:             c.PersonUUID,
 		AggregatedHash:         c.AggregatedHash,
 		SourceRepresentations:  sources,
