@@ -86,6 +86,16 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 	if err != nil {
 		return ontology.NewAggregatedConcept{}, err
 	}
+
+	var sourceConcepts []ontology.NewSourceConcept
+	for _, srcConcept := range c.SourceRepresentations {
+		source, err := srcConcept.ToSourceConcept()
+		if err != nil {
+			return ontology.NewAggregatedConcept{}, err
+		}
+		sourceConcepts = append(sourceConcepts, source)
+	}
+
 	return ontology.NewAggregatedConcept{
 		GenericConcept: ontology.GenericConcept{
 			Properties: map[string]interface{}{
@@ -121,10 +131,11 @@ func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcep
 				ontology.TerminationDateProp:        c.TerminationDate,
 			},
 		},
-		AggregatedHash: c.AggregateHash,
-		IssuedBy:       c.IssuedBy,
-		PrefUUID:       c.PrefUUID,
-		Type:           typeName,
+		AggregatedHash:        c.AggregateHash,
+		IssuedBy:              c.IssuedBy,
+		PrefUUID:              c.PrefUUID,
+		SourceRepresentations: sourceConcepts,
+		Type:                  typeName,
 	}, nil
 }
 
@@ -203,7 +214,7 @@ func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfIncorporationRelation, []string{c.CountryOfIncorporationUUID}))
 	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
 	relations = append(relations, ontology.TransformToRelationships(ontology.ParentOrganisationRelation, []string{c.ParentOrganisation}))
-	relations = append(relations, ontology.TransformNAICSToRelationship(cleanNAICS(c.NAICSIndustryClassifications)))
+	relations = append(relations, ontology.TransformNAICSToRelationship(c.NAICSIndustryClassifications))
 	relations = append(relations, ontology.TransformToRelationships(ontology.HasOrganisationRelation, []string{c.OrganisationUUID}))
 	relations = append(relations, ontology.TransformToRelationships(ontology.HasMemberRelation, []string{c.PersonUUID}))
 	relations = append(relations, ontology.TransformMembershipRoleToRelationship(c.MembershipRoles))
@@ -357,4 +368,19 @@ func getNeoConceptReadQuery(uuid string, results *[]neoAggregatedConcept) *neois
 		},
 		Result: results,
 	}
+}
+
+func filterSlice(a []string) []string {
+	r := []string{}
+	for _, str := range a {
+		if str != "" {
+			r = append(r, str)
+		}
+	}
+
+	if len(r) == 0 {
+		return nil
+	}
+
+	return a
 }

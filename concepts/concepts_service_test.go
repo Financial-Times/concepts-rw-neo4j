@@ -2130,6 +2130,50 @@ func newURL() string {
 	return url
 }
 
+func cleanHash(c ontology.AggregatedConcept) ontology.AggregatedConcept {
+	c.AggregatedHash = ""
+	return c
+}
+
+func cleanConcept(c ontology.AggregatedConcept) ontology.AggregatedConcept {
+	for j := range c.SourceRepresentations {
+		c.SourceRepresentations[j].LastModifiedEpoch = 0
+		for i := range c.SourceRepresentations[j].MembershipRoles {
+			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
+			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
+		}
+		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
+			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
+		})
+		sort.SliceStable(c.SourceRepresentations[j].BroaderUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].BroaderUUIDs[k] < c.SourceRepresentations[j].BroaderUUIDs[l]
+		})
+		sort.SliceStable(c.SourceRepresentations[j].RelatedUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].RelatedUUIDs[k] < c.SourceRepresentations[j].RelatedUUIDs[l]
+		})
+		sort.SliceStable(c.SourceRepresentations[j].SupersededByUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].SupersededByUUIDs[k] < c.SourceRepresentations[j].SupersededByUUIDs[l]
+		})
+		sort.SliceStable(c.SourceRepresentations[j].ImpliedByUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].ImpliedByUUIDs[k] < c.SourceRepresentations[j].ImpliedByUUIDs[l]
+		})
+		sort.SliceStable(c.SourceRepresentations[j].HasFocusUUIDs, func(k, l int) bool {
+			return c.SourceRepresentations[j].HasFocusUUIDs[k] < c.SourceRepresentations[j].HasFocusUUIDs[l]
+		})
+		sort.SliceStable(c.SourceRepresentations[j].NAICSIndustryClassifications, func(k, l int) bool {
+			return c.SourceRepresentations[j].NAICSIndustryClassifications[k].Rank < c.SourceRepresentations[j].NAICSIndustryClassifications[l].Rank
+		})
+	}
+	for i := range c.MembershipRoles {
+		c.MembershipRoles[i].InceptionDateEpoch = 0
+		c.MembershipRoles[i].TerminationDateEpoch = 0
+	}
+	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
+		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
+	})
+	return c
+}
+
 func cleanDB(t *testing.T) {
 	cleanSourceNodes(t,
 		parentUUID,

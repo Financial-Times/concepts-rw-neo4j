@@ -5,6 +5,9 @@ import "time"
 func TransformToRelationships(label string, uuids []string) Relationship {
 	var connections []Connection
 	for _, uuid := range uuids {
+		if uuid == "" {
+			continue
+		}
 		connections = append(connections, Connection{
 			UUID: uuid,
 		})
@@ -48,6 +51,9 @@ const naicsRankField = "rank"
 func TransformNAICSToRelationship(naics []NAICSIndustryClassification) Relationship {
 	var connections []Connection
 	for _, n := range naics {
+		if n.UUID == "" {
+			continue
+		}
 		connections = append(connections, Connection{
 			UUID: n.UUID,
 			Properties: map[string]interface{}{

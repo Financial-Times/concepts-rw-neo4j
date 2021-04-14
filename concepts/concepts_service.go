@@ -124,17 +124,6 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 		return ontology.NewAggregatedConcept{}, err
 	}
 
-	var sourceConcepts []ontology.NewSourceConcept
-	for _, srcConcept := range results[0].SourceRepresentations {
-		concept, err := srcConcept.ToSourceConcept()
-		if err != nil {
-			logEntry.WithError(err).Error("Returned source concept had no recognized type")
-			return ontology.NewAggregatedConcept{}, err
-		}
-		sourceConcepts = append(sourceConcepts, concept)
-	}
-
-	aggregatedConcept.SourceRepresentations = sourceConcepts
 	logEntry.Debugf("Returned concept is %v", aggregatedConcept)
 	return cleanAndSortAggregateConcept(aggregatedConcept), nil
 }
@@ -1067,62 +1056,6 @@ func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }
 
-func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole {
-	deleted := 0
-	for i := range m {
-		j := i - deleted
-		if m[j].RoleUUID == "" {
-			m = m[:j+copy(m[j:], m[j+1:])]
-			deleted++
-			continue
-		}
-		m[j].InceptionDateEpoch = getEpoch(m[j].InceptionDate)
-		m[j].TerminationDateEpoch = getEpoch(m[j].TerminationDate)
-	}
-
-	if len(m) == 0 {
-		return nil
-	}
-
-	return m
-}
-
-func getEpoch(t string) int64 {
-	if t == "" {
-		return 0
-	}
-
-	tt, _ := time.Parse(iso8601DateOnly, t)
-	return tt.Unix()
-}
-
-// cleanNAICS returns the same slice of NAICSIndustryClassification if all are valid,
-// skips the invalid ones, returns nil if the input slice doesn't have valid NAICSIndustryClassification objects
-func cleanNAICS(naics []ontology.NAICSIndustryClassification) []ontology.NAICSIndustryClassification {
-	var res []ontology.NAICSIndustryClassification
-	for _, ic := range naics {
-		if ic.UUID != "" {
-			res = append(res, ic)
-		}
-	}
-	return res
-}
-
-func filterSlice(a []string) []string {
-	r := []string{}
-	for _, str := range a {
-		if str != "" {
-			r = append(r, str)
-		}
-	}
-
-	if len(r) == 0 {
-		return nil
-	}
-
-	return a
-}
-
 func cleanAndSortAggregateConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 
 	deniedRelationProperties := map[string][]string{
@@ -1166,49 +1099,6 @@ func cleanAndSortAggregateConcept(c ontology.NewAggregatedConcept) ontology.NewA
 	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
 		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
 	})
-	return c
-}
-func cleanConcept(c ontology.AggregatedConcept) ontology.AggregatedConcept {
-	for j := range c.SourceRepresentations {
-		c.SourceRepresentations[j].LastModifiedEpoch = 0
-		for i := range c.SourceRepresentations[j].MembershipRoles {
-			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
-			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
-		}
-		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
-			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
-		})
-		sort.SliceStable(c.SourceRepresentations[j].BroaderUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].BroaderUUIDs[k] < c.SourceRepresentations[j].BroaderUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].RelatedUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].RelatedUUIDs[k] < c.SourceRepresentations[j].RelatedUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].SupersededByUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].SupersededByUUIDs[k] < c.SourceRepresentations[j].SupersededByUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].ImpliedByUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].ImpliedByUUIDs[k] < c.SourceRepresentations[j].ImpliedByUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].HasFocusUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].HasFocusUUIDs[k] < c.SourceRepresentations[j].HasFocusUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].NAICSIndustryClassifications, func(k, l int) bool {
-			return c.SourceRepresentations[j].NAICSIndustryClassifications[k].Rank < c.SourceRepresentations[j].NAICSIndustryClassifications[l].Rank
-		})
-	}
-	for i := range c.MembershipRoles {
-		c.MembershipRoles[i].InceptionDateEpoch = 0
-		c.MembershipRoles[i].TerminationDateEpoch = 0
-	}
-	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
-		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
-	})
-	return c
-}
-
-func cleanHash(c ontology.AggregatedConcept) ontology.AggregatedConcept {
-	c.AggregatedHash = ""
 	return c
 }
 
