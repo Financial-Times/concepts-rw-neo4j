@@ -1,6 +1,9 @@
 package ontology
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 func TransformToRelationships(label string, uuids []string) Relationship {
 	var connections []Connection
@@ -220,91 +223,97 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 }
 
 func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
-	prefLabel, _ := c.GetPropString(PrefLabelProp)
-	aliases, _ := c.GetPropStringSlice(AliasesProp)
-	strapline, _ := c.GetPropString(StraplineProp)
-	description, _ := c.GetPropString(DescriptionProp)
-	imageURL, _ := c.GetPropString(ImageURLProp)
-	email, _ := c.GetPropString(EmailAddressProp)
-	facebookPage, _ := c.GetPropString(FacebookPageProp)
-	twitter, _ := c.GetPropString(TwitterHandleProp)
-	scopeNote, _ := c.GetPropString(ScopeNoteProp)
-	shortLabel, _ := c.GetPropString(ShortLabelProp)
-	figiCode, _ := c.GetPropString(FigiCodeProp)
-	// organisation
-	properName, _ := c.GetPropString(ProperNameProp)
-	shortName, _ := c.GetPropString(ShortNameProp)
-	tradeNames, _ := c.GetPropStringSlice(TradeNamesProp)
-	formerNames, _ := c.GetPropStringSlice(FormerNamesProp)
-	countryCode, _ := c.GetPropString(CountryCodeProp)
-	countryOfRisk, _ := c.GetPropString(CountryOfRiskProp)
-	countryOfOperations, _ := c.GetPropString(CountryOfOperationsProp)
-	countryOfIncorporation, _ := c.GetPropString(CountryOfIncorporationProp)
-	postalCode, _ := c.GetPropString(PostalCodeProp)
-	yearFounded, _ := c.GetPropInt(YearFoundedProp)
-	leiCode, _ := c.GetPropString(LeiCodeProp)
-	deprecated, _ := c.GetPropBool(IsDeprecatedProp)
-	iso31661, _ := c.GetPropString(ISO31661Prop)
-	salutation, _ := c.GetPropString(SalutationProp)
-	birthYear, _ := c.GetPropInt(BirthYearProp)
-	industryIdentifier, _ := c.GetPropString(IndustryIdentifierProp)
+
+	propertyLabelToConceptField := map[string]string{
+		PrefLabelProp:              "prefLabel",
+		AliasesProp:                "aliases",
+		StraplineProp:              "strapline",
+		DescriptionProp:            "descriptionXML",
+		ImageURLProp:               "_imageUrl",
+		EmailAddressProp:           "emailAddress",
+		FacebookPageProp:           "facebookPage",
+		TwitterHandleProp:          "twitterHandle",
+		ScopeNoteProp:              "scopeNote",
+		ShortLabelProp:             "shortLabel",
+		InceptionDateProp:          "inceptionDate",
+		TerminationDateProp:        "terminationDate",
+		InceptionDateEpochProp:     "inceptionDateEpoch",
+		TerminationDateEpochProp:   "terminationDateEpoch",
+		FigiCodeProp:               "figiCode",
+		ProperNameProp:             "properName",
+		ShortNameProp:              "shortName",
+		TradeNamesProp:             "tradeNames",
+		FormerNamesProp:            "formerNames",
+		CountryCodeProp:            "countryCode",
+		CountryOfRiskProp:          "countryOfRisk",
+		CountryOfIncorporationProp: "countryOfIncorporation",
+		CountryOfOperationsProp:    "countryOfOperations",
+		PostalCodeProp:             "postalCode",
+		YearFoundedProp:            "yearFounded",
+		LeiCodeProp:                "leiCode",
+		IsDeprecatedProp:           "isDeprecated",
+		ISO31661Prop:               "iso31661",
+		SalutationProp:             "salutation",
+		BirthYearProp:              "birthYear",
+		IndustryIdentifierProp:     "industryIdentifier",
+	}
+	relations := map[string]struct {
+		Field  string
+		Single bool
+	}{
+		ParentRelation:                 {Field: "parentUUIDs", Single: false},
+		BroaderRelation:                {Field: "broaderUUIDs", Single: false},
+		IsRelatedRelation:              {Field: "relatedUUIDs", Single: false},
+		SupersededByRelation:           {Field: "supersededByUUIDs", Single: false},
+		ImpliedByRelation:              {Field: "impliedByUUIDs", Single: false},
+		HasFocusRelation:               {Field: "hasFocusUUIDs", Single: false},
+		HasOrganisationRelation:        {Field: "organisationUUID", Single: true},
+		HasMemberRelation:              {Field: "personUUID", Single: true},
+		CountryOfRiskRelation:          {Field: "countryOfRiskUUID", Single: true},
+		CountryOfIncorporationRelation: {Field: "countryOfIncorporationUUID", Single: true},
+		CountryOfOperationsRelation:    {Field: "countryOfOperationsUUID", Single: true},
+		ParentOrganisationRelation:     {Field: "parentOrganisation", Single: true},
+	}
 
 	inceptionDate, _ := c.GetPropString(InceptionDateProp)
 	terminationDate, _ := c.GetPropString(TerminationDateProp)
-	concept := SourceConcept{
-		UUID:                         c.UUID,
-		PrefLabel:                    prefLabel,
-		Type:                         c.Type,
-		Authority:                    c.Authority,
-		AuthorityValue:               c.AuthorityValue,
-		LastModifiedEpoch:            c.LastModifiedEpoch,
-		Aliases:                      aliases,
-		ParentUUIDs:                  TransformFromRelationships(c.Relations, ParentRelation),
-		Strapline:                    strapline,
-		DescriptionXML:               description,
-		ImageURL:                     imageURL,
-		EmailAddress:                 email,
-		FacebookPage:                 facebookPage,
-		TwitterHandle:                twitter,
-		ScopeNote:                    scopeNote,
-		ShortLabel:                   shortLabel,
-		BroaderUUIDs:                 TransformFromRelationships(c.Relations, BroaderRelation),
-		RelatedUUIDs:                 TransformFromRelationships(c.Relations, IsRelatedRelation),
-		SupersededByUUIDs:            TransformFromRelationships(c.Relations, SupersededByRelation),
-		ImpliedByUUIDs:               TransformFromRelationships(c.Relations, ImpliedByRelation),
-		HasFocusUUIDs:                TransformFromRelationships(c.Relations, HasFocusRelation),
-		OrganisationUUID:             TransformFromRelationshipsSingle(c.Relations, HasOrganisationRelation),
-		PersonUUID:                   TransformFromRelationshipsSingle(c.Relations, HasMemberRelation),
-		Hash:                         c.Hash,
-		MembershipRoles:              TransformRelationshipToMembershipRole(c.Relations),
-		InceptionDate:                inceptionDate,
-		TerminationDate:              terminationDate,
-		InceptionDateEpoch:           TransformDateToUnix(inceptionDate),
-		TerminationDateEpoch:         TransformDateToUnix(terminationDate),
-		FigiCode:                     figiCode,
-		IssuedBy:                     c.IssuedBy,
-		ProperName:                   properName,
-		ShortName:                    shortName,
-		TradeNames:                   tradeNames,
-		FormerNames:                  formerNames,
-		CountryCode:                  countryCode,
-		CountryOfRisk:                countryOfRisk,
-		CountryOfIncorporation:       countryOfIncorporation,
-		CountryOfOperations:          countryOfOperations,
-		CountryOfRiskUUID:            TransformFromRelationshipsSingle(c.Relations, CountryOfRiskRelation),
-		CountryOfIncorporationUUID:   TransformFromRelationshipsSingle(c.Relations, CountryOfIncorporationRelation),
-		CountryOfOperationsUUID:      TransformFromRelationshipsSingle(c.Relations, CountryOfOperationsRelation),
-		PostalCode:                   postalCode,
-		YearFounded:                  yearFounded,
-		LeiCode:                      leiCode,
-		ParentOrganisation:           TransformFromRelationshipsSingle(c.Relations, ParentOrganisationRelation),
-		NAICSIndustryClassifications: TransformRelationshipToNAICS(c.Relations),
-		IsDeprecated:                 deprecated,
-		ISO31661:                     iso31661,
-		Salutation:                   salutation,
-		BirthYear:                    birthYear,
-		IndustryIdentifier:           industryIdentifier,
+	store := map[string]interface{}{
+		"uuid":              c.UUID,
+		"type":              c.Type,
+		"hash":              c.Hash,
+		"authority":         c.Authority,
+		"authorityValue":    c.AuthorityValue,
+		"lastModifiedEpoch": c.LastModifiedEpoch,
+
+		// special
+		"inceptionDate":                inceptionDate,
+		"terminationDate":              terminationDate,
+		"inceptionDateEpoch":           TransformDateToUnix(inceptionDate),
+		"terminationDateEpoch":         TransformDateToUnix(terminationDate),
+		"naicsIndustryClassifications": TransformRelationshipToNAICS(c.Relations),
+		"membershipRoles":              TransformRelationshipToMembershipRole(c.Relations),
+		"issuedBy":                     c.IssuedBy,
 	}
+	for prop, label := range propertyLabelToConceptField {
+		val, has := c.GetProp(prop)
+		if has {
+			store[label] = val
+		}
+	}
+	for rel, setup := range relations {
+		var val interface{}
+		if setup.Single {
+			val = TransformFromRelationshipsSingle(c.Relations, rel)
+		} else {
+			val = TransformFromRelationships(c.Relations, rel)
+		}
+		store[setup.Field] = val
+	}
+
+	data, _ := json.Marshal(store)
+	var concept SourceConcept
+	_ = json.Unmarshal(data, &concept)
+
 	return concept
 }
 
