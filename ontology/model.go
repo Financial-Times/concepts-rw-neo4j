@@ -187,6 +187,11 @@ const (
 	BirthYearProp              = "birthYear"
 	IndustryIdentifierProp     = "industryIdentifier"
 
+	InceptionDateProp        = "inceptionDate"
+	TerminationDateProp      = "terminationDate"
+	InceptionDateEpochProp   = "inceptionDateEpoch"
+	TerminationDateEpochProp = "terminationDateEpoch"
+
 	BroaderRelation      = "HAS_BROADER"
 	ParentRelation       = "HAS_PARENT"
 	ImpliedByRelation    = "IMPLIED_BY"
@@ -277,10 +282,6 @@ type NewAggregatedConcept struct {
 	AggregatedHash        string             `json:"aggregateHash,omitempty"`
 	SourceRepresentations []NewSourceConcept `json:"sourceRepresentations,omitempty"`
 	MembershipRoles       []MembershipRole   `json:"membershipRoles,omitempty"`
-	InceptionDate         string             `json:"inceptionDate,omitempty"`
-	TerminationDate       string             `json:"terminationDate,omitempty"`
-	InceptionDateEpoch    int64              `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch  int64              `json:"terminationDateEpoch,omitempty"`
 	IssuedBy              string             `json:"issuedBy,omitempty"`
 }
 

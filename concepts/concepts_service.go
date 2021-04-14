@@ -694,13 +694,9 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		GenericConcept: ontology.GenericConcept{
 			Properties: map[string]interface{}{},
 		},
-		Hash:                 aggregatedConcept.AggregatedHash,
-		InceptionDate:        aggregatedConcept.InceptionDate,
-		InceptionDateEpoch:   aggregatedConcept.InceptionDateEpoch,
-		IssuedBy:             aggregatedConcept.IssuedBy,
-		TerminationDate:      aggregatedConcept.TerminationDate,
-		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
-		Type:                 aggregatedConcept.Type,
+		Hash:     aggregatedConcept.AggregatedHash,
+		IssuedBy: aggregatedConcept.IssuedBy,
+		Type:     aggregatedConcept.Type,
 	}
 
 	canonicalNodeProperties := [...]string{
@@ -731,6 +727,11 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		ontology.BirthYearProp,
 		ontology.ISO31661Prop,
 		ontology.IndustryIdentifierProp,
+
+		ontology.InceptionDateProp,
+		ontology.InceptionDateEpochProp,
+		ontology.TerminationDateProp,
+		ontology.TerminationDateEpochProp,
 	}
 	for _, label := range canonicalNodeProperties {
 		concept.Properties[label] = aggregatedConcept.Properties[label]
@@ -1052,6 +1053,12 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 		ontology.BirthYearProp:              "birthYear",              // int
 		ontology.ISO31661Prop:               "iso31661",               // string
 		ontology.IndustryIdentifierProp:     "industryIdentifier",     // string
+
+		ontology.InceptionDateProp:        "inceptionDate",        // string
+		ontology.TerminationDateProp:      "terminationDate",      // string
+		ontology.InceptionDateEpochProp:   "inceptionDateEpoch",   // int64
+		ontology.TerminationDateEpochProp: "terminationDateEpoch", // int64
+
 	}
 
 	//common props
@@ -1082,19 +1089,6 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	}
 	nodeProps["prefUUID"] = id
 	nodeProps["aggregateHash"] = concept.Hash
-
-	if concept.InceptionDate != "" {
-		nodeProps["inceptionDate"] = concept.InceptionDate
-	}
-	if concept.TerminationDate != "" {
-		nodeProps["terminationDate"] = concept.TerminationDate
-	}
-	if concept.InceptionDateEpoch > 0 {
-		nodeProps["inceptionDateEpoch"] = concept.InceptionDateEpoch
-	}
-	if concept.TerminationDateEpoch > 0 {
-		nodeProps["terminationDateEpoch"] = concept.TerminationDateEpoch
-	}
 
 	return nodeProps
 }
@@ -1131,8 +1125,6 @@ func (re requestError) InvalidRequestDetails() string {
 func processMembershipRoles(v interface{}) interface{} {
 	switch c := v.(type) {
 	case ontology.NewAggregatedConcept:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
 		for _, s := range c.SourceRepresentations {
 			processMembershipRoles(s)

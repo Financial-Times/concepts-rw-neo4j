@@ -1,5 +1,7 @@
 package ontology
 
+import "time"
+
 func TransformToRelationships(label string, uuids []string) Relationship {
 	var connections []Connection
 	for _, uuid := range uuids {
@@ -279,6 +281,9 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 				SalutationProp:             c.Salutation,
 				BirthYearProp:              c.BirthYear,
 				IndustryIdentifierProp:     c.IndustryIdentifier,
+
+				InceptionDateProp:   c.InceptionDate,
+				TerminationDateProp: c.TerminationDate,
 			},
 		},
 		PrefUUID:              c.PrefUUID,
@@ -286,12 +291,14 @@ func TransformToNewAggregateConcept(c AggregatedConcept) NewAggregatedConcept {
 		AggregatedHash:        c.AggregatedHash,
 		SourceRepresentations: sources,
 		MembershipRoles:       c.MembershipRoles,
-		InceptionDate:         c.InceptionDate,
-		TerminationDate:       c.TerminationDate,
-		InceptionDateEpoch:    c.InceptionDateEpoch,
-		TerminationDateEpoch:  c.TerminationDateEpoch,
-		IssuedBy:              c.IssuedBy,
+
+		IssuedBy: c.IssuedBy,
 	}
+
+	// setup
+	// this code needs to be performed before serialising the concept
+	concept.Properties[InceptionDateEpochProp] = TransformDateToUnix(c.InceptionDate)
+	concept.Properties[TerminationDateEpochProp] = TransformDateToUnix(c.TerminationDate)
 	return concept
 }
 
@@ -329,6 +336,9 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 	birthYear, _ := c.GetPropInt(BirthYearProp)
 	industryIdentifier, _ := c.GetPropString(IndustryIdentifierProp)
 
+	inceptionDate, _ := c.GetPropString(InceptionDateProp)
+	terminationDate, _ := c.GetPropString(TerminationDateProp)
+
 	orgUUID := ""
 	for _, s := range c.SourceRepresentations {
 		if s.OrganisationUUID != "" {
@@ -359,10 +369,10 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 		AggregatedHash:         c.AggregatedHash,
 		SourceRepresentations:  sources,
 		MembershipRoles:        c.MembershipRoles,
-		InceptionDate:          c.InceptionDate,
-		TerminationDate:        c.TerminationDate,
-		InceptionDateEpoch:     c.InceptionDateEpoch,
-		TerminationDateEpoch:   c.TerminationDateEpoch,
+		InceptionDate:          inceptionDate,
+		TerminationDate:        terminationDate,
+		InceptionDateEpoch:     TransformDateToUnix(inceptionDate),
+		TerminationDateEpoch:   TransformDateToUnix(terminationDate),
 		FigiCode:               figiCode,
 		IssuedBy:               c.IssuedBy,
 		ProperName:             properName,
@@ -383,4 +393,14 @@ func TransformToOldAggregateConcept(c NewAggregatedConcept) AggregatedConcept {
 		IndustryIdentifier:     industryIdentifier,
 	}
 	return concept
+}
+
+const iso8601DateOnly = "2006-01-02"
+
+func TransformDateToUnix(t string) int64 {
+	if t == "" {
+		return 0
+	}
+	tt, _ := time.Parse(iso8601DateOnly, t)
+	return tt.Unix()
 }
