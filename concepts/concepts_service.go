@@ -1130,8 +1130,6 @@ func processMembershipRoles(v interface{}) interface{} {
 			processMembershipRoles(s)
 		}
 	case ontology.NewSourceConcept:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
 	case ontology.MembershipRole:
 		c.InceptionDateEpoch = getEpoch(c.InceptionDate)

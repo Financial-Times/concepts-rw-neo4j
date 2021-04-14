@@ -288,18 +288,14 @@ type NewAggregatedConcept struct {
 // SourceConcept - could be any concept genre, subject etc
 type NewSourceConcept struct {
 	GenericConcept
-	UUID                 string           `json:"uuid,omitempty"`
-	Type                 string           `json:"type,omitempty"`
-	Authority            string           `json:"authority,omitempty"`
-	AuthorityValue       string           `json:"authorityValue,omitempty"`
-	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
-	PersonUUID           string           `json:"personUUID,omitempty"`
-	Hash                 string           `json:"hash,omitempty"`
-	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
-	InceptionDate        string           `json:"inceptionDate,omitempty"`
-	TerminationDate      string           `json:"terminationDate,omitempty"`
-	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
-	IssuedBy             string           `json:"issuedBy,omitempty"`
+	UUID              string           `json:"uuid,omitempty"`
+	Type              string           `json:"type,omitempty"`
+	Authority         string           `json:"authority,omitempty"`
+	AuthorityValue    string           `json:"authorityValue,omitempty"`
+	LastModifiedEpoch int              `json:"lastModifiedEpoch,omitempty"`
+	OrganisationUUID  string           `json:"organisationUUID,omitempty"`
+	PersonUUID        string           `json:"personUUID,omitempty"`
+	Hash              string           `json:"hash,omitempty"`
+	MembershipRoles   []MembershipRole `json:"membershipRoles,omitempty"`
+	IssuedBy          string           `json:"issuedBy,omitempty"`
 }

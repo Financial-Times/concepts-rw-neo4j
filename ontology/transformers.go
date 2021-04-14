@@ -128,24 +128,27 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 				SalutationProp:             c.Salutation,
 				BirthYearProp:              c.BirthYear,
 				IndustryIdentifierProp:     c.IndustryIdentifier,
+
+				InceptionDateProp:   c.InceptionDate,
+				TerminationDateProp: c.TerminationDate,
 			},
 			Relations: relations,
 		},
-		UUID:                 c.UUID,
-		Type:                 c.Type,
-		Authority:            c.Authority,
-		AuthorityValue:       c.AuthorityValue,
-		LastModifiedEpoch:    c.LastModifiedEpoch,
-		OrganisationUUID:     c.OrganisationUUID,
-		PersonUUID:           c.PersonUUID,
-		Hash:                 c.Hash,
-		MembershipRoles:      c.MembershipRoles,
-		InceptionDate:        c.InceptionDate,
-		TerminationDate:      c.TerminationDate,
-		InceptionDateEpoch:   c.InceptionDateEpoch,
-		TerminationDateEpoch: c.TerminationDateEpoch,
-		IssuedBy:             c.IssuedBy,
+		UUID:              c.UUID,
+		Type:              c.Type,
+		Authority:         c.Authority,
+		AuthorityValue:    c.AuthorityValue,
+		LastModifiedEpoch: c.LastModifiedEpoch,
+		OrganisationUUID:  c.OrganisationUUID,
+		PersonUUID:        c.PersonUUID,
+		Hash:              c.Hash,
+		MembershipRoles:   c.MembershipRoles,
+		IssuedBy:          c.IssuedBy,
 	}
+	// setup
+	// this code needs to be performed before serialising the concept
+	concept.Properties[InceptionDateEpochProp] = TransformDateToUnix(c.InceptionDate)
+	concept.Properties[TerminationDateEpochProp] = TransformDateToUnix(c.TerminationDate)
 	return concept
 }
 
@@ -178,6 +181,9 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 	salutation, _ := c.GetPropString(SalutationProp)
 	birthYear, _ := c.GetPropInt(BirthYearProp)
 	industryIdentifier, _ := c.GetPropString(IndustryIdentifierProp)
+
+	inceptionDate, _ := c.GetPropString(InceptionDateProp)
+	terminationDate, _ := c.GetPropString(TerminationDateProp)
 	concept := SourceConcept{
 		UUID:                         c.UUID,
 		PrefLabel:                    prefLabel,
@@ -204,10 +210,10 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		PersonUUID:                   c.PersonUUID,
 		Hash:                         c.Hash,
 		MembershipRoles:              c.MembershipRoles,
-		InceptionDate:                c.InceptionDate,
-		TerminationDate:              c.TerminationDate,
-		InceptionDateEpoch:           c.InceptionDateEpoch,
-		TerminationDateEpoch:         c.TerminationDateEpoch,
+		InceptionDate:                inceptionDate,
+		TerminationDate:              terminationDate,
+		InceptionDateEpoch:           TransformDateToUnix(inceptionDate),
+		TerminationDateEpoch:         TransformDateToUnix(terminationDate),
 		FigiCode:                     figiCode,
 		IssuedBy:                     c.IssuedBy,
 		ProperName:                   properName,
