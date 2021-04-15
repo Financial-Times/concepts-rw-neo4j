@@ -636,8 +636,9 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 		"EQUIVALENT_TO",
 		"ISSUED_BY",
 	}
+	relationMap := ontology.GetRelationships()
 	for _, setup := range relationMap {
-		relationsToRemove = append(relationsToRemove, setup.Relationship)
+		relationsToRemove = append(relationsToRemove, setup.NeoRelationship)
 	}
 	for _, sr := range ac.SourceRepresentations {
 		deletePreviousSourceLabelsAndPropertiesQuery := &neoism.CypherQuery{
@@ -669,68 +670,6 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 	queryBatch = append(queryBatch, deletePreviousCanonicalLabelsAndPropertiesQuery)
 
 	return queryBatch
-}
-
-var relationMap = map[string]struct {
-	Relationship string
-	ShouldCreate bool // if the Thing node does not exist create it
-}{
-	ontology.BroaderRelation: {
-		Relationship: "HAS_BROADER",
-		ShouldCreate: false,
-	},
-	ontology.ParentRelation: {
-		Relationship: "HAS_PARENT",
-		ShouldCreate: true,
-	},
-	ontology.ImpliedByRelation: {
-		Relationship: "IMPLIED_BY",
-		ShouldCreate: false,
-	},
-	ontology.HasFocusRelation: {
-		Relationship: "HAS_FOCUS",
-		ShouldCreate: false,
-	},
-	ontology.IsRelatedRelation: {
-		Relationship: "IS_RELATED_TO",
-		ShouldCreate: false,
-	},
-	ontology.SupersededByRelation: {
-		Relationship: "SUPERSEDED_BY",
-		ShouldCreate: false,
-	},
-	ontology.CountryOfRiskRelation: {
-		Relationship: "COUNTRY_OF_RISK",
-		ShouldCreate: true,
-	},
-	ontology.CountryOfIncorporationRelation: {
-		Relationship: "COUNTRY_OF_INCORPORATION",
-		ShouldCreate: true,
-	},
-	ontology.CountryOfOperationsRelation: {
-		Relationship: "COUNTRY_OF_OPERATIONS",
-		ShouldCreate: true,
-	},
-	ontology.ParentOrganisationRelation: {
-		Relationship: "SUB_ORGANISATION_OF",
-		ShouldCreate: true,
-	},
-	ontology.IndustryClassificationRelation: {
-		Relationship: "HAS_INDUSTRY_CLASSIFICATION",
-		ShouldCreate: true,
-	},
-	ontology.HasOrganisationRelation: {
-		Relationship: "HAS_ORGANISATION",
-		ShouldCreate: true,
-	},
-	ontology.HasMemberRelation: {
-		Relationship: "HAS_MEMBER",
-		ShouldCreate: true,
-	},
-	ontology.HasMembershipRoleRelation: {
-		Relationship: "HAS_ROLE",
-		ShouldCreate: true,
-	},
 }
 
 //Curate all queries to populate concept nodes
@@ -796,6 +735,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 	queryBatch = append(queryBatch, createConceptQuery)
 
 	// Repopulate
+	relationMap := ontology.GetRelationships()
 	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
 		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, sourceConcept.UUID)...)
 
@@ -814,7 +754,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			if !has {
 				continue
 			}
-			q := addRelationship(sourceConcept.UUID, relation.Connections, setup.Relationship, setup.ShouldCreate)
+			q := addRelationship(sourceConcept.UUID, relation.Connections, setup.NeoRelationship, setup.NeoShouldCreate)
 			queryBatch = append(queryBatch, q...)
 		}
 	}
