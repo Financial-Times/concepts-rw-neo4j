@@ -190,23 +190,6 @@ var propertyLabelToConceptField = map[string]string{
 	BirthYearProp:              "birthYear",
 	IndustryIdentifierProp:     "industryIdentifier",
 }
-var relationshipMapping = map[string]struct {
-	Field  string
-	Single bool
-}{
-	ParentRelation:                 {Field: "parentUUIDs", Single: false},
-	BroaderRelation:                {Field: "broaderUUIDs", Single: false},
-	IsRelatedRelation:              {Field: "relatedUUIDs", Single: false},
-	SupersededByRelation:           {Field: "supersededByUUIDs", Single: false},
-	ImpliedByRelation:              {Field: "impliedByUUIDs", Single: false},
-	HasFocusRelation:               {Field: "hasFocusUUIDs", Single: false},
-	HasOrganisationRelation:        {Field: "organisationUUID", Single: true},
-	HasMemberRelation:              {Field: "personUUID", Single: true},
-	CountryOfRiskRelation:          {Field: "countryOfRiskUUID", Single: true},
-	CountryOfIncorporationRelation: {Field: "countryOfIncorporationUUID", Single: true},
-	CountryOfOperationsRelation:    {Field: "countryOfOperationsUUID", Single: true},
-	ParentOrganisationRelation:     {Field: "parentOrganisation", Single: true},
-}
 
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	data, _ := json.Marshal(c)
@@ -239,13 +222,17 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 			concept.Properties[prop] = val
 		}
 	}
+	relationshipMapping := GetRelationships()
 	for rel, setup := range relationshipMapping {
-		val, has := store[setup.Field]
+		if setup.SpecialField {
+			continue
+		}
+		val, has := store[setup.ConceptField]
 		if !has {
 			continue
 		}
 		var uuids []string
-		if setup.Single {
+		if setup.SingleField {
 			uuids = append(uuids, val.(string))
 		} else {
 			for _, v := range val.([]interface{}) {
@@ -267,13 +254,11 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		"lastModifiedEpoch": c.LastModifiedEpoch,
 
 		// special
-		"inceptionDate":                inceptionDate,
-		"terminationDate":              terminationDate,
-		"inceptionDateEpoch":           TransformDateToUnix(inceptionDate),
-		"terminationDateEpoch":         TransformDateToUnix(terminationDate),
-		"naicsIndustryClassifications": TransformRelationshipToNAICS(c.Relations),
-		"membershipRoles":              TransformRelationshipToMembershipRole(c.Relations),
-		"issuedBy":                     c.IssuedBy,
+		"inceptionDate":        inceptionDate,
+		"terminationDate":      terminationDate,
+		"inceptionDateEpoch":   TransformDateToUnix(inceptionDate),
+		"terminationDateEpoch": TransformDateToUnix(terminationDate),
+		"issuedBy":             c.IssuedBy,
 	}
 	for prop, label := range propertyLabelToConceptField {
 		val, has := c.GetProp(prop)
@@ -281,14 +266,21 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 			store[label] = val
 		}
 	}
+	relationshipMapping := GetRelationships()
+	store[relationshipMapping[IndustryClassificationRelation].ConceptField] = TransformRelationshipToNAICS(c.Relations)
+	store[relationshipMapping[HasMembershipRoleRelation].ConceptField] = TransformRelationshipToMembershipRole(c.Relations)
+
 	for rel, setup := range relationshipMapping {
+		if setup.SpecialField {
+			continue
+		}
 		var val interface{}
-		if setup.Single {
+		if setup.SingleField {
 			val = TransformFromRelationshipsSingle(c.Relations, rel)
 		} else {
 			val = TransformFromRelationships(c.Relations, rel)
 		}
-		store[setup.Field] = val
+		store[setup.ConceptField] = val
 	}
 
 	data, _ := json.Marshal(store)
