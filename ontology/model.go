@@ -158,17 +158,19 @@ var authorities = []string{
 }
 
 const (
-	PrefLabelProp     = "prefLabel"
-	AliasesProp       = "aliases"
-	StraplineProp     = "strapline"
-	DescriptionProp   = "descriptionXML"
-	ImageURLProp      = "_imageUrl"
-	EmailAddressProp  = "emailAddress"
-	FacebookPageProp  = "facebookPage"
-	TwitterHandleProp = "twitterHandle"
-	ScopeNoteProp     = "scopeNote"
-	ShortLabelProp    = "shortLabel"
-	FigiCodeProp      = "figiCode"
+	AuthorityProp      = "authority"
+	AuthorityValueProp = "authorityValue"
+	PrefLabelProp      = "prefLabel"
+	AliasesProp        = "aliases"
+	StraplineProp      = "strapline"
+	DescriptionProp    = "descriptionXML"
+	ImageURLProp       = "_imageUrl"
+	EmailAddressProp   = "emailAddress"
+	FacebookPageProp   = "facebookPage"
+	TwitterHandleProp  = "twitterHandle"
+	ScopeNoteProp      = "scopeNote"
+	ShortLabelProp     = "shortLabel"
+	FigiCodeProp       = "figiCode"
 	// Organisations
 	ProperNameProp             = "properName"
 	ShortNameProp              = "shortName"
@@ -324,8 +326,6 @@ type NewSourceConcept struct {
 	GenericConcept
 	UUID              string `json:"uuid,omitempty"`
 	Type              string `json:"type,omitempty"`
-	Authority         string `json:"authority,omitempty"`
-	AuthorityValue    string `json:"authorityValue,omitempty"`
 	LastModifiedEpoch int    `json:"lastModifiedEpoch,omitempty"`
 	Hash              string `json:"hash,omitempty"`
 	IssuedBy          string `json:"issuedBy,omitempty"`

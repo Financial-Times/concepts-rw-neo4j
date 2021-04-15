@@ -157,6 +157,8 @@ func TransformRelationshipToMembershipRole(relations []Relationship) []Membershi
 
 var propertyLabelToConceptField = map[string]string{
 	PrefLabelProp:              "prefLabel",
+	AuthorityProp:              "authority",
+	AuthorityValueProp:         "authorityValue",
 	AliasesProp:                "aliases",
 	StraplineProp:              "strapline",
 	DescriptionProp:            "descriptionXML",
@@ -226,8 +228,6 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		},
 		UUID:              c.UUID,
 		Type:              c.Type,
-		Authority:         c.Authority,
-		AuthorityValue:    c.AuthorityValue,
 		LastModifiedEpoch: c.LastModifiedEpoch,
 		Hash:              c.Hash,
 		IssuedBy:          c.IssuedBy,
@@ -264,8 +264,6 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		"uuid":              c.UUID,
 		"type":              c.Type,
 		"hash":              c.Hash,
-		"authority":         c.Authority,
-		"authorityValue":    c.AuthorityValue,
 		"lastModifiedEpoch": c.LastModifiedEpoch,
 
 		// special

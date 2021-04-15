@@ -222,14 +222,14 @@ func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 	return ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
 			Properties: map[string]interface{}{
-				ontology.PrefLabelProp:    c.PrefLabel,
-				ontology.FigiCodeProp:     c.FigiCode,
-				ontology.IsDeprecatedProp: c.IsDeprecated,
+				ontology.PrefLabelProp:      c.PrefLabel,
+				ontology.FigiCodeProp:       c.FigiCode,
+				ontology.IsDeprecatedProp:   c.IsDeprecated,
+				ontology.AuthorityProp:      c.Authority,
+				ontology.AuthorityValueProp: c.AuthorityValue,
 			},
 			Relations: relations,
 		},
-		Authority:         c.Authority,
-		AuthorityValue:    c.AuthorityValue,
 		IssuedBy:          c.IssuedBy,
 		LastModifiedEpoch: c.LastModifiedEpoch,
 		Type:              conceptType,

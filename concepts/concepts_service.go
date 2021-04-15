@@ -403,13 +403,15 @@ func validateObject(aggConcept ontology.NewAggregatedConcept) error {
 		return formatError("sourceRepresentation", aggConcept.PrefUUID)
 	}
 	for _, concept := range aggConcept.SourceRepresentations {
-		if concept.Authority == "" {
+		authority, ok := concept.GetPropString(ontology.AuthorityProp)
+		if !ok || authority == "" {
 			return formatError("sourceRepresentation.authority", concept.UUID)
 		}
 		if concept.Type == "" {
 			return formatError("sourceRepresentation.type", concept.UUID)
 		}
-		if concept.AuthorityValue == "" {
+		authorityValue, ok := concept.GetPropString(ontology.AuthorityValueProp)
+		if !ok || authorityValue == "" {
 			return formatError("sourceRepresentation.authorityValue", concept.UUID)
 		}
 		if _, ok := constraintMap[concept.Type]; !ok {
@@ -950,9 +952,11 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	nodeProps := map[string]interface{}{}
 	// TODO: Check if props are empty not just that they exist
 	sourceNodePropertiesToStore := map[string]string{
-		ontology.PrefLabelProp:    "prefLabel",    // string
-		ontology.FigiCodeProp:     "figiCode",     // string
-		ontology.IsDeprecatedProp: "isDeprecated", // bool
+		ontology.PrefLabelProp:      "prefLabel",      // string
+		ontology.FigiCodeProp:       "figiCode",       // string
+		ontology.IsDeprecatedProp:   "isDeprecated",   // bool
+		ontology.AuthorityProp:      "authority",      // string
+		ontology.AuthorityValueProp: "authorityValue", // string
 	}
 
 	canonicalNodePropertiesToStore := map[string]string{
@@ -1004,8 +1008,6 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	//source specific props
 	if isSource {
 		nodeProps["uuid"] = id
-		nodeProps["authority"] = concept.Authority
-		nodeProps["authorityValue"] = concept.AuthorityValue
 
 		return nodeProps
 	}
@@ -1104,6 +1106,8 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 		ontology.PrefLabelProp,
 		ontology.FigiCodeProp,
 		ontology.IsDeprecatedProp,
+		ontology.AuthorityProp,
+		ontology.AuthorityValueProp,
 	}
 	relationsToKeep := map[string]bool{
 		ontology.BroaderRelation:                true,
@@ -1139,11 +1143,9 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 				Properties: cleanProps,
 				Relations:  cleanRelations,
 			},
-			UUID:           source.UUID,
-			Type:           source.Type,
-			Authority:      source.Authority,
-			AuthorityValue: source.AuthorityValue,
-			IssuedBy:       source.IssuedBy,
+			UUID:     source.UUID,
+			Type:     source.Type,
+			IssuedBy: source.IssuedBy,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}
@@ -1154,7 +1156,8 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 func getCanonicalAuthority(aggregate ontology.NewAggregatedConcept) string {
 	for _, source := range aggregate.SourceRepresentations {
 		if source.UUID == aggregate.PrefUUID {
-			return source.Authority
+			authority, _ := source.GetPropString(ontology.AuthorityProp)
+			return authority
 		}
 	}
 	return ""
