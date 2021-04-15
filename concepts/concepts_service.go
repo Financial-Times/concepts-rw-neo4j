@@ -630,30 +630,24 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 
 	var queryBatch []*neoism.CypherQuery
 
+	relationsToRemove := []string{
+		"EQUIVALENT_TO",
+		"ISSUED_BY",
+	}
+	for _, setup := range relationMap {
+		relationsToRemove = append(relationsToRemove, setup.Relationship)
+	}
 	for _, sr := range ac.SourceRepresentations {
 		deletePreviousSourceLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
-			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
-			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
-			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
-			OPTIONAL MATCH (t)-[supersededBy:SUPERSEDED_BY]->(supersedesNode)
-			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
-			OPTIONAL MATCH (t)-[impliedBy:IMPLIED_BY]->(impliesNode)
-			OPTIONAL MATCH (t)-[hasFocus:HAS_FOCUS]->(hasFocusNode)
-			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->(org)
-			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
-			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
-			OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
-			OPTIONAL MATCH (t)-[parentOrgRel:SUB_ORGANISATION_OF]->(parentOrg)
-			OPTIONAL MATCH (t)-[cooRel:COUNTRY_OF_OPERATIONS]->(coo)
-			OPTIONAL MATCH (t)-[coiRel:COUNTRY_OF_INCORPORATION]->(coi)
-			OPTIONAL MATCH (t)-[corRel:COUNTRY_OF_RISK]->(cor)
-			OPTIONAL MATCH (t)-[icRel:HAS_INDUSTRY_CLASSIFICATION]->(ic)
+			MATCH (t)-[r]->(other)
+			WHERE TYPE(r) IN {relations}
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, eq, relatedTo, broader, impliedBy, hasFocus, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel, icRel`, getLabelsToRemove()),
+			DELETE  r`, getLabelsToRemove()),
 			Parameters: map[string]interface{}{
-				"id": sr.UUID,
+				"id":        sr.UUID,
+				"relations": relationsToRemove,
 			},
 		}
 		queryBatch = append(queryBatch, deletePreviousSourceLabelsAndPropertiesQuery)
@@ -673,6 +667,68 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 	queryBatch = append(queryBatch, deletePreviousCanonicalLabelsAndPropertiesQuery)
 
 	return queryBatch
+}
+
+var relationMap = map[string]struct {
+	Relationship string
+	ShouldCreate bool // if the Thing node does not exist create it
+}{
+	ontology.BroaderRelation: {
+		Relationship: "HAS_BROADER",
+		ShouldCreate: false,
+	},
+	ontology.ParentRelation: {
+		Relationship: "HAS_PARENT",
+		ShouldCreate: true,
+	},
+	ontology.ImpliedByRelation: {
+		Relationship: "IMPLIED_BY",
+		ShouldCreate: false,
+	},
+	ontology.HasFocusRelation: {
+		Relationship: "HAS_FOCUS",
+		ShouldCreate: false,
+	},
+	ontology.IsRelatedRelation: {
+		Relationship: "IS_RELATED_TO",
+		ShouldCreate: false,
+	},
+	ontology.SupersededByRelation: {
+		Relationship: "SUPERSEDED_BY",
+		ShouldCreate: false,
+	},
+	ontology.CountryOfRiskRelation: {
+		Relationship: "COUNTRY_OF_RISK",
+		ShouldCreate: true,
+	},
+	ontology.CountryOfIncorporationRelation: {
+		Relationship: "COUNTRY_OF_INCORPORATION",
+		ShouldCreate: true,
+	},
+	ontology.CountryOfOperationsRelation: {
+		Relationship: "COUNTRY_OF_OPERATIONS",
+		ShouldCreate: true,
+	},
+	ontology.ParentOrganisationRelation: {
+		Relationship: "SUB_ORGANISATION_OF",
+		ShouldCreate: true,
+	},
+	ontology.IndustryClassificationRelation: {
+		Relationship: "HAS_INDUSTRY_CLASSIFICATION",
+		ShouldCreate: true,
+	},
+	ontology.HasOrganisationRelation: {
+		Relationship: "HAS_ORGANISATION",
+		ShouldCreate: true,
+	},
+	ontology.HasMemberRelation: {
+		Relationship: "HAS_MEMBER",
+		ShouldCreate: true,
+	},
+	ontology.HasMembershipRoleRelation: {
+		Relationship: "HAS_ROLE",
+		ShouldCreate: true,
+	},
 }
 
 //Curate all queries to populate concept nodes
@@ -750,67 +806,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			},
 		}
 		queryBatch = append(queryBatch, equivQuery)
-		relationMap := map[string]struct {
-			Relationship string
-			ShouldCreate bool
-		}{
-			ontology.BroaderRelation: {
-				Relationship: "HAS_BROADER",
-				ShouldCreate: false,
-			},
-			ontology.ParentRelation: {
-				Relationship: "HAS_PARENT",
-				ShouldCreate: true,
-			},
-			ontology.ImpliedByRelation: {
-				Relationship: "IMPLIED_BY",
-				ShouldCreate: false,
-			},
-			ontology.HasFocusRelation: {
-				Relationship: "HAS_FOCUS",
-				ShouldCreate: false,
-			},
-			ontology.IsRelatedRelation: {
-				Relationship: "IS_RELATED_TO",
-				ShouldCreate: false,
-			},
-			ontology.SupersededByRelation: {
-				Relationship: "SUPERSEDED_BY",
-				ShouldCreate: false,
-			},
-			ontology.CountryOfRiskRelation: {
-				Relationship: "COUNTRY_OF_RISK",
-				ShouldCreate: true,
-			},
-			ontology.CountryOfIncorporationRelation: {
-				Relationship: "COUNTRY_OF_INCORPORATION",
-				ShouldCreate: true,
-			},
-			ontology.CountryOfOperationsRelation: {
-				Relationship: "COUNTRY_OF_OPERATIONS",
-				ShouldCreate: true,
-			},
-			ontology.ParentOrganisationRelation: {
-				Relationship: "SUB_ORGANISATION_OF",
-				ShouldCreate: true,
-			},
-			ontology.IndustryClassificationRelation: {
-				Relationship: "HAS_INDUSTRY_CLASSIFICATION",
-				ShouldCreate: true,
-			},
-			ontology.HasOrganisationRelation: {
-				Relationship: "HAS_ORGANISATION",
-				ShouldCreate: true,
-			},
-			ontology.HasMemberRelation: {
-				Relationship: "HAS_MEMBER",
-				ShouldCreate: true,
-			},
-			ontology.HasMembershipRoleRelation: {
-				Relationship: "HAS_ROLE",
-				ShouldCreate: true,
-			},
-		}
+
 		for _, relation := range sourceConcept.Relations {
 			setup, has := relationMap[relation.Label]
 			if !has {
