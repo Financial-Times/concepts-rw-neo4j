@@ -684,41 +684,8 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		Type:     aggregatedConcept.Type,
 	}
 
-	canonicalNodeProperties := [...]string{
-		ontology.PrefLabelProp,
-		ontology.AliasesProp,
-		ontology.StraplineProp,
-		ontology.DescriptionProp,
-		ontology.ImageURLProp,
-		ontology.EmailAddressProp,
-		ontology.FacebookPageProp,
-		ontology.FigiCodeProp,
-		ontology.ScopeNoteProp,
-		ontology.ShortLabelProp,
-		ontology.TwitterHandleProp,
-		ontology.ProperNameProp,
-		ontology.ShortNameProp,
-		ontology.TradeNamesProp,
-		ontology.FormerNamesProp,
-		ontology.CountryCodeProp,
-		ontology.CountryOfRiskProp,
-		ontology.CountryOfOperationsProp,
-		ontology.CountryOfIncorporationProp,
-		ontology.PostalCodeProp,
-		ontology.YearFoundedProp,
-		ontology.LeiCodeProp,
-		ontology.IsDeprecatedProp, //TODO deprecated event?
-		ontology.SalutationProp,
-		ontology.BirthYearProp,
-		ontology.ISO31661Prop,
-		ontology.IndustryIdentifierProp,
-
-		ontology.InceptionDateProp,
-		ontology.InceptionDateEpochProp,
-		ontology.TerminationDateProp,
-		ontology.TerminationDateEpochProp,
-	}
-	for _, label := range canonicalNodeProperties {
+	canonicalNodeProperties := ontology.GetFilteredPropertySetup(ontology.CanonicalProperty)
+	for label := range canonicalNodeProperties {
 		concept.Properties[label] = aggregatedConcept.Properties[label]
 	}
 	// Canonical node that doesn't have UUID
@@ -891,76 +858,34 @@ func getSourceData(sourceConcepts []ontology.NewSourceConcept) map[string]string
 func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 	// TODO: Check if props are empty not just that they exist
-	sourceNodePropertiesToStore := map[string]string{
-		ontology.PrefLabelProp:      "prefLabel",      // string
-		ontology.FigiCodeProp:       "figiCode",       // string
-		ontology.IsDeprecatedProp:   "isDeprecated",   // bool
-		ontology.AuthorityProp:      "authority",      // string
-		ontology.AuthorityValueProp: "authorityValue", // string
-	}
-
-	canonicalNodePropertiesToStore := map[string]string{
-		ontology.PrefLabelProp:              "prefLabel",              // string
-		ontology.AliasesProp:                "aliases",                // []string
-		ontology.StraplineProp:              "strapline",              // string
-		ontology.DescriptionProp:            "descriptionXML",         // string
-		ontology.ImageURLProp:               "imageUrl",               // string
-		ontology.EmailAddressProp:           "emailAddress",           // string
-		ontology.FacebookPageProp:           "facebookPage",           // string
-		ontology.FigiCodeProp:               "figiCode",               // string
-		ontology.TwitterHandleProp:          "twitterHandle",          // string
-		ontology.ScopeNoteProp:              "scopeNote",              // string
-		ontology.ShortLabelProp:             "shortLabel",             // string
-		ontology.ProperNameProp:             "properName",             // string
-		ontology.ShortNameProp:              "shortName",              // string
-		ontology.FormerNamesProp:            "formerNames",            // []string
-		ontology.TradeNamesProp:             "tradeNames",             // []string
-		ontology.CountryCodeProp:            "countryCode",            // string
-		ontology.CountryOfRiskProp:          "countryOfRisk",          // string
-		ontology.CountryOfOperationsProp:    "countryOfOperations",    // string
-		ontology.CountryOfIncorporationProp: "countryOfIncorporation", // string
-		ontology.PostalCodeProp:             "postalCode",             // string
-		ontology.YearFoundedProp:            "yearFounded",            // int
-		ontology.LeiCodeProp:                "leiCode",                // string
-		ontology.IsDeprecatedProp:           "isDeprecated",           // bool
-		ontology.SalutationProp:             "salutation",             // string
-		ontology.BirthYearProp:              "birthYear",              // int
-		ontology.ISO31661Prop:               "iso31661",               // string
-		ontology.IndustryIdentifierProp:     "industryIdentifier",     // string
-
-		ontology.InceptionDateProp:        "inceptionDate",        // string
-		ontology.TerminationDateProp:      "terminationDate",      // string
-		ontology.InceptionDateEpochProp:   "inceptionDateEpoch",   // int64
-		ontology.TerminationDateEpochProp: "terminationDateEpoch", // int64
-
-	}
 
 	//common props
-	for label, name := range sourceNodePropertiesToStore {
+	sourceNodePropertiesToStore := ontology.GetFilteredPropertySetup(ontology.SourceProperty)
+	for label, setup := range sourceNodePropertiesToStore {
 		val, has := concept.GetProp(label)
 		if !has {
 			continue
 		}
-		nodeProps[name] = val
+		nodeProps[setup.NeoLabel] = val
 	}
 
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 	//source specific props
 	if isSource {
 		nodeProps["uuid"] = id
-
 		return nodeProps
 	}
+	nodeProps["prefUUID"] = id
+	nodeProps["aggregateHash"] = concept.Hash
 	//canonical specific props
-	for label, name := range canonicalNodePropertiesToStore {
+	canonicalNodePropertiesToStore := ontology.GetFilteredPropertySetup(ontology.CanonicalProperty)
+	for label, setup := range canonicalNodePropertiesToStore {
 		val, has := concept.GetProp(label)
 		if !has {
 			continue
 		}
-		nodeProps[name] = val
+		nodeProps[setup.NeoLabel] = val
 	}
-	nodeProps["prefUUID"] = id
-	nodeProps["aggregateHash"] = concept.Hash
 
 	return nodeProps
 }
@@ -1042,38 +967,19 @@ func cleanAndSortAggregateConcept(c ontology.NewAggregatedConcept) ontology.NewA
 
 func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	var cleanSources []ontology.NewSourceConcept
-	propertiesToKeep := [...]string{
-		ontology.PrefLabelProp,
-		ontology.FigiCodeProp,
-		ontology.IsDeprecatedProp,
-		ontology.AuthorityProp,
-		ontology.AuthorityValueProp,
-	}
-	relationsToKeep := map[string]bool{
-		ontology.BroaderRelation:                true,
-		ontology.ParentRelation:                 true,
-		ontology.ImpliedByRelation:              true,
-		ontology.HasFocusRelation:               true,
-		ontology.IsRelatedRelation:              true,
-		ontology.SupersededByRelation:           true,
-		ontology.CountryOfRiskRelation:          true,
-		ontology.CountryOfIncorporationRelation: true,
-		ontology.CountryOfOperationsRelation:    true,
-		ontology.ParentOrganisationRelation:     true,
-		ontology.IndustryClassificationRelation: true,
-		ontology.HasOrganisationRelation:        true,
-		ontology.HasMemberRelation:              true,
-		ontology.HasMembershipRoleRelation:      true,
-	}
+	sourceProperties := ontology.GetFilteredPropertySetup(ontology.SourceProperty)
+	relations := ontology.GetRelationships()
+
 	for _, source := range c.SourceRepresentations {
 		cleanProps := map[string]interface{}{}
-		for _, label := range propertiesToKeep {
+		for label := range sourceProperties {
 			cleanProps[label] = source.Properties[label]
 		}
 
 		var cleanRelations []ontology.Relationship
 		for _, rel := range source.Relations {
-			if relationsToKeep[rel.Label] {
+			_, hasRelation := relations[rel.Label]
+			if hasRelation {
 				cleanRelations = append(cleanRelations, rel)
 			}
 		}

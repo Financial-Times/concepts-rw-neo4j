@@ -155,42 +155,6 @@ func TransformRelationshipToMembershipRole(relations []Relationship) []Membershi
 	return roles
 }
 
-var propertyLabelToConceptField = map[string]string{
-	PrefLabelProp:              "prefLabel",
-	AuthorityProp:              "authority",
-	AuthorityValueProp:         "authorityValue",
-	AliasesProp:                "aliases",
-	StraplineProp:              "strapline",
-	DescriptionProp:            "descriptionXML",
-	ImageURLProp:               "_imageUrl",
-	EmailAddressProp:           "emailAddress",
-	FacebookPageProp:           "facebookPage",
-	TwitterHandleProp:          "twitterHandle",
-	ScopeNoteProp:              "scopeNote",
-	ShortLabelProp:             "shortLabel",
-	InceptionDateProp:          "inceptionDate",
-	TerminationDateProp:        "terminationDate",
-	InceptionDateEpochProp:     "inceptionDateEpoch",
-	TerminationDateEpochProp:   "terminationDateEpoch",
-	FigiCodeProp:               "figiCode",
-	ProperNameProp:             "properName",
-	ShortNameProp:              "shortName",
-	TradeNamesProp:             "tradeNames",
-	FormerNamesProp:            "formerNames",
-	CountryCodeProp:            "countryCode",
-	CountryOfRiskProp:          "countryOfRisk",
-	CountryOfIncorporationProp: "countryOfIncorporation",
-	CountryOfOperationsProp:    "countryOfOperations",
-	PostalCodeProp:             "postalCode",
-	YearFoundedProp:            "yearFounded",
-	LeiCodeProp:                "leiCode",
-	IsDeprecatedProp:           "isDeprecated",
-	ISO31661Prop:               "iso31661",
-	SalutationProp:             "salutation",
-	BirthYearProp:              "birthYear",
-	IndustryIdentifierProp:     "industryIdentifier",
-}
-
 func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 	data, _ := json.Marshal(c)
 	var store map[string]interface{}
@@ -215,9 +179,9 @@ func TransformToNewSourceConcept(c SourceConcept) NewSourceConcept {
 		Hash:              c.Hash,
 		IssuedBy:          c.IssuedBy,
 	}
-
-	for prop, label := range propertyLabelToConceptField {
-		val, has := store[label]
+	propertySetup := GetPropertySetup()
+	for prop, setup := range propertySetup {
+		val, has := store[setup.ConceptField]
 		if has {
 			concept.Properties[prop] = val
 		}
@@ -260,10 +224,11 @@ func TransformToOldSourceConcept(c NewSourceConcept) SourceConcept {
 		"terminationDateEpoch": TransformDateToUnix(terminationDate),
 		"issuedBy":             c.IssuedBy,
 	}
-	for prop, label := range propertyLabelToConceptField {
+	propertySetup := GetPropertySetup()
+	for prop, setup := range propertySetup {
 		val, has := c.GetProp(prop)
 		if has {
-			store[label] = val
+			store[setup.ConceptField] = val
 		}
 	}
 	relationshipMapping := GetRelationships()
