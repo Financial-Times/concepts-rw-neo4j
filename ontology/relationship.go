@@ -1,5 +1,26 @@
 package ontology
 
+// Relation names
+const (
+	BroaderRelation         = "HAS_BROADER"
+	ParentRelation          = "HAS_PARENT"
+	ImpliedByRelation       = "IMPLIED_BY"
+	HasFocusRelation        = "HAS_FOCUS"
+	IsRelatedRelation       = "IS_RELATED_TO"
+	SupersededByRelation    = "SUPERSEDED_BY"
+	HasOrganisationRelation = "HAS_ORGANISATION"
+	HasMemberRelation       = "HAS_MEMBER"
+
+	HasMembershipRoleRelation = "HAS_ROLE"
+
+	CountryOfRiskRelation          = "COUNTRY_OF_RISK"
+	CountryOfIncorporationRelation = "COUNTRY_OF_INCORPORATION"
+	CountryOfOperationsRelation    = "COUNTRY_OF_OPERATIONS"
+	ParentOrganisationRelation     = "SUB_ORGANISATION_OF"
+
+	IndustryClassificationRelation = "HAS_INDUSTRY_CLASSIFICATION"
+)
+
 type RelationshipConfig struct {
 	// Neo4j setup
 	NeoRelationship string // Neo4J Relationship type

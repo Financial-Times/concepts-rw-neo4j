@@ -156,63 +156,6 @@ var authorities = []string{
 	"DBPedia",
 	"NAICS",
 }
-
-const (
-	AuthorityProp      = "authority"
-	AuthorityValueProp = "authorityValue"
-	PrefLabelProp      = "prefLabel"
-	AliasesProp        = "aliases"
-	StraplineProp      = "strapline"
-	DescriptionProp    = "descriptionXML"
-	ImageURLProp       = "_imageUrl"
-	EmailAddressProp   = "emailAddress"
-	FacebookPageProp   = "facebookPage"
-	TwitterHandleProp  = "twitterHandle"
-	ScopeNoteProp      = "scopeNote"
-	ShortLabelProp     = "shortLabel"
-	FigiCodeProp       = "figiCode"
-	// Organisations
-	ProperNameProp             = "properName"
-	ShortNameProp              = "shortName"
-	TradeNamesProp             = "tradeNames"
-	FormerNamesProp            = "formerNames"
-	CountryCodeProp            = "countryCode"
-	CountryOfRiskProp          = "countryOfRisk"
-	CountryOfIncorporationProp = "countryOfIncorporation"
-	CountryOfOperationsProp    = "countryOfOperations"
-	PostalCodeProp             = "postalCode"
-	YearFoundedProp            = "yearFounded"
-	LeiCodeProp                = "leiCode"
-	IsDeprecatedProp           = "isDeprecated"
-	ISO31661Prop               = "iso31661"
-	SalutationProp             = "salutation"
-	BirthYearProp              = "birthYear"
-	IndustryIdentifierProp     = "industryIdentifier"
-
-	InceptionDateProp        = "inceptionDate"
-	TerminationDateProp      = "terminationDate"
-	InceptionDateEpochProp   = "inceptionDateEpoch"
-	TerminationDateEpochProp = "terminationDateEpoch"
-
-	BroaderRelation         = "HAS_BROADER"
-	ParentRelation          = "HAS_PARENT"
-	ImpliedByRelation       = "IMPLIED_BY"
-	HasFocusRelation        = "HAS_FOCUS"
-	IsRelatedRelation       = "IS_RELATED_TO"
-	SupersededByRelation    = "SUPERSEDED_BY"
-	HasOrganisationRelation = "HAS_ORGANISATION"
-	HasMemberRelation       = "HAS_MEMBER"
-
-	HasMembershipRoleRelation = "HAS_ROLE"
-
-	CountryOfRiskRelation          = "COUNTRY_OF_RISK"
-	CountryOfIncorporationRelation = "COUNTRY_OF_INCORPORATION"
-	CountryOfOperationsRelation    = "COUNTRY_OF_OPERATIONS"
-	ParentOrganisationRelation     = "SUB_ORGANISATION_OF"
-
-	IndustryClassificationRelation = "HAS_INDUSTRY_CLASSIFICATION"
-)
-
 type GenericConcept struct {
 	Properties map[string]interface{} `json:"properties"`
 	Relations  []Relationship         `json:"relationships"`

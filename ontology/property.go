@@ -1,5 +1,6 @@
 package ontology
 
+// Property Types
 const (
 	PropertyStringType      = "string"
 	PropertyStringSliceType = "[]string"
@@ -8,9 +9,49 @@ const (
 	PropertyDateType        = "date"
 )
 
+// Property Locations
 const (
 	SourceProperty    = "source-property"
 	CanonicalProperty = "canonical-property"
+)
+
+// Property names
+const (
+	AuthorityProp      = "authority"
+	AuthorityValueProp = "authorityValue"
+	PrefLabelProp      = "prefLabel"
+	AliasesProp        = "aliases"
+	StraplineProp      = "strapline"
+	DescriptionProp    = "descriptionXML"
+	ImageURLProp       = "_imageUrl"
+	EmailAddressProp   = "emailAddress"
+	FacebookPageProp   = "facebookPage"
+	TwitterHandleProp  = "twitterHandle"
+	ScopeNoteProp      = "scopeNote"
+	ShortLabelProp     = "shortLabel"
+	FigiCodeProp       = "figiCode"
+	// Organisations
+	ProperNameProp             = "properName"
+	ShortNameProp              = "shortName"
+	TradeNamesProp             = "tradeNames"
+	FormerNamesProp            = "formerNames"
+	CountryCodeProp            = "countryCode"
+	CountryOfRiskProp          = "countryOfRisk"
+	CountryOfIncorporationProp = "countryOfIncorporation"
+	CountryOfOperationsProp    = "countryOfOperations"
+	PostalCodeProp             = "postalCode"
+	YearFoundedProp            = "yearFounded"
+	LeiCodeProp                = "leiCode"
+	IsDeprecatedProp           = "isDeprecated"
+	ISO31661Prop               = "iso31661"
+	SalutationProp             = "salutation"
+	BirthYearProp              = "birthYear"
+	IndustryIdentifierProp     = "industryIdentifier"
+
+	InceptionDateProp        = "inceptionDate"
+	TerminationDateProp      = "terminationDate"
+	InceptionDateEpochProp   = "inceptionDateEpoch"
+	TerminationDateEpochProp = "terminationDateEpoch"
 )
 
 type PropertyConfig struct {
