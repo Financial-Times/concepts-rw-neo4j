@@ -1654,7 +1654,7 @@ func TestInvalidTypesThrowError(t *testing.T) {
 		assert.Equal(t, ontology.AggregatedConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
 		assert.Equal(t, false, found, "Scenario "+scenario.testName+" failed; aggregate concept should not be returned from read")
 		assert.Error(t, err, "Scenario "+scenario.testName+" failed; read of concept should return error")
-		assert.Contains(t, err.Error(), "provided types are not a consistent hierarchy", "Scenario "+scenario.testName+" failed; should throw error from mapper.MostSpecificType function")
+		assert.Contains(t, err.Error(), "unknow concept type 'Unknown'", "Scenario "+scenario.testName+" failed; should throw error from mapper.MostSpecificType function")
 	}
 
 	defer cleanDB(t)

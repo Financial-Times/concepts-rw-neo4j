@@ -121,28 +121,6 @@ type SourceConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-var ConceptLabels = [...]string{
-	"Concept",
-	"Classification",
-	"Section",
-	"Subject",
-	"SpecialReport",
-	"Topic",
-	"Location",
-	"Genre",
-	"Brand",
-	"Person",
-	"Organisation",
-	"MembershipRole",
-	"Membership",
-	"BoardRole",
-	"FinancialInstrument",
-	"Company",
-	"PublicCompany",
-	"IndustryClassification",
-	"NAICSIndustryClassification",
-}
-
 var authorities = []string{
 	"TME",
 	"FACTSET",
@@ -156,6 +134,7 @@ var authorities = []string{
 	"DBPedia",
 	"NAICS",
 }
+
 type GenericConcept struct {
 	Properties map[string]interface{} `json:"properties"`
 	Relations  []Relationship         `json:"relationships"`

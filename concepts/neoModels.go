@@ -3,34 +3,8 @@ package concepts
 import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
-	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/jmcvetta/neoism"
 )
-
-// Map of all the possible node types so we can ensure they all have
-// constraints on the uuid
-var constraintMap = map[string]string{
-	"Thing":                       "uuid",
-	"Concept":                     "uuid",
-	"Classification":              "uuid",
-	"Section":                     "uuid",
-	"Subject":                     "uuid",
-	"SpecialReport":               "uuid",
-	"Location":                    "uuid",
-	"Topic":                       "uuid",
-	"Genre":                       "uuid",
-	"Brand":                       "uuid",
-	"AlphavilleSeries":            "uuid",
-	"PublicCompany":               "uuid",
-	"Person":                      "uuid",
-	"Organisation":                "uuid",
-	"MembershipRole":              "uuid",
-	"BoardRole":                   "uuid",
-	"Membership":                  "uuid",
-	"FinancialInstrument":         "uuid",
-	"IndustryClassification":      "uuid",
-	"NAICSIndustryClassification": "uuid",
-}
 
 type neoAggregatedConcept struct {
 	AggregateHash         string                    `json:"aggregateHash,omitempty"`
@@ -83,7 +57,7 @@ type neoAggregatedConcept struct {
 }
 
 func (c neoAggregatedConcept) ToAggregateConcept() (ontology.NewAggregatedConcept, error) {
-	typeName, err := mapper.MostSpecificType(c.Types)
+	typeName, err := ontology.MostSpecificType(c.Types)
 	if err != nil {
 		return ontology.NewAggregatedConcept{}, err
 	}
@@ -200,7 +174,7 @@ type neoConcept struct {
 }
 
 func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
-	conceptType, err := mapper.MostSpecificType(c.Types)
+	conceptType, err := ontology.MostSpecificType(c.Types)
 	if err != nil {
 		return ontology.NewSourceConcept{}, err
 	}

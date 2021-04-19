@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
@@ -49,34 +50,32 @@ func NewConceptService(cypherRunner neoutils.NeoConnection) ConceptService {
 
 // Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
 func (s *ConceptService) Initialise() error {
-	err := s.conn.EnsureIndexes(map[string]string{
-		"Concept": "leiCode",
-	})
-	if err != nil {
-		logger.WithError(err).Error("Could not run db index")
-		return err
-	}
 
-	err = s.conn.EnsureIndexes(map[string]string{
-		"Thing":   "authorityValue",
-		"Concept": "authorityValue",
-	})
-	if err != nil {
-		logger.WithError(err).Error("Could not run DB constraints")
-		return err
+	indexes := ontology.GetConceptTypeIndexes()
+	for label, fields := range indexes {
+		for _, field := range fields {
+			err := s.conn.EnsureIndexes(map[string]string{
+				label: field,
+			})
+			if err != nil {
+				logger.WithError(err).WithField("ConceptType", label).WithField("FieldName", field).Error("Could not run db index")
+				return err
+			}
+		}
 	}
-
-	err = s.conn.EnsureConstraints(map[string]string{
-		"Thing":                       "prefUUID",
-		"Concept":                     "prefUUID",
-		"Location":                    "iso31661",
-		"NAICSIndustryClassification": "industryIdentifier",
-	})
-	if err != nil {
-		logger.WithError(err).Error("Could not run db constraints")
-		return err
+	constraints := ontology.GetConceptTypeConstraints()
+	for label, fields := range constraints {
+		for _, field := range fields {
+			err := s.conn.EnsureConstraints(map[string]string{
+				label: field,
+			})
+			if err != nil {
+				logger.WithError(err).WithField("ConceptType", label).WithField("FieldName", field).Error("Could not run DB constraints")
+				return err
+			}
+		}
 	}
-	return s.conn.EnsureConstraints(constraintMap)
+	return nil
 }
 
 type equivalenceResult struct {
@@ -397,7 +396,7 @@ func validateObject(aggConcept ontology.NewAggregatedConcept) error {
 	if !ok || prefLabel == "" {
 		return formatError("prefLabel", aggConcept.PrefUUID)
 	}
-	if _, ok := constraintMap[aggConcept.Type]; !ok {
+	if !ontology.HasType(aggConcept.Type) {
 		return formatError("type", aggConcept.PrefUUID)
 	}
 	if aggConcept.SourceRepresentations == nil {
@@ -415,7 +414,7 @@ func validateObject(aggConcept ontology.NewAggregatedConcept) error {
 		if !ok || authorityValue == "" {
 			return formatError("sourceRepresentation.authorityValue", concept.UUID)
 		}
-		if _, ok := constraintMap[concept.Type]; !ok {
+		if !ontology.HasType(concept.Type) {
 			return formatError("type", aggConcept.PrefUUID)
 		}
 	}
@@ -641,6 +640,7 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 	for _, setup := range relationMap {
 		relationsToRemove = append(relationsToRemove, setup.NeoRelationship)
 	}
+	labelsToRemove := strings.Join(ontology.GetRemovableConceptTypeLabels(), ":")
 	for _, sr := range ac.SourceRepresentations {
 		deletePreviousSourceLabelsAndPropertiesQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
@@ -648,7 +648,7 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 			WHERE TYPE(r) IN {relations}
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE  r`, getLabelsToRemove()),
+			DELETE  r`, labelsToRemove),
 			Parameters: map[string]interface{}{
 				"id":        sr.UUID,
 				"relations": relationsToRemove,
@@ -663,7 +663,7 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
 			REMOVE t:%s
 			SET t={prefUUID:{acUUID}}
-			DELETE rel`, getLabelsToRemove()),
+			DELETE rel`, labelsToRemove),
 		Parameters: map[string]interface{}{
 			"acUUID": acUUID,
 		},
@@ -691,10 +691,11 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 	}
 	// Canonical node that doesn't have UUID
 	canonicalProps := setProps(concept, aggregatedConcept.PrefUUID, false)
+	labels := strings.Join(ontology.GetConceptTypeLabels(concept.Type), ":")
 	createConceptQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
 											set n={allprops}
-											set n :%s`, getAllLabels(concept.Type)),
+											set n :%s`, labels),
 		Parameters: map[string]interface{}{
 			"prefUUID": aggregatedConcept.PrefUUID,
 			"allprops": canonicalProps,
@@ -735,10 +736,11 @@ func createNodeQueries(concept ontology.NewSourceConcept, uuid string) []*neoism
 	var createConceptQuery *neoism.CypherQuery
 
 	allProps := setProps(concept, uuid, true)
+	labels := strings.Join(ontology.GetConceptTypeLabels(concept.Type), ":")
 	createConceptQuery = &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 											set n={allprops}
-											set n :%s`, getAllLabels(concept.Type)),
+											set n :%s`, labels),
 		Parameters: map[string]interface{}{
 			"uuid":     uuid,
 			"allprops": allProps,
@@ -807,42 +809,20 @@ func addRelationship(conceptID string, connections []ontology.Connection, relati
 func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept ontology.NewSourceConcept) *neoism.CypherQuery {
 	allProps := setProps(concept, concept.UUID, false)
 	logger.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
+	labels := strings.Join(ontology.GetConceptTypeLabels(concept.Type), ":")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`
 					MATCH (t:Thing{uuid:{prefUUID}})
 					MERGE (n:Thing {prefUUID: {prefUUID}})
 					MERGE (n)<-[:EQUIVALENT_TO]-(t)
 					set n={allprops}
-					set n :%s`, getAllLabels(concept.Type)),
+					set n :%s`, labels),
 		Parameters: map[string]interface{}{
 			"prefUUID": concept.UUID,
 			"allprops": allProps,
 		},
 	}
 	return createCanonicalNodeQuery
-}
-
-//return all concept labels
-func getAllLabels(conceptType string) string {
-	labels := conceptType
-	parentType := mapper.ParentType(conceptType)
-	for parentType != "" {
-		labels += ":" + parentType
-		parentType = mapper.ParentType(parentType)
-	}
-	return labels
-}
-
-//return existing labels
-func getLabelsToRemove() string {
-	var labelsToRemove string
-	for i, conceptType := range ontology.ConceptLabels {
-		labelsToRemove += conceptType
-		if i+1 < len(ontology.ConceptLabels) {
-			labelsToRemove += ":"
-		}
-	}
-	return labelsToRemove
 }
 
 //extract uuids of the source concepts

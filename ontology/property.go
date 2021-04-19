@@ -17,6 +17,8 @@ const (
 
 // Property names
 const (
+	UUIDProp           = "uuid"
+	PrefUUIDProp       = "prefUUID"
 	AuthorityProp      = "authority"
 	AuthorityValueProp = "authorityValue"
 	PrefLabelProp      = "prefLabel"
