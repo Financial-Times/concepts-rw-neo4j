@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
@@ -91,7 +92,7 @@ var ConceptNotFoundErr = errors.New("concept not found")
 //Read - read service
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	concept, err := s.read(uuid, transID)
-	result := ontology.TransformToOldAggregateConcept(concept)
+	result := transform.TransformToOldAggregateConcept(concept)
 	if err == nil {
 		return result, true, nil
 	}
@@ -133,7 +134,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	if !ok {
 		return nil, errors.New("wrong thing")
 	}
-	newConcept := ontology.TransformToNewAggregateConcept(concept)
+	newConcept := transform.TransformToNewAggregateConcept(concept)
 	return s.write(transID, newConcept)
 }
 

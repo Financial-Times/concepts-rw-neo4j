@@ -2,6 +2,7 @@ package concepts
 
 import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/jmcvetta/neoism"
 )
@@ -204,20 +205,20 @@ func (c neoConcept) ToSourceConcept() (ontology.NewSourceConcept, error) {
 		return ontology.NewSourceConcept{}, err
 	}
 	var relations []ontology.Relationship
-	relations = append(relations, ontology.TransformToRelationships(ontology.BroaderRelation, filterSlice(c.BroaderUUIDs)))
-	relations = append(relations, ontology.TransformToRelationships(ontology.ParentRelation, filterSlice(c.ParentUUIDs)))
-	relations = append(relations, ontology.TransformToRelationships(ontology.ImpliedByRelation, filterSlice(c.ImpliedByUUIDs)))
-	relations = append(relations, ontology.TransformToRelationships(ontology.HasFocusRelation, filterSlice(c.HasFocusUUIDs)))
-	relations = append(relations, ontology.TransformToRelationships(ontology.SupersededByRelation, filterSlice(c.SupersededByUUIDs)))
-	relations = append(relations, ontology.TransformToRelationships(ontology.IsRelatedRelation, filterSlice(c.RelatedUUIDs)))
-	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfRiskRelation, []string{c.CountryOfRiskUUID}))
-	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfIncorporationRelation, []string{c.CountryOfIncorporationUUID}))
-	relations = append(relations, ontology.TransformToRelationships(ontology.CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
-	relations = append(relations, ontology.TransformToRelationships(ontology.ParentOrganisationRelation, []string{c.ParentOrganisation}))
-	relations = append(relations, ontology.TransformNAICSToRelationship(c.NAICSIndustryClassifications))
-	relations = append(relations, ontology.TransformToRelationships(ontology.HasOrganisationRelation, []string{c.OrganisationUUID}))
-	relations = append(relations, ontology.TransformToRelationships(ontology.HasMemberRelation, []string{c.PersonUUID}))
-	relations = append(relations, ontology.TransformMembershipRoleToRelationship(c.MembershipRoles))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.BroaderRelation, filterSlice(c.BroaderUUIDs)))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.ParentRelation, filterSlice(c.ParentUUIDs)))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.ImpliedByRelation, filterSlice(c.ImpliedByUUIDs)))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.HasFocusRelation, filterSlice(c.HasFocusUUIDs)))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.SupersededByRelation, filterSlice(c.SupersededByUUIDs)))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.IsRelatedRelation, filterSlice(c.RelatedUUIDs)))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.CountryOfRiskRelation, []string{c.CountryOfRiskUUID}))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.CountryOfIncorporationRelation, []string{c.CountryOfIncorporationUUID}))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.CountryOfOperationsRelation, []string{c.CountryOfOperationsUUID}))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.ParentOrganisationRelation, []string{c.ParentOrganisation}))
+	relations = append(relations, transform.NAICSToRelationship(c.NAICSIndustryClassifications))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.HasOrganisationRelation, []string{c.OrganisationUUID}))
+	relations = append(relations, transform.UUIDsToRelationships(ontology.HasMemberRelation, []string{c.PersonUUID}))
+	relations = append(relations, transform.MembershipRolesToRelationship(c.MembershipRoles))
 
 	return ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
