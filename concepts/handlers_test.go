@@ -33,7 +33,7 @@ func TestPutHandler(t *testing.T) {
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
 				},
-				write: func(thing interface{}, transID string) (interface{}, error) {
+				write: func(thing interface{}, conceptType string, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
 				},
 			},
@@ -48,7 +48,7 @@ func TestPutHandler(t *testing.T) {
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "FinancialInstrument"}, knownUUID, nil
 				},
-				write: func(thing interface{}, transID string) (interface{}, error) {
+				write: func(thing interface{}, conceptType string, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
 				},
 			},
@@ -75,7 +75,7 @@ func TestPutHandler(t *testing.T) {
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
 				},
-				write: func(thing interface{}, transID string) (interface{}, error) {
+				write: func(thing interface{}, conceptType string, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
 				},
 			},
@@ -90,7 +90,7 @@ func TestPutHandler(t *testing.T) {
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
 				},
-				write: func(thing interface{}, transID string) (interface{}, error) {
+				write: func(thing interface{}, conceptType string, transID string) (interface{}, error) {
 					return nil, errors.New("TEST failing to WRITE")
 				},
 			},
@@ -105,7 +105,7 @@ func TestPutHandler(t *testing.T) {
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
 				},
-				write: func(thing interface{}, transID string) (interface{}, error) {
+				write: func(thing interface{}, conceptType string, transID string) (interface{}, error) {
 					return nil, rwapi.ConstraintOrTransactionError{}
 				},
 			},
@@ -120,7 +120,7 @@ func TestPutHandler(t *testing.T) {
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, knownUUID, nil
 				},
-				write: func(thing interface{}, transID string) (interface{}, error) {
+				write: func(thing interface{}, conceptType string, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
 				},
 			},
@@ -155,7 +155,7 @@ func TestGetHandler(t *testing.T) {
 			name: "Success",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
-				read: func(uuid string, transID string) (interface{}, bool, error) {
+				read: func(uuid string, conceptType string, transID string) (interface{}, bool, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
 				},
 			},
@@ -167,7 +167,7 @@ func TestGetHandler(t *testing.T) {
 			name: "NotFound",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", "99999"), t),
 			ds: &mockConceptService{
-				read: func(uuid string, transID string) (interface{}, bool, error) {
+				read: func(uuid string, conceptType string, transID string) (interface{}, bool, error) {
 					return nil, false, nil
 				},
 			},
@@ -179,7 +179,7 @@ func TestGetHandler(t *testing.T) {
 			name: "ReadError",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
-				read: func(uuid string, transID string) (interface{}, bool, error) {
+				read: func(uuid string, conceptType string, transID string) (interface{}, bool, error) {
 					return nil, false, errors.New("TEST failing to READ")
 				},
 			},
@@ -191,7 +191,7 @@ func TestGetHandler(t *testing.T) {
 			name: "BadConceptOrPath",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
-				read: func(uuid string, transID string) (interface{}, bool, error) {
+				read: func(uuid string, conceptType string, transID string) (interface{}, bool, error) {
 					return AggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
 				},
 			},

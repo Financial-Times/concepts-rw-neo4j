@@ -6,22 +6,22 @@ import (
 )
 
 type mockConceptService struct {
-	write      func(thing interface{}, transID string) (interface{}, error)
-	read       func(uuid string, transID string) (interface{}, bool, error)
+	write      func(thing interface{}, conceptType string, transID string) (interface{}, error)
+	read       func(uuid string, conceptType string, transID string) (interface{}, bool, error)
 	decodeJSON func(*json.Decoder) (interface{}, string, error)
 	check      func() error
 }
 
-func (mcs *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
+func (mcs *mockConceptService) Write(thing interface{}, conceptType string, transID string) (interface{}, error) {
 	if mcs.write != nil {
-		return mcs.write(thing, transID)
+		return mcs.write(thing, conceptType, transID)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (mcs *mockConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
+func (mcs *mockConceptService) Read(uuid string, conceptType string, transID string) (interface{}, bool, error) {
 	if mcs.read != nil {
-		return mcs.read(uuid, transID)
+		return mcs.read(uuid, conceptType, transID)
 	}
 	return nil, false, errors.New("not implemented")
 }

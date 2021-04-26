@@ -32,8 +32,8 @@ type ConceptService struct {
 
 // ConceptServicer defines the functions any read-write application needs to implement
 type ConceptServicer interface {
-	Write(thing interface{}, transID string) (updatedIds interface{}, err error)
-	Read(uuid string, transID string) (thing interface{}, found bool, err error)
+	Write(thing interface{}, conceptType string, transID string) (updatedIds interface{}, err error)
+	Read(uuid string, conceptType string, transID string) (thing interface{}, found bool, err error)
 	DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error)
 	Check() error
 	Initialise() error
@@ -194,7 +194,7 @@ type equivalenceResult struct {
 }
 
 //Read - read service
-func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
+func (s *ConceptService) Read(uuid string, conceptType string, transID string) (interface{}, bool, error) {
 	var results []neoAggregatedConcept
 
 	query := &neoism.CypherQuery{
@@ -429,7 +429,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 	return cleanConcept(aggregatedConcept), true, nil
 }
 
-func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
+func (s *ConceptService) Write(thing interface{}, conceptType string, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	updateRecord := ConceptChanges{}
@@ -450,7 +450,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		return updateRecord, err
 	}
 
-	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, transID)
+	existingConcept, exists, err := s.Read(aggregatedConceptToWrite.PrefUUID, conceptType, transID)
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Read request for existing concordance resulted in error")
 		return updateRecord, err

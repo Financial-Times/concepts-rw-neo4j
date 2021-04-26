@@ -973,11 +973,11 @@ func TestWriteService(t *testing.T) {
 			defer cleanDB(t)
 			// Create the related, broader than and impliedBy on concepts
 			for _, relatedConcept := range test.otherRelatedConcepts {
-				_, err := conceptsDriver.Write(relatedConcept, "")
+				_, err := conceptsDriver.Write(relatedConcept, "", "")
 				assert.NoError(t, err, "Failed to write related/broader/impliedBy concept")
 			}
 
-			updatedConcepts, err := conceptsDriver.Write(test.aggregatedConcept, "")
+			updatedConcepts, err := conceptsDriver.Write(test.aggregatedConcept, "", "")
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
 				readConceptAndCompare(t, test.aggregatedConcept, test.testName, test.writtenNotReadFields...)
@@ -1016,12 +1016,12 @@ func TestWriteMemberships_Organisation(t *testing.T) {
 	defer cleanDB(t)
 
 	org := getAggregatedConcept(t, "organisation.json")
-	_, err := conceptsDriver.Write(org, "test_tid")
+	_, err := conceptsDriver.Write(org, "", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, org, "TestWriteMemberships_Organisation")
 
 	upOrg := getAggregatedConcept(t, "updated-organisation.json")
-	_, err = conceptsDriver.Write(upOrg, "test_tid")
+	_, err = conceptsDriver.Write(upOrg, "", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, upOrg, "TestWriteMemberships_Organisation.Updated")
 }
@@ -1029,10 +1029,10 @@ func TestWriteMemberships_Organisation(t *testing.T) {
 func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	defer cleanDB(t)
 
-	_, err := conceptsDriver.Write(getAggregatedConcept(t, "membership.json"), "test_tid")
+	_, err := conceptsDriver.Write(getAggregatedConcept(t, "membership.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write membership")
 
-	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
+	result, _, err := conceptsDriver.Read(membershipUUID, "", "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
 	ab, err := json.Marshal(cleanHash(result.(AggregatedConcept)))
 
@@ -1048,10 +1048,10 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	assert.Equal(t, "Mr", originalMembership.Salutation)
 	assert.Equal(t, 2018, originalMembership.BirthYear)
 
-	_, err = conceptsDriver.Write(getAggregatedConcept(t, "updated-membership.json"), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "updated-membership.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write membership")
 
-	updatedResult, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
+	updatedResult, _, err := conceptsDriver.Read(membershipUUID, "", "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
 	cd, err := json.Marshal(cleanHash(updatedResult.(AggregatedConcept)))
 
@@ -1071,10 +1071,10 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 	err := db.CypherBatch(queries)
 	assert.NoError(t, err, "Failed to write source")
 
-	_, err = conceptsDriver.Write(getAggregatedConcept(t, "membership.json"), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "membership.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write membership")
 
-	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
+	result, _, err := conceptsDriver.Read(membershipUUID, "", "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
 	ab, err := json.Marshal(cleanHash(result.(AggregatedConcept)))
 
@@ -1092,18 +1092,18 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
 	defer cleanDB(t)
 
-	_, err := conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "test_tid")
+	_, err := conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
 	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 
-	_, err = conceptsDriver.Write(getAggregatedConcept(t, "updated-financial-instrument.json"), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "updated-financial-instrument.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
 	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
@@ -1112,12 +1112,12 @@ func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
 func TestFinancialInstrumentIssuerOrgRelationRemoved(t *testing.T) {
 	defer cleanDB(t)
 
-	_, err := conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "test_tid")
+	_, err := conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
 	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 
-	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument-with-same-issuer.json"), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument-with-same-issuer.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
 	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument-with-same-issuer.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
@@ -1577,11 +1577,11 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	cleanDB(t)
 	for _, scenario := range scenarios {
 		//Write data into db, to set up test scenario
-		_, err := conceptsDriver.Write(scenario.setUpConcept, tid)
+		_, err := conceptsDriver.Write(scenario.setUpConcept, "", tid)
 		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 		verifyAggregateHashIsCorrect(t, scenario.setUpConcept, scenario.testName)
 		//Overwrite data with update
-		output, err := conceptsDriver.Write(scenario.testConcept, tid)
+		output, err := conceptsDriver.Write(scenario.testConcept, "", tid)
 		if scenario.returnedError != "" {
 			if assert.Error(t, err, "Scenario "+scenario.testName+" failed; should return an error") {
 				assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unknown error")
@@ -1619,7 +1619,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		assert.Equal(t, scenario.updatedConcepts, actualChanges, "Scenario "+scenario.testName+" failed: Updated uuid list differs from expected")
 
 		for _, id := range scenario.uuidsToCheck {
-			conceptIf, found, err := conceptsDriver.Read(id, tid)
+			conceptIf, found, err := conceptsDriver.Read(id, "", tid)
 			concept := cleanHash(conceptIf.(AggregatedConcept))
 			if found {
 				assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
@@ -1641,16 +1641,16 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 func TestMultipleConcordancesAreHandled(t *testing.T) {
 	defer cleanDB(t)
 
-	_, err := conceptsDriver.Write(getAggregatedConcept(t, "full-lone-aggregated-concept.json"), "test_tid")
+	_, err := conceptsDriver.Write(getAggregatedConcept(t, "full-lone-aggregated-concept.json"), "", "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
-	_, err = conceptsDriver.Write(getAggregatedConcept(t, "lone-tme-section.json"), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "lone-tme-section.json"), "", "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
-	_, err = conceptsDriver.Write(getAggregatedConcept(t, "transfer-multiple-source-concordance.json"), "test_tid")
+	_, err = conceptsDriver.Write(getAggregatedConcept(t, "transfer-multiple-source-concordance.json"), "", "test_tid")
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
-	conceptIf, found, err := conceptsDriver.Read(simpleSmartlogicTopicUUID, "test_tid")
+	conceptIf, found, err := conceptsDriver.Read(simpleSmartlogicTopicUUID, "", "test_tid")
 	concept := cleanHash(conceptIf.(AggregatedConcept))
 	assert.NoError(t, err, "Should be able to read concept with no problems")
 	assert.True(t, found, "Concept should exist")
@@ -1686,7 +1686,7 @@ func TestInvalidTypesThrowError(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		db.CypherBatch([]*neoism.CypherQuery{{Statement: scenario.statementToWrite}})
-		aggConcept, found, err := conceptsDriver.Read(scenario.prefUUID, "")
+		aggConcept, found, err := conceptsDriver.Read(scenario.prefUUID, "", "")
 		assert.Equal(t, AggregatedConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
 		assert.Equal(t, false, found, "Scenario "+scenario.testName+" failed; aggregate concept should not be returned from read")
 		assert.Error(t, err, "Scenario "+scenario.testName+" failed; read of concept should return error")
@@ -2112,18 +2112,18 @@ func TestWriteLocation(t *testing.T) {
 	defer cleanDB(t)
 
 	location := getLocation()
-	_, err := conceptsDriver.Write(location, "test_tid")
+	_, err := conceptsDriver.Write(location, "", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, location, "TestWriteLocation")
 
 	locationISO31661 := getLocationWithISO31661()
-	_, err = conceptsDriver.Write(locationISO31661, "test_tid")
+	_, err = conceptsDriver.Write(locationISO31661, "", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, locationISO31661, "TestWriteLocationISO31661")
 }
 
 func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName string, ignoredFields ...string) {
-	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
+	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "", "")
 	actual := actualIf.(AggregatedConcept)
 
 	actual = cleanHash(cleanConcept(actual))

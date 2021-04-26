@@ -64,7 +64,7 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedIds, err := h.ConceptsService.Write(inst, transID)
+	updatedIds, err := h.ConceptsService.Write(inst, conceptType, transID)
 
 	if err != nil {
 		switch e := err.(type) {
@@ -100,7 +100,7 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 
 	transID := transactionidutils.GetTransactionIDFromRequest(r)
 
-	obj, found, err := h.ConceptsService.Read(uuid, transID)
+	obj, found, err := h.ConceptsService.Read(uuid, conceptType, transID)
 
 	w.Header().Add("Content-Type", "application/json")
 	w.Header().Set("X-Request-Id", transID)
