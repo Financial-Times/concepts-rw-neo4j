@@ -128,7 +128,7 @@ func MostSpecificType(typeLabels []string) (string, error) {
 	for _, l := range typeLabels {
 		t, ok := conceptTypes[l]
 		if !ok {
-			return "", fmt.Errorf("unknow concept type '%s'", l)
+			return "", fmt.Errorf("unknown concept type '%s'", l)
 		}
 		types = append(types, t)
 	}
