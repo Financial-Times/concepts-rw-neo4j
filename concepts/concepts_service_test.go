@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -1045,7 +1046,11 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	originalMembership = cleanConcept(originalMembership)
 
 	assert.Equal(t, len(originalMembership.MembershipRoles), 2)
-	assert.True(t, reflect.DeepEqual([]transform.MembershipRole{membershipRole, anotherMembershipRole}, originalMembership.MembershipRoles))
+	expectedRoles := []transform.MembershipRole{membershipRole, anotherMembershipRole}
+	if !cmp.Equal(expectedRoles, originalMembership.MembershipRoles) {
+		diff := cmp.Diff(expectedRoles, originalMembership.MembershipRoles)
+		t.Error(diff)
+	}
 	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
 	assert.Equal(t, personUUID, originalMembership.PersonUUID)
 	assert.Equal(t, "Mr", originalMembership.Salutation)
@@ -1070,7 +1075,7 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 func TestWriteMemberships_FixOldData(t *testing.T) {
 	defer cleanDB(t)
 
-	queries := createNodeQueries(getConcept(t, "old-membership.json"), "", membershipUUID)
+	queries := createNodeQueries(transform.TransformToNewSourceConcept(getConcept(t, "old-membership.json")), membershipUUID)
 	err := db.CypherBatch(queries)
 	assert.NoError(t, err, "Failed to write source")
 
@@ -1865,7 +1870,7 @@ func TestTransferConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", transform.AggregatedConcept{}, "")
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", ontology.NewAggregatedConcept{}, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
 			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
@@ -1956,7 +1961,7 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", scenario.targetConcordance, "")
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", transform.TransformToNewAggregateConcept(scenario.targetConcordance), "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
 			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
@@ -2105,7 +2110,7 @@ func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		err := validateObject(scenario.aggConcept, "transaction_id")
+		err := validateObject(transform.TransformToNewAggregateConcept(scenario.aggConcept), "transaction_id")
 		if err != nil {
 			assert.Contains(t, err.Error(), scenario.returnedError, scenario.testName)
 		} else {
@@ -2133,8 +2138,8 @@ func readConceptAndCompare(t *testing.T, payload transform.AggregatedConcept, te
 	actual := actualIf.(transform.AggregatedConcept)
 
 	actual = cleanHash(cleanConcept(actual))
-	clean := cleanSourceProperties(payload)
-	expected := cleanHash(cleanConcept(clean))
+	clean := cleanSourceProperties(transform.TransformToNewAggregateConcept(payload))
+	expected := cleanHash(cleanConcept(transform.TransformToOldAggregateConcept(clean)))
 
 	cmpOptions := cmpopts.IgnoreFields(transform.SourceConcept{}, ignoredFields...)
 	if !cmp.Equal(expected, actual, cmpOptions) {
@@ -2311,7 +2316,8 @@ func deleteConcordedNodes(t *testing.T, uuids ...string) {
 	assert.NoError(t, err, "Error executing clean up cypher")
 }
 
-func verifyAggregateHashIsCorrect(t *testing.T, concept transform.AggregatedConcept, testName string) {
+func verifyAggregateHashIsCorrect(t *testing.T, oldC transform.AggregatedConcept, testName string) {
+	concept := transform.TransformToNewAggregateConcept(oldC)
 	var results []struct {
 		Hash string `json:"a.aggregateHash"`
 	}
