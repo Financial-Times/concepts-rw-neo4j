@@ -6,6 +6,24 @@
 
 __An API for reading/writing concepts into Neo4j.__ 
 
+## POC - ontology outside of concept publishing services
+
+The aim of this POC is to separate the description of what properties and relationships Concepts can have, from the code that writes the concepts in Neo4j.
+The end goal is to speedup development time on new KG features.
+
+The POC adds two new packages:
+
+- `ontology` - this package contains the descriptions of `concept types` and allowed node `properties` and `relationships`.
+  It also defines new concept model that does not have explicit fields for concept properties and relations.
+  It adds two generic containers for `propeties` and `relations` and relays on the ontology descriptions to deduce what data goes in which container.
+
+- `ontology/transform` - this package defines basic transform functions from the old expressive model to the new compact one. 
+  It also defines a simplified way to read the concept nodes from Neo4j.
+  This new way reads every relationship and property stored in Neo4j for a provided node.
+  It then uses the ontology definitions to deduce how to map the neo data to the concept model.  
+  
+To see some thoughts on the implementation and still open questions search for `POC:` comments in the code.
+
 ## Installation
 
         go get github.com/Financial-Times/concepts-rw-neo4j

@@ -1,5 +1,9 @@
 package ontology
 
+// POC: most property types here are self-explanatory only "date" is strange
+// The idea is that property with "date" type will add two node properties
+// one is a datetime string and another unix epoch int. And the epoch field will not be visible from the outside.
+// That way we can cover "InceptionDateEpoch", "TerminationDateEpoch" fields for the Membership/MembershipRole Concepts
 // Property Types
 const (
 	PropertyStringType      = "string"
@@ -71,6 +75,7 @@ type PropertyConfig struct {
 	ConceptField string
 }
 
+// GetPropertySetup returns the node property configurations allowed in the Knowledge graph
 func GetPropertySetup() map[string]PropertyConfig {
 	return map[string]PropertyConfig{
 		PrefLabelProp: {

@@ -78,6 +78,8 @@ func GetConceptTypeIndexes() map[string][]string {
 	return result
 }
 
+// POC: this code is copy-pasted from github.com/Financial-Times/neo-model-utils-go/mapper
+
 //return all concept labels
 func GetConceptTypeLabels(label string) []string {
 	labels := []string{label}

@@ -101,6 +101,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 	return cleanConcept(aggregateConcept), true, nil
 }
 
+// POC: We can keep the public interface working with the old concept model and use transformers to the new one
 func (s *ConceptService) readNew(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
 	var results []transform.NeoAggregatedConcept
 
@@ -131,6 +132,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	updateRecord := ConceptChanges{}
 	var updatedUUIDList []string
 
+	// POC: keep the old interface working
 	aggregatedConceptToWrite := transform.TransformToNewAggregateConcept(thing.(transform.AggregatedConcept))
 
 	aggregatedConceptToWrite = cleanSourceProperties(aggregatedConceptToWrite)
@@ -337,7 +339,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 }
 
 func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) error {
-
+	// POC: we should probably validate all fields not just a subset of them.
 	prefLabel, _ := aggConcept.GetPropString(ontology.PrefLabelProp)
 	if prefLabel == "" {
 		return requestError{formatError("prefLabel", aggConcept.PrefUUID, transID)}
@@ -349,6 +351,8 @@ func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) er
 		return requestError{formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
 	}
 	for _, concept := range aggConcept.SourceRepresentations {
+		// POC: because "authority" and "authorityValue" are integral to how our concepts work
+		// we should probably keep them as explicit fields in the source concept
 		authority, _ := concept.GetPropString(ontology.AuthorityProp)
 		if authority == "" {
 			return requestError{formatError("sourceRepresentation.authority", concept.UUID, transID)}
@@ -558,7 +562,10 @@ func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
 //Clear down current concept node
 func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept) []*neoism.CypherQuery {
 	acUUID := ac.PrefUUID
-
+	// POC: Before recreating the new source/canonical nodes we strip from the affected nodes
+	// removes ALL properties even if they are not defined in the ontology
+	// removes ONLY relations present in the ontology
+	// removes ONLY labels (concept types) defined in the ontology
 	var queryBatch []*neoism.CypherQuery
 
 	relationsToRemove := []string{
@@ -605,6 +612,7 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 //Curate all queries to populate concept nodes
 func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
 	// Create a sourceConcept from the canonical information - WITH NO UUID
+	// POC: in order to reuse "setProps" function, there is a transformation between  NewAggregatedConcept and NewSourceConcept
 	concept := ontology.NewSourceConcept{
 		GenericConcept: ontology.GenericConcept{
 			Properties: map[string]interface{}{},
@@ -694,6 +702,14 @@ func createNodeQueries(concept ontology.NewSourceConcept, uuid string) []*neoism
 
 //Add relationships to concepts
 func addRelationship(conceptID string, connections []ontology.Connection, relationshipType string, createOnMissing bool) []*neoism.CypherQuery {
+	// POC: for some reason when creating relationships sometimes we expect the "origin" node to exits
+	//		MATCH (this:Concept {uuid: {uuid}})
+	// 		MERGE (other:Thing {uuid: {other_uuid}})
+	//		MERGE (this)-[rel:%s]->(other)
+	// and sometimes we create it
+	//		MERGE (this:Thing {uuid: {uuid}})
+	// 		MERGE (other:Thing {uuid: {other_uuid}})
+	//		MERGE (this)-[rel:%s]->(other)
 
 	const (
 		findConceptNode  = `MATCH (this:Concept {uuid: {uuid}})`
@@ -780,6 +796,8 @@ func setProps(concept ontology.NewSourceConcept, id string, isSource bool) map[s
 	// TODO: Check if props are empty not just that they exist
 
 	//common props
+	// POC: only small number of properties are kept on the source node, and most of them are part of the inner working of the system
+	// only figiCode has some meaning. So not sure whether the SourceConcept should have any properties or just relations?
 	sourceNodePropertiesToStore := ontology.GetFilteredPropertySetup(ontology.SourceProperty)
 	for label, setup := range sourceNodePropertiesToStore {
 		val, has := concept.GetProp(label)
@@ -839,6 +857,9 @@ func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }
 
+// POC: this function removes meaningless MembershipRoles
+// and initializes "InceptionDateEpoch", "TerminationDateEpoch" fields for the Membership/MembershipRole Concepts
+// We can move this functionality in the concept transformation/validation phase.
 func processMembershipRoles(v interface{}) interface{} {
 	switch c := v.(type) {
 	case transform.AggregatedConcept:
@@ -960,6 +981,8 @@ func cleanHash(c transform.AggregatedConcept) transform.AggregatedConcept {
 }
 
 func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
+	// POC: this function silently discards concept properties that are not defined in ontology
+	// This should probably be an "validation error"
 	var cleanSources []ontology.NewSourceConcept
 	sourceProperties := ontology.GetFilteredPropertySetup(ontology.SourceProperty)
 	relations := ontology.GetRelationships()

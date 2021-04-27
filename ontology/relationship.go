@@ -21,6 +21,7 @@ const (
 	IndustryClassificationRelation = "HAS_INDUSTRY_CLASSIFICATION"
 )
 
+// RelationshipConfig describes a single possible relationship in the ontology
 type RelationshipConfig struct {
 	// Neo4j setup
 	NeoRelationship string // Neo4J Relationship type
@@ -32,6 +33,7 @@ type RelationshipConfig struct {
 
 }
 
+// GetRelationships returns the relationship descriptions and configuration allowed in the Knowledge graph
 func GetRelationships() map[string]RelationshipConfig {
 	return map[string]RelationshipConfig{
 		BroaderRelation: {
