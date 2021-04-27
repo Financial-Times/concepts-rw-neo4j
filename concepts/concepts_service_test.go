@@ -1,5 +1,3 @@
-// +build integration
-
 package concepts
 
 import (
@@ -980,7 +978,7 @@ func TestWriteService(t *testing.T) {
 			updatedConcepts, err := conceptsDriver.Write(test.aggregatedConcept, "", "")
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
-				readConceptAndCompare(t, test.aggregatedConcept, test.testName, test.writtenNotReadFields...)
+				readConceptAndCompare(t, "", test.aggregatedConcept, test.testName, test.writtenNotReadFields...)
 
 				sort.Slice(test.updatedConcepts.ChangedRecords, func(i, j int) bool {
 					l, _ := json.Marshal(test.updatedConcepts.ChangedRecords[i])
@@ -1018,12 +1016,12 @@ func TestWriteMemberships_Organisation(t *testing.T) {
 	org := getAggregatedConcept(t, "organisation.json")
 	_, err := conceptsDriver.Write(org, "", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
-	readConceptAndCompare(t, org, "TestWriteMemberships_Organisation")
+	readConceptAndCompare(t, "organisations", org, "TestWriteMemberships_Organisation")
 
 	upOrg := getAggregatedConcept(t, "updated-organisation.json")
 	_, err = conceptsDriver.Write(upOrg, "", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
-	readConceptAndCompare(t, upOrg, "TestWriteMemberships_Organisation.Updated")
+	readConceptAndCompare(t, "organisations", upOrg, "TestWriteMemberships_Organisation.Updated")
 }
 
 func TestWriteMemberships_CleansUpExisting(t *testing.T) {
@@ -1098,7 +1096,7 @@ func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
 	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
+	readConceptAndCompare(t, "", getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 
 	_, err = conceptsDriver.Write(getAggregatedConcept(t, "updated-financial-instrument.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
@@ -1106,7 +1104,7 @@ func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
 	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
+	readConceptAndCompare(t, "", getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 }
 
 func TestFinancialInstrumentIssuerOrgRelationRemoved(t *testing.T) {
@@ -1115,12 +1113,12 @@ func TestFinancialInstrumentIssuerOrgRelationRemoved(t *testing.T) {
 	_, err := conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
+	readConceptAndCompare(t, "", getAggregatedConcept(t, "financial-instrument.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 
 	_, err = conceptsDriver.Write(getAggregatedConcept(t, "financial-instrument-with-same-issuer.json"), "", "test_tid")
 	assert.NoError(t, err, "Failed to write financial instrument")
 
-	readConceptAndCompare(t, getAggregatedConcept(t, "financial-instrument-with-same-issuer.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
+	readConceptAndCompare(t, "", getAggregatedConcept(t, "financial-instrument-with-same-issuer.json"), "TestFinancialInstrumentExistingIssuedByRemoved")
 }
 
 func TestWriteService_HandlingConcordance(t *testing.T) {
@@ -1655,7 +1653,7 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 	assert.NoError(t, err, "Should be able to read concept with no problems")
 	assert.True(t, found, "Concept should exist")
 	assert.NotNil(t, concept, "Concept should be populated")
-	readConceptAndCompare(t, getAggregatedConcept(t, "transfer-multiple-source-concordance.json"), "TestMultipleConcordancesAreHandled")
+	readConceptAndCompare(t, "", getAggregatedConcept(t, "transfer-multiple-source-concordance.json"), "TestMultipleConcordancesAreHandled")
 }
 
 func TestInvalidTypesThrowError(t *testing.T) {
@@ -2114,16 +2112,16 @@ func TestWriteLocation(t *testing.T) {
 	location := getLocation()
 	_, err := conceptsDriver.Write(location, "", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
-	readConceptAndCompare(t, location, "TestWriteLocation")
+	readConceptAndCompare(t, "locations", location, "TestWriteLocation")
 
 	locationISO31661 := getLocationWithISO31661()
 	_, err = conceptsDriver.Write(locationISO31661, "", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
-	readConceptAndCompare(t, locationISO31661, "TestWriteLocationISO31661")
+	readConceptAndCompare(t, "locations", locationISO31661, "TestWriteLocationISO31661")
 }
 
-func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName string, ignoredFields ...string) {
-	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "", "")
+func readConceptAndCompare(t *testing.T, conceptType string, payload AggregatedConcept, testName string, ignoredFields ...string) {
+	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, conceptType, "")
 	actual := actualIf.(AggregatedConcept)
 
 	actual = cleanHash(cleanConcept(actual))

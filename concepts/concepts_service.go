@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	ontology "github.com/Financial-Times/concepts-rw-neo4j/ontology/generated"
 	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
@@ -196,9 +197,116 @@ type equivalenceResult struct {
 //Read - read service
 func (s *ConceptService) Read(uuid string, conceptType string, transID string) (interface{}, bool, error) {
 	var results []neoAggregatedConcept
+	query := getCypherReadQuery(uuid, conceptType)
+	query.Result = &results
 
-	query := &neoism.CypherQuery{
-		Statement: `
+	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
+	if err != nil {
+		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Error executing neo4j read query")
+		return AggregatedConcept{}, false, err
+	}
+
+	if len(results) == 0 {
+		logger.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
+		return AggregatedConcept{}, false, nil
+	}
+	typeName, err := mapper.MostSpecificType(results[0].Types)
+	if err != nil {
+		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned concept had no recognized type")
+		return AggregatedConcept{}, false, err
+	}
+
+	aggregatedConcept := AggregatedConcept{
+		AggregatedHash:   results[0].AggregateHash,
+		Aliases:          results[0].Aliases,
+		DescriptionXML:   results[0].DescriptionXML,
+		EmailAddress:     results[0].EmailAddress,
+		FacebookPage:     results[0].FacebookPage,
+		FigiCode:         results[0].FigiCode,
+		ImageURL:         results[0].ImageURL,
+		InceptionDate:    results[0].InceptionDate,
+		IssuedBy:         results[0].IssuedBy,
+		MembershipRoles:  cleanMembershipRoles(results[0].MembershipRoles),
+		OrganisationUUID: results[0].OrganisationUUID,
+		PersonUUID:       results[0].PersonUUID,
+		PrefLabel:        results[0].PrefLabel,
+		PrefUUID:         results[0].PrefUUID,
+		ScopeNote:        results[0].ScopeNote,
+		ShortLabel:       results[0].ShortLabel,
+		Strapline:        results[0].Strapline,
+		TerminationDate:  results[0].TerminationDate,
+		TwitterHandle:    results[0].TwitterHandle,
+		Type:             typeName,
+		IsDeprecated:     results[0].IsDeprecated,
+		// Organisations
+		ProperName:             results[0].ProperName,
+		ShortName:              results[0].ShortName,
+		TradeNames:             results[0].TradeNames,
+		FormerNames:            results[0].FormerNames,
+		CountryCode:            results[0].CountryCode,
+		CountryOfIncorporation: results[0].CountryOfIncorporation,
+		CountryOfRisk:          results[0].CountryOfRisk,
+		CountryOfOperations:    results[0].CountryOfOperations,
+		PostalCode:             results[0].PostalCode,
+		YearFounded:            results[0].YearFounded,
+		LeiCode:                results[0].LeiCode,
+		// Person
+		Salutation: results[0].Salutation,
+		BirthYear:  results[0].BirthYear,
+		// Location
+		ISO31661: results[0].ISO31661,
+		// Industry Classification
+		IndustryIdentifier: results[0].IndustryIdentifier,
+	}
+
+	var sourceConcepts []Concept
+	for _, srcConcept := range results[0].SourceRepresentations {
+		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
+		if err != nil {
+			logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned source concept had no recognized type")
+			return AggregatedConcept{}, false, err
+		}
+
+		concept := Concept{
+			Authority:                    srcConcept.Authority,
+			AuthorityValue:               srcConcept.AuthorityValue,
+			BroaderUUIDs:                 filterSlice(srcConcept.BroaderUUIDs),
+			SupersededByUUIDs:            filterSlice(srcConcept.SupersededByUUIDs),
+			FigiCode:                     srcConcept.FigiCode,
+			IssuedBy:                     srcConcept.IssuedBy,
+			LastModifiedEpoch:            srcConcept.LastModifiedEpoch,
+			MembershipRoles:              cleanMembershipRoles(srcConcept.MembershipRoles),
+			OrganisationUUID:             srcConcept.OrganisationUUID,
+			CountryOfIncorporationUUID:   srcConcept.CountryOfIncorporationUUID,
+			CountryOfRiskUUID:            srcConcept.CountryOfRiskUUID,
+			CountryOfOperationsUUID:      srcConcept.CountryOfOperationsUUID,
+			ParentUUIDs:                  filterSlice(srcConcept.ParentUUIDs),
+			PersonUUID:                   srcConcept.PersonUUID,
+			PrefLabel:                    srcConcept.PrefLabel,
+			RelatedUUIDs:                 filterSlice(srcConcept.RelatedUUIDs),
+			ImpliedByUUIDs:               filterSlice(srcConcept.ImpliedByUUIDs),
+			HasFocusUUIDs:                filterSlice(srcConcept.HasFocusUUIDs),
+			NAICSIndustryClassifications: cleanNAICS(srcConcept.NAICSIndustryClassifications),
+			Type:                         conceptType,
+			UUID:                         srcConcept.UUID,
+			IsDeprecated:                 srcConcept.IsDeprecated,
+			// Organisations
+			ParentOrganisation: srcConcept.ParentOrganisation,
+		}
+		sourceConcepts = append(sourceConcepts, concept)
+	}
+
+	aggregatedConcept.SourceRepresentations = sourceConcepts
+	logger.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
+	return cleanConcept(aggregatedConcept), true, nil
+}
+
+func getCypherReadQuery(uuid string, conceptType string) *neoism.CypherQuery {
+	var query *neoism.CypherQuery
+	query = ontology.CypherReadQuery(uuid, conceptType)
+	if query == nil {
+		query = &neoism.CypherQuery{
+			Statement: `
 			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
 			OPTIONAL MATCH (source)-[:HAS_BROADER]->(broader:Thing)
 			OPTIONAL MATCH (source)-[:HAS_MEMBER]->(person:Thing)
@@ -322,111 +430,13 @@ func (s *ConceptService) Read(uuid string, conceptType string, transID string) (
 				canonical.iso31661 as iso31661,
 				canonical.industryIdentifier as industryIdentifier
 			`,
-		Parameters: map[string]interface{}{
-			"uuid": uuid,
-		},
-		Result: &results,
-	}
-
-	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
-	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Error executing neo4j read query")
-		return AggregatedConcept{}, false, err
-	}
-
-	if len(results) == 0 {
-		logger.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
-		return AggregatedConcept{}, false, nil
-	}
-	typeName, err := mapper.MostSpecificType(results[0].Types)
-	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned concept had no recognized type")
-		return AggregatedConcept{}, false, err
-	}
-
-	aggregatedConcept := AggregatedConcept{
-		AggregatedHash:   results[0].AggregateHash,
-		Aliases:          results[0].Aliases,
-		DescriptionXML:   results[0].DescriptionXML,
-		EmailAddress:     results[0].EmailAddress,
-		FacebookPage:     results[0].FacebookPage,
-		FigiCode:         results[0].FigiCode,
-		ImageURL:         results[0].ImageURL,
-		InceptionDate:    results[0].InceptionDate,
-		IssuedBy:         results[0].IssuedBy,
-		MembershipRoles:  cleanMembershipRoles(results[0].MembershipRoles),
-		OrganisationUUID: results[0].OrganisationUUID,
-		PersonUUID:       results[0].PersonUUID,
-		PrefLabel:        results[0].PrefLabel,
-		PrefUUID:         results[0].PrefUUID,
-		ScopeNote:        results[0].ScopeNote,
-		ShortLabel:       results[0].ShortLabel,
-		Strapline:        results[0].Strapline,
-		TerminationDate:  results[0].TerminationDate,
-		TwitterHandle:    results[0].TwitterHandle,
-		Type:             typeName,
-		IsDeprecated:     results[0].IsDeprecated,
-		// Organisations
-		ProperName:             results[0].ProperName,
-		ShortName:              results[0].ShortName,
-		TradeNames:             results[0].TradeNames,
-		FormerNames:            results[0].FormerNames,
-		CountryCode:            results[0].CountryCode,
-		CountryOfIncorporation: results[0].CountryOfIncorporation,
-		CountryOfRisk:          results[0].CountryOfRisk,
-		CountryOfOperations:    results[0].CountryOfOperations,
-		PostalCode:             results[0].PostalCode,
-		YearFounded:            results[0].YearFounded,
-		LeiCode:                results[0].LeiCode,
-		// Person
-		Salutation: results[0].Salutation,
-		BirthYear:  results[0].BirthYear,
-		// Location
-		ISO31661: results[0].ISO31661,
-		// Industry Classification
-		IndustryIdentifier: results[0].IndustryIdentifier,
-	}
-
-	var sourceConcepts []Concept
-	for _, srcConcept := range results[0].SourceRepresentations {
-		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
-		if err != nil {
-			logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned source concept had no recognized type")
-			return AggregatedConcept{}, false, err
+			Parameters: map[string]interface{}{
+				"uuid": uuid,
+			},
 		}
-
-		concept := Concept{
-			Authority:                    srcConcept.Authority,
-			AuthorityValue:               srcConcept.AuthorityValue,
-			BroaderUUIDs:                 filterSlice(srcConcept.BroaderUUIDs),
-			SupersededByUUIDs:            filterSlice(srcConcept.SupersededByUUIDs),
-			FigiCode:                     srcConcept.FigiCode,
-			IssuedBy:                     srcConcept.IssuedBy,
-			LastModifiedEpoch:            srcConcept.LastModifiedEpoch,
-			MembershipRoles:              cleanMembershipRoles(srcConcept.MembershipRoles),
-			OrganisationUUID:             srcConcept.OrganisationUUID,
-			CountryOfIncorporationUUID:   srcConcept.CountryOfIncorporationUUID,
-			CountryOfRiskUUID:            srcConcept.CountryOfRiskUUID,
-			CountryOfOperationsUUID:      srcConcept.CountryOfOperationsUUID,
-			ParentUUIDs:                  filterSlice(srcConcept.ParentUUIDs),
-			PersonUUID:                   srcConcept.PersonUUID,
-			PrefLabel:                    srcConcept.PrefLabel,
-			RelatedUUIDs:                 filterSlice(srcConcept.RelatedUUIDs),
-			ImpliedByUUIDs:               filterSlice(srcConcept.ImpliedByUUIDs),
-			HasFocusUUIDs:                filterSlice(srcConcept.HasFocusUUIDs),
-			NAICSIndustryClassifications: cleanNAICS(srcConcept.NAICSIndustryClassifications),
-			Type:                         conceptType,
-			UUID:                         srcConcept.UUID,
-			IsDeprecated:                 srcConcept.IsDeprecated,
-			// Organisations
-			ParentOrganisation: srcConcept.ParentOrganisation,
-		}
-		sourceConcepts = append(sourceConcepts, concept)
 	}
 
-	aggregatedConcept.SourceRepresentations = sourceConcepts
-	logger.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
-	return cleanConcept(aggregatedConcept), true, nil
+	return query
 }
 
 func (s *ConceptService) Write(thing interface{}, conceptType string, transID string) (interface{}, error) {

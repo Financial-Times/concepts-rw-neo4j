@@ -1,0 +1,95 @@
+directive @cypher(statement: String!) on OBJECT
+
+interface Concept {
+  uuid: ID!
+  authority: String!
+  authorityValue: String!
+}
+
+type Organisation implements Concept @cypher(statement: """
+                MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing) 
+                OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
+                OPTIONAL MATCH (source)-[:COUNTRY_OF_OPERATIONS]->(coo:Thing)
+                OPTIONAL MATCH (source)-[:COUNTRY_OF_RISK]->(cor:Thing)
+                OPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(coi:Thing)
+                OPTIONAL MATCH (source)-[hasICRel:HAS_INDUSTRY_CLASSIFICATION]->(naics:NAICSIndustryClassification)
+                WITH
+                  canonical,
+                  parentOrg,
+                  coo,
+                  cor,
+                  coi,
+                  collect(DISTINCT {UUID: naics.uuid, Rank: hasICRel.rank}) as naicsIndustryClassifications,
+                  source
+                  ORDER BY
+                    source.uuid
+                WITH
+                  canonical,
+                  {
+                    authority: source.authority,
+                    authorityValue: source.authorityValue,
+                    lastModifiedEpoch: source.lastModifiedEpoch,
+                    prefLabel: source.prefLabel,
+                    types: labels(source),
+                    uuid: source.uuid,
+                    parentOrganisation: parentOrg.uuid,
+                    countryOfIncorporationUUID: coi.uuid,
+                    countryOfOperationsUUID: coo.uuid,
+                    countryOfRiskUUID: cor.uuid,
+                    naicsIndustryClassifications: naicsIndustryClassifications
+                  } as sources
+                RETURN 
+                  canonical.aggregateHash as aggregateHash,
+                  canonical.aliases as aliases,
+                  canonical.prefLabel as prefLabel,
+                  canonical.emailAddress as emailAddress,
+                  canonical.prefUUID as prefUUID,
+                  canonical.properName as properName,
+                  canonical.shortName as shortName,
+                  canonical.tradeNames as tradeNames,
+                  canonical.formerNames as formerNames,
+                  canonical.postalCode as postalCode,
+                  canonical.yearFounded as yearFounded,
+                  canonical.leiCode as leiCode,
+                  canonical.countryCode as countryCode,
+                  canonical.countryOfIncorporation as countryOfIncorporation,
+                  canonical.countryOfOperations as countryOfOperations,
+                  canonical.countryOfRisk as countryOfRisk,
+                  labels(canonical) as types,
+                  collect(sources) as sourceRepresentations""") {
+  uuid: ID!
+  authorityValue: String!
+  authority: String!
+  yearFounded: Int!
+}
+
+type Location implements Concept  @cypher(statement: """
+            MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+            WITH
+              canonical,
+              source
+              ORDER BY
+                source.uuid
+            WITH
+              canonical,
+              {
+                authority: source.authority,
+                authorityValue: source.authorityValue,
+                lastModifiedEpoch: source.lastModifiedEpoch,
+                prefLabel: source.prefLabel,
+                types: labels(source),
+                uuid: source.uuid
+              } as sources
+            RETURN
+              canonical.aggregateHash as aggregateHash,
+              canonical.aliases as aliases,
+              canonical.prefLabel as prefLabel,
+              canonical.prefUUID as prefUUID,
+              labels(canonical) as types,
+              canonical.iso31661 as iso31661,
+              collect(sources) as sourceRepresentations""") {
+  uuid: ID!
+  authority: String!
+  authorityValue: String!
+  iso31661: String!
+}
