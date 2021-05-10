@@ -1267,15 +1267,30 @@ func getSourceData(sourceConcepts []Concept) map[string]string {
 	return conceptData
 }
 
+func resolveConceptType(conceptType string) string {
+	if ipath, ok := irregularConceptTypePaths[conceptType]; ok && ipath != "" {
+		return ipath
+	}
+
+	return toSnakeCase(conceptType) + "s"
+}
+
 //This function dictates which properties will be actually
 //written in neo for both canonical and source nodes.
 func setProps(concept Concept, id string, isSource bool) map[string]interface{} {
-	nodeProps := map[string]interface{}{}
+	conceptType := resolveConceptType(concept.Type)
+	nodeProps := ontology.Props(conceptType, concept, id, isSource)
+
+	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
+
+	if ontology.IsKnownType(conceptType) {
+		return nodeProps
+	}
+
 	//common props
 	if concept.PrefLabel != "" {
 		nodeProps["prefLabel"] = concept.PrefLabel
 	}
-	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 	if concept.FigiCode != "" {
 		nodeProps["figiCode"] = concept.FigiCode
 	}

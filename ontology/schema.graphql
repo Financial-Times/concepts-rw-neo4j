@@ -1,13 +1,12 @@
 directive @cypher(statement: String!) on OBJECT
 
 interface Concept {
-  uuid: ID!
-  authority: String!
-  authorityValue: String!
+  prefLabel: String!
 }
 
 type Organisation implements Concept @cypher(statement: """
                 MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing) 
+                OPTIONAL MATCH (source)-[:HAS_FOCUS]->(hasFocus:Thing)
                 OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
                 OPTIONAL MATCH (source)-[:COUNTRY_OF_OPERATIONS]->(coo:Thing)
                 OPTIONAL MATCH (source)-[:COUNTRY_OF_RISK]->(cor:Thing)
@@ -15,6 +14,7 @@ type Organisation implements Concept @cypher(statement: """
                 OPTIONAL MATCH (source)-[hasICRel:HAS_INDUSTRY_CLASSIFICATION]->(naics:NAICSIndustryClassification)
                 WITH
                   canonical,
+                  collect(DISTINCT hasFocus.uuid) as hasFocusUUIDs,
                   parentOrg,
                   coo,
                   cor,
@@ -30,6 +30,7 @@ type Organisation implements Concept @cypher(statement: """
                     authorityValue: source.authorityValue,
                     lastModifiedEpoch: source.lastModifiedEpoch,
                     prefLabel: source.prefLabel,
+                    hasFocusUUIDs: hasFocusUUIDs,
                     types: labels(source),
                     uuid: source.uuid,
                     parentOrganisation: parentOrg.uuid,
@@ -44,6 +45,7 @@ type Organisation implements Concept @cypher(statement: """
                   canonical.prefLabel as prefLabel,
                   canonical.emailAddress as emailAddress,
                   canonical.prefUUID as prefUUID,
+                  canonical.scopeNote as scopeNote,
                   canonical.properName as properName,
                   canonical.shortName as shortName,
                   canonical.tradeNames as tradeNames,
@@ -57,13 +59,24 @@ type Organisation implements Concept @cypher(statement: """
                   canonical.countryOfRisk as countryOfRisk,
                   labels(canonical) as types,
                   collect(sources) as sourceRepresentations""") {
-  uuid: ID!
-  authorityValue: String!
-  authority: String!
+  prefLabel: String!
+  aliases: [String!]
+  emailAddress: String!
+  scopeNote: String!
+  properName: String!
+  shortName: String!
+  tradeNames: [String!]
+  formerNames: [String!]
+  countryCode: String!
+  countryOfIncorporation: String!
+  countryOfOperations: String!
+  countryOfRisk: String!
+  postalCode: String!
   yearFounded: Int!
+  leiCode: String!
 }
 
-type Location implements Concept  @cypher(statement: """
+type Location implements Concept @cypher(statement: """
             MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
             WITH
               canonical,
@@ -88,8 +101,7 @@ type Location implements Concept  @cypher(statement: """
               labels(canonical) as types,
               canonical.iso31661 as iso31661,
               collect(sources) as sourceRepresentations""") {
-  uuid: ID!
-  authority: String!
-  authorityValue: String!
+  prefLabel: String!
+  aliases: [String!]
   iso31661: String!
 }

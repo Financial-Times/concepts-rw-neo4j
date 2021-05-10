@@ -7,19 +7,29 @@ type Concept interface {
 }
 
 type Location struct {
-	UUID           string `json:"uuid"`
-	Authority      string `json:"authority"`
-	AuthorityValue string `json:"authorityValue"`
-	Iso31661       string `json:"iso31661"`
+	PrefLabel string   `json:"prefLabel"`
+	Aliases   []string `json:"aliases"`
+	Iso31661  string   `json:"iso31661"`
 }
 
 func (Location) IsConcept() {}
 
 type Organisation struct {
-	UUID           string `json:"uuid"`
-	AuthorityValue string `json:"authorityValue"`
-	Authority      string `json:"authority"`
-	YearFounded    int    `json:"yearFounded"`
+	PrefLabel              string   `json:"prefLabel"`
+	Aliases                []string `json:"aliases"`
+	EmailAddress           string   `json:"emailAddress"`
+	ScopeNote              string   `json:"scopeNote"`
+	ProperName             string   `json:"properName"`
+	ShortName              string   `json:"shortName"`
+	TradeNames             []string `json:"tradeNames"`
+	FormerNames            []string `json:"formerNames"`
+	CountryCode            string   `json:"countryCode"`
+	CountryOfIncorporation string   `json:"countryOfIncorporation"`
+	CountryOfOperations    string   `json:"countryOfOperations"`
+	CountryOfRisk          string   `json:"countryOfRisk"`
+	PostalCode             string   `json:"postalCode"`
+	YearFounded            int      `json:"yearFounded"`
+	LeiCode                string   `json:"leiCode"`
 }
 
 func (Organisation) IsConcept() {}

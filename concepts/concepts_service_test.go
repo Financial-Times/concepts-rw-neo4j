@@ -971,14 +971,14 @@ func TestWriteService(t *testing.T) {
 			defer cleanDB(t)
 			// Create the related, broader than and impliedBy on concepts
 			for _, relatedConcept := range test.otherRelatedConcepts {
-				_, err := conceptsDriver.Write(relatedConcept, "", "")
+				_, err := conceptsDriver.Write(relatedConcept, resolveConceptType(relatedConcept.Type), "")
 				assert.NoError(t, err, "Failed to write related/broader/impliedBy concept")
 			}
 
-			updatedConcepts, err := conceptsDriver.Write(test.aggregatedConcept, "", "")
+			updatedConcepts, err := conceptsDriver.Write(test.aggregatedConcept, resolveConceptType(test.aggregatedConcept.Type), "")
 			if test.errStr == "" {
 				assert.NoError(t, err, "Failed to write concept")
-				readConceptAndCompare(t, "", test.aggregatedConcept, test.testName, test.writtenNotReadFields...)
+				readConceptAndCompare(t, resolveConceptType(test.aggregatedConcept.Type), test.aggregatedConcept, test.testName, test.writtenNotReadFields...)
 
 				sort.Slice(test.updatedConcepts.ChangedRecords, func(i, j int) bool {
 					l, _ := json.Marshal(test.updatedConcepts.ChangedRecords[i])
@@ -1014,12 +1014,12 @@ func TestWriteMemberships_Organisation(t *testing.T) {
 	defer cleanDB(t)
 
 	org := getAggregatedConcept(t, "organisation.json")
-	_, err := conceptsDriver.Write(org, "", "test_tid")
+	_, err := conceptsDriver.Write(org, "organisations", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, "organisations", org, "TestWriteMemberships_Organisation")
 
 	upOrg := getAggregatedConcept(t, "updated-organisation.json")
-	_, err = conceptsDriver.Write(upOrg, "", "test_tid")
+	_, err = conceptsDriver.Write(upOrg, "organisations", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, "organisations", upOrg, "TestWriteMemberships_Organisation.Updated")
 }
@@ -2110,12 +2110,12 @@ func TestWriteLocation(t *testing.T) {
 	defer cleanDB(t)
 
 	location := getLocation()
-	_, err := conceptsDriver.Write(location, "", "test_tid")
+	_, err := conceptsDriver.Write(location, "locations", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, "locations", location, "TestWriteLocation")
 
 	locationISO31661 := getLocationWithISO31661()
-	_, err = conceptsDriver.Write(locationISO31661, "", "test_tid")
+	_, err = conceptsDriver.Write(locationISO31661, "locations", "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, "locations", locationISO31661, "TestWriteLocationISO31661")
 }
