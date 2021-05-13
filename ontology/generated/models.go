@@ -15,21 +15,27 @@ type Location struct {
 func (Location) IsConcept() {}
 
 type Organisation struct {
-	PrefLabel              string   `json:"prefLabel"`
-	Aliases                []string `json:"aliases"`
-	EmailAddress           string   `json:"emailAddress"`
-	ScopeNote              string   `json:"scopeNote"`
-	ProperName             string   `json:"properName"`
-	ShortName              string   `json:"shortName"`
-	TradeNames             []string `json:"tradeNames"`
-	FormerNames            []string `json:"formerNames"`
-	CountryCode            string   `json:"countryCode"`
-	CountryOfIncorporation string   `json:"countryOfIncorporation"`
-	CountryOfOperations    string   `json:"countryOfOperations"`
-	CountryOfRisk          string   `json:"countryOfRisk"`
-	PostalCode             string   `json:"postalCode"`
-	YearFounded            int      `json:"yearFounded"`
-	LeiCode                string   `json:"leiCode"`
+	PrefLabel                    string   `json:"prefLabel"`
+	Aliases                      []string `json:"aliases"`
+	EmailAddress                 string   `json:"emailAddress"`
+	ScopeNote                    string   `json:"scopeNote"`
+	ProperName                   string   `json:"properName"`
+	ShortName                    string   `json:"shortName"`
+	TradeNames                   []string `json:"tradeNames"`
+	FormerNames                  []string `json:"formerNames"`
+	CountryCode                  string   `json:"countryCode"`
+	CountryOfIncorporation       string   `json:"countryOfIncorporation"`
+	CountryOfOperations          string   `json:"countryOfOperations"`
+	CountryOfRisk                string   `json:"countryOfRisk"`
+	PostalCode                   string   `json:"postalCode"`
+	YearFounded                  int      `json:"yearFounded"`
+	LeiCode                      string   `json:"leiCode"`
+	HasFocusUUIDs                []string `json:"hasFocusUUIDs"`
+	NaicsIndustryClassifications []string `json:"naicsIndustryClassifications"`
+	ParentOrganisation           string   `json:"parentOrganisation"`
+	CountryOfIncorporationUUID   string   `json:"countryOfIncorporationUUID"`
+	CountryOfOperationsUUID      string   `json:"countryOfOperationsUUID"`
+	CountryOfRiskUUID            string   `json:"countryOfRiskUUID"`
 }
 
 func (Organisation) IsConcept() {}

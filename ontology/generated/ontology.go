@@ -12,7 +12,31 @@ import (
 
 func locationCypherReadQuery(uuid string) *neoism.CypherQuery {
 	query := &neoism.CypherQuery{
-		Statement: "MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)\nWITH\n  canonical,\n  source\n  ORDER BY\n    source.uuid\nWITH\n  canonical,\n  {\n    authority: source.authority,\n    authorityValue: source.authorityValue,\n    lastModifiedEpoch: source.lastModifiedEpoch,\n    prefLabel: source.prefLabel,\n    types: labels(source),\n    uuid: source.uuid\n  } as sources\nRETURN\n  canonical.aggregateHash as aggregateHash,\n  canonical.aliases as aliases,\n  canonical.prefLabel as prefLabel,\n  canonical.prefUUID as prefUUID,\n  labels(canonical) as types,\n  canonical.iso31661 as iso31661,\n  collect(sources) as sourceRepresentations",
+		Statement: `
+                    MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+                    WITH
+                        canonical,
+                        source
+                        ORDER BY
+                            source.uuid
+                    WITH
+                        canonical,
+                        {
+                            authority: source.authority,
+                            authorityValue: source.authorityValue,
+                            prefLabel: source.prefLabel,
+                            types: labels(source),
+                            uuid: source.uuid,
+                            lastModifiedEpoch: source.lastModifiedEpoch
+                        } as sources 
+                        RETURN 
+                        canonical.prefUUID as prefUUID,
+                        canonical.aggregateHash as aggregateHash,
+                        canonical.prefLabel as prefLabel,
+                        canonical.aliases as aliases,
+                        canonical.iso31661 as iso31661,
+                        labels(canonical) as types,
+                        collect(sources) as sourceRepresentations`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -51,9 +75,71 @@ func locationProps(concept interface{}, id string, isSource bool) map[string]int
 
 	return props
 }
+
+func mapToLocation(concordedConcept interface{}) interface{} {
+	var model = Location{}
+	tmp, _ := json.Marshal(concordedConcept)
+	json.Unmarshal(tmp, &model)
+
+	return model
+}
 func organisationCypherReadQuery(uuid string) *neoism.CypherQuery {
 	query := &neoism.CypherQuery{
-		Statement: "MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing) \nOPTIONAL MATCH (source)-[:HAS_FOCUS]->(hasFocus:Thing)\nOPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)\nOPTIONAL MATCH (source)-[:COUNTRY_OF_OPERATIONS]->(coo:Thing)\nOPTIONAL MATCH (source)-[:COUNTRY_OF_RISK]->(cor:Thing)\nOPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(coi:Thing)\nOPTIONAL MATCH (source)-[hasICRel:HAS_INDUSTRY_CLASSIFICATION]->(naics:NAICSIndustryClassification)\nWITH\n  canonical,\n  collect(DISTINCT hasFocus.uuid) as hasFocusUUIDs,\n  parentOrg,\n  coo,\n  cor,\n  coi,\n  collect(DISTINCT {UUID: naics.uuid, Rank: hasICRel.rank}) as naicsIndustryClassifications,\n  source\n  ORDER BY\n    source.uuid\nWITH\n  canonical,\n  {\n    authority: source.authority,\n    authorityValue: source.authorityValue,\n    lastModifiedEpoch: source.lastModifiedEpoch,\n    prefLabel: source.prefLabel,\n    hasFocusUUIDs: hasFocusUUIDs,\n    types: labels(source),\n    uuid: source.uuid,\n    parentOrganisation: parentOrg.uuid,\n    countryOfIncorporationUUID: coi.uuid,\n    countryOfOperationsUUID: coo.uuid,\n    countryOfRiskUUID: cor.uuid,\n    naicsIndustryClassifications: naicsIndustryClassifications\n  } as sources\nRETURN \n  canonical.aggregateHash as aggregateHash,\n  canonical.aliases as aliases,\n  canonical.prefLabel as prefLabel,\n  canonical.emailAddress as emailAddress,\n  canonical.prefUUID as prefUUID,\n  canonical.scopeNote as scopeNote,\n  canonical.properName as properName,\n  canonical.shortName as shortName,\n  canonical.tradeNames as tradeNames,\n  canonical.formerNames as formerNames,\n  canonical.postalCode as postalCode,\n  canonical.yearFounded as yearFounded,\n  canonical.leiCode as leiCode,\n  canonical.countryCode as countryCode,\n  canonical.countryOfIncorporation as countryOfIncorporation,\n  canonical.countryOfOperations as countryOfOperations,\n  canonical.countryOfRisk as countryOfRisk,\n  labels(canonical) as types,\n  collect(sources) as sourceRepresentations",
+		Statement: `
+                    MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+                    OPTIONAL MATCH (source)-[hasFocusUUIDsRel:HAS_FOCUS]->(hasFocusUUIDsNode:Thing)
+                    OPTIONAL MATCH (source)-[naicsIndustryClassificationsRel:HAS_INDUSTRY_CLASSIFICATION]->(naicsIndustryClassificationsNode:NAICSIndustryClassification)
+                    OPTIONAL MATCH (source)-[parentOrganisationRel:SUB_ORGANISATION_OF]->(parentOrganisationNode:Thing)
+                    OPTIONAL MATCH (source)-[countryOfIncorporationUUIDRel:COUNTRY_OF_INCORPORATION]->(countryOfIncorporationUUIDNode:Thing)
+                    OPTIONAL MATCH (source)-[countryOfOperationsUUIDRel:COUNTRY_OF_OPERATIONS]->(countryOfOperationsUUIDNode:Thing)
+                    OPTIONAL MATCH (source)-[countryOfRiskUUIDRel:COUNTRY_OF_RISK]->(countryOfRiskUUIDNode:Thing)
+                    WITH
+                        canonical,
+                                    collect(DISTINCT hasFocusUUIDsNode.uuid) as hasFocusUUIDs,
+                                    collect(DISTINCT {Rank: naicsIndustryClassificationsRel.rank,UUID: naicsIndustryClassificationsNode.uuid}) as naicsIndustryClassifications,
+                                    parentOrganisationNode,
+                                    countryOfIncorporationUUIDNode,
+                                    countryOfOperationsUUIDNode,
+                                    countryOfRiskUUIDNode,
+                        source
+                        ORDER BY
+                            source.uuid
+                    WITH
+                        canonical,
+                        {
+                            authority: source.authority,
+                            authorityValue: source.authorityValue,
+                            prefLabel: source.prefLabel,
+                            types: labels(source),
+                            uuid: source.uuid,
+                            hasFocusUUIDs: hasFocusUUIDs,
+                            naicsIndustryClassifications: naicsIndustryClassifications,
+                            parentOrganisation: parentOrganisationNode.uuid,
+                            countryOfIncorporationUUID: countryOfIncorporationUUIDNode.uuid,
+                            countryOfOperationsUUID: countryOfOperationsUUIDNode.uuid,
+                            countryOfRiskUUID: countryOfRiskUUIDNode.uuid,
+                            lastModifiedEpoch: source.lastModifiedEpoch
+                        } as sources 
+                        RETURN 
+                        canonical.prefUUID as prefUUID,
+                        canonical.aggregateHash as aggregateHash,
+                        canonical.prefLabel as prefLabel,
+                        canonical.aliases as aliases,
+                        canonical.emailAddress as emailAddress,
+                        canonical.scopeNote as scopeNote,
+                        canonical.properName as properName,
+                        canonical.shortName as shortName,
+                        canonical.tradeNames as tradeNames,
+                        canonical.formerNames as formerNames,
+                        canonical.countryCode as countryCode,
+                        canonical.countryOfIncorporation as countryOfIncorporation,
+                        canonical.countryOfOperations as countryOfOperations,
+                        canonical.countryOfRisk as countryOfRisk,
+                        canonical.postalCode as postalCode,
+                        canonical.yearFounded as yearFounded,
+                        canonical.leiCode as leiCode,
+                        labels(canonical) as types,
+                        collect(sources) as sourceRepresentations`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -105,6 +191,14 @@ func organisationProps(concept interface{}, id string, isSource bool) map[string
 	return props
 }
 
+func mapToOrganisation(concordedConcept interface{}) interface{} {
+	var model = Organisation{}
+	tmp, _ := json.Marshal(concordedConcept)
+	json.Unmarshal(tmp, &model)
+
+	return model
+}
+
 func CypherReadQuery(uuid string, conceptType string) *neoism.CypherQuery {
 	switch conceptType {
 	case "locations":
@@ -134,6 +228,17 @@ func IsKnownType(conceptType string) bool {
 	}
 
 	return knownTypes[conceptType]
+}
+
+func MapToKnownType(conceptType string, concordedConcept interface{}) interface{} {
+	switch conceptType {
+	case "locations":
+		return mapToLocation(concordedConcept)
+	case "organisations":
+		return mapToOrganisation(concordedConcept)
+	default:
+		return concordedConcept
+	}
 }
 
 // endregion *************************** template.gotpl ***************************

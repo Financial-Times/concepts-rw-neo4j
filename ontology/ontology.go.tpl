@@ -6,13 +6,74 @@
         {{- if not $object.Root -}}
             func {{$object.Name|lcFirst}}CypherReadQuery(uuid string) *neoism.CypherQuery {
                 query := &neoism.CypherQuery{
-                    Statement: 
-                    {{- range $objDirective := $object.Definition.Directives }}
-                        {{- if eq $objDirective.Name "cypher" -}}
-                            {{$cypherStatement := index $objDirective.Arguments 0}}
-                                {{$cypherStatement.Value}}
+                    Statement: `
+                    MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+                    {{- range $objField := $object.Fields }}
+                        {{- range $fieldDirective := $objField.Directives }}
+                            {{- if eq $fieldDirective.Name "relation" -}}
+                                {{ $relationName := index $fieldDirective.Args 0 }}
+                                {{- $relationTo := index $fieldDirective.Args 1 }}
+                    OPTIONAL MATCH (source)-[{{$objField.Name}}Rel:{{$relationName.Value}}]->({{$objField.Name}}Node:{{$relationTo.Value}})
+                            {{- end }}
                         {{- end }}
-                    {{- end }},
+                    {{- end }}
+                    WITH
+                        canonical,
+                        {{- range $objField := $object.Fields }}
+                            {{- range $fieldDirective := $objField.Directives }}
+                                {{- if eq $fieldDirective.Name "relation" }}
+                                    {{$relationProps := index $fieldDirective.Args 2}}
+                                    {{- if eq $objField.Type.NamedType "" }}
+                                        {{- if not $relationProps.Value -}}
+                        collect(DISTINCT {{$objField.Name}}Node.uuid) as {{ $objField.Name }},
+                                        {{- else -}}
+                                        collect(DISTINCT {
+                                            {{- range $relProp := $relationProps.Value -}}
+                                                {{ $relProp|ucFirst }}: {{ $objField.Name }}Rel.{{ $relProp }},
+                                            {{- end -}}
+                                            UUID: {{ $objField.Name }}Node.uuid}) as {{ $objField.Name }},
+                                        {{- end -}}
+                                    {{- else -}}
+                        {{$objField.Name}}Node,
+                                    {{- end }}
+                                {{- end }}
+                            {{- end }}
+                        {{- end }}
+                        source
+                        ORDER BY
+                            source.uuid
+                    WITH
+                        canonical,
+                        {
+                            authority: source.authority,
+                            authorityValue: source.authorityValue,
+                            prefLabel: source.prefLabel,
+                            types: labels(source),
+                            uuid: source.uuid,
+                            {{- range $objField := $object.Fields }}
+                                {{- range $fieldDirective := $objField.Directives }}
+                                    {{- if eq $fieldDirective.Name "relation" }}
+                                        {{- if eq $objField.Type.NamedType "" }}
+                            {{$objField.Name}}: {{$objField.Name}},
+                                        {{- else }}
+                            {{$objField.Name}}: {{$objField.Name}}Node.uuid,
+                                        {{- end }}
+                                    {{- end }}
+                                {{- end }}
+                            {{- end }}
+                            lastModifiedEpoch: source.lastModifiedEpoch
+                        } as sources 
+                        RETURN 
+                        canonical.prefUUID as prefUUID,
+                        canonical.aggregateHash as aggregateHash,
+                        {{- range $objField := $object.Fields }}
+                            {{- $directivesCount := len $objField.Directives}}
+                            {{- if eq $directivesCount 0 }}
+                        canonical.{{$objField.Name}} as {{$objField.Name}},
+                            {{- end }}
+                        {{- end }}
+                        labels(canonical) as types,
+                        collect(sources) as sourceRepresentations`,
                     Parameters: map[string]interface{}{
                         "uuid": uuid,
                     },
@@ -27,9 +88,12 @@
                 json.Unmarshal(tmp, &props)
 
                 objFields := map[string]bool{
-                    {{- range $objField := $object.Fields }}
+                {{- range $objField := $object.Fields }}
+                    {{- $directivesCount := len $objField.Directives}}
+                    {{- if eq $directivesCount 0 }}
                         {{$objField.Name|quote}}: true,
                     {{- end }}
+                {{- end }}
                 }
 
                 if isSource {
@@ -50,6 +114,14 @@
                 }
 
                 return props
+            }
+
+            func mapTo{{$object.Name}}(concordedConcept interface{}) interface{} {
+                var model = {{$object.Name}}{}
+                tmp, _ := json.Marshal(concordedConcept)
+                json.Unmarshal(tmp, &model)
+
+                return model
             }
         {{ end -}}
     {{ end -}}
@@ -95,4 +167,18 @@ func IsKnownType(conceptType string) bool {
     }
 
     return knownTypes[conceptType]
+}
+
+func MapToKnownType(conceptType string, concordedConcept interface{}) interface{} {
+	switch conceptType {
+    {{ range $object := .Objects }}
+	    {{- if not $object.Definition.BuiltIn -}}
+            {{- if not $object.Root -}}
+                case "{{$object.Name|lcFirst}}s":
+                    return mapTo{{$object.Name}}(concordedConcept)
+            {{ end -}}
+        {{ end -}}
+    {{ end }}default:
+		return concordedConcept
+	}
 }
