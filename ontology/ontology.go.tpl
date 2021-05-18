@@ -1,6 +1,64 @@
 {{ reserveImport "encoding/json" }}
 {{ reserveImport "github.com/jmcvetta/neoism" }}
 
+{{ define "optionalMatches" }}
+{{- range $objField := .Fields }}
+    {{- range $fieldDirective := $objField.Directives }}
+        {{- if eq $fieldDirective.Name "relation" -}}
+            {{ $relationName := index $fieldDirective.Args 0 }}
+            {{- $relationTo := index $fieldDirective.Args 1 }}
+                    OPTIONAL MATCH (source)-[{{$objField.Name}}Rel:{{$relationName.Value}}]->({{$objField.Name}}Node:{{$relationTo.Value}})
+        {{- end }}
+    {{- end }}
+{{- end -}}
+{{ end }}
+
+{{ define "collectRelations" }}
+{{- range $objField := .Fields }}
+    {{- range $fieldDirective := $objField.Directives }}
+        {{- if eq $fieldDirective.Name "relation" -}}
+            {{$relationProps := index $fieldDirective.Args 2}}
+            {{- if eq $objField.Type.NamedType "" }}
+                {{- if not $relationProps.Value }}
+                                    collect(DISTINCT {{$objField.Name}}Node.uuid) as {{ $objField.Name }},
+                {{- else }}
+                                    collect(DISTINCT {
+                                        {{- range $relProp := $relationProps.Value -}}
+                                            {{ $relProp|ucFirst }}: {{ $objField.Name }}Rel.{{ $relProp }},
+                                        {{- end -}}
+                                        UUID: {{ $objField.Name }}Node.uuid}) as {{ $objField.Name }},
+                {{- end }}
+            {{- else }}
+                                    {{$objField.Name}}Node,
+            {{- end }}
+        {{- end -}}
+    {{- end }}
+{{- end -}}
+{{ end }}
+
+{{ define "sourceProperties" }}
+{{- range $objField := .Fields }}
+    {{- range $fieldDirective := $objField.Directives }}
+        {{- if eq $fieldDirective.Name "relation" }}
+            {{- if eq $objField.Type.NamedType "" }}
+                            {{$objField.Name}}: {{$objField.Name}},
+            {{- else }}
+                            {{$objField.Name}}: {{$objField.Name}}Node.uuid,
+            {{- end }}
+        {{- end }}
+    {{- end }}
+{{- end -}}
+{{ end }}
+
+{{ define "canonicalProperties" }}
+{{- range $objField := .Fields }}
+    {{- $directivesCount := len $objField.Directives}}
+    {{- if eq $directivesCount 0 }}
+                        canonical.{{$objField.Name}} as {{$objField.Name}},
+    {{- end }}
+{{- end -}}
+{{ end }}
+
 {{- range $object := .Objects }}
     {{- if not $object.Definition.BuiltIn -}}
         {{- if not $object.Root -}}
@@ -8,37 +66,10 @@
                 query := &neoism.CypherQuery{
                     Statement: `
                     MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
-                    {{- range $objField := $object.Fields }}
-                        {{- range $fieldDirective := $objField.Directives }}
-                            {{- if eq $fieldDirective.Name "relation" -}}
-                                {{ $relationName := index $fieldDirective.Args 0 }}
-                                {{- $relationTo := index $fieldDirective.Args 1 }}
-                    OPTIONAL MATCH (source)-[{{$objField.Name}}Rel:{{$relationName.Value}}]->({{$objField.Name}}Node:{{$relationTo.Value}})
-                            {{- end }}
-                        {{- end }}
-                    {{- end }}
+                    {{- template "optionalMatches" $object }}
                     WITH
                         canonical,
-                        {{- range $objField := $object.Fields }}
-                            {{- range $fieldDirective := $objField.Directives }}
-                                {{- if eq $fieldDirective.Name "relation" }}
-                                    {{$relationProps := index $fieldDirective.Args 2}}
-                                    {{- if eq $objField.Type.NamedType "" }}
-                                        {{- if not $relationProps.Value -}}
-                        collect(DISTINCT {{$objField.Name}}Node.uuid) as {{ $objField.Name }},
-                                        {{- else -}}
-                                        collect(DISTINCT {
-                                            {{- range $relProp := $relationProps.Value -}}
-                                                {{ $relProp|ucFirst }}: {{ $objField.Name }}Rel.{{ $relProp }},
-                                            {{- end -}}
-                                            UUID: {{ $objField.Name }}Node.uuid}) as {{ $objField.Name }},
-                                        {{- end -}}
-                                    {{- else -}}
-                        {{$objField.Name}}Node,
-                                    {{- end }}
-                                {{- end }}
-                            {{- end }}
-                        {{- end }}
+                        {{- template "collectRelations" $object }}
                         source
                         ORDER BY
                             source.uuid
@@ -50,28 +81,13 @@
                             prefLabel: source.prefLabel,
                             types: labels(source),
                             uuid: source.uuid,
-                            {{- range $objField := $object.Fields }}
-                                {{- range $fieldDirective := $objField.Directives }}
-                                    {{- if eq $fieldDirective.Name "relation" }}
-                                        {{- if eq $objField.Type.NamedType "" }}
-                            {{$objField.Name}}: {{$objField.Name}},
-                                        {{- else }}
-                            {{$objField.Name}}: {{$objField.Name}}Node.uuid,
-                                        {{- end }}
-                                    {{- end }}
-                                {{- end }}
-                            {{- end }}
+                            {{- template "sourceProperties" $object }}
                             lastModifiedEpoch: source.lastModifiedEpoch
                         } as sources 
                         RETURN 
                         canonical.prefUUID as prefUUID,
                         canonical.aggregateHash as aggregateHash,
-                        {{- range $objField := $object.Fields }}
-                            {{- $directivesCount := len $objField.Directives}}
-                            {{- if eq $directivesCount 0 }}
-                        canonical.{{$objField.Name}} as {{$objField.Name}},
-                            {{- end }}
-                        {{- end }}
+                        {{- template "canonicalProperties" $object }}
                         labels(canonical) as types,
                         collect(sources) as sourceRepresentations`,
                     Parameters: map[string]interface{}{
