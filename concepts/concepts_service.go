@@ -513,7 +513,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					//set this to 0 as otherwise it is empty
 					//TODO fix this up at some point to do it properly?
 					concept.Hash = "0"
-					unconcordQuery := s.writeCanonicalNodeForUnconcordedConcepts(concept)
+					unconcordQuery := s.writeCanonicalNodeForUnconcordedConcepts(transID, concept)
 					queryBatch = append(queryBatch, unconcordQuery)
 
 					//We will need to send a notification of ids that have been removed from current concordance
@@ -555,7 +555,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		queryBatch = append(queryBatch, query)
 	}
 	aggregatedConceptToWrite.AggregatedHash = hashAsString
-	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
+	queryBatch = populateConceptQueries(transID, queryBatch, aggregatedConceptToWrite)
 
 	updateRecord.UpdatedIds = updatedUUIDList
 	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
@@ -908,7 +908,7 @@ func (s *ConceptService) clearDownExistingNodes(ac AggregatedConcept) []*neoism.
 }
 
 //Curate all queries to populate concept nodes
-func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept AggregatedConcept) []*neoism.CypherQuery {
+func populateConceptQueries(transID string, queryBatch []*neoism.CypherQuery, aggregatedConcept AggregatedConcept) []*neoism.CypherQuery {
 	// Create a sourceConcept from the canonical information - WITH NO UUID
 	concept := Concept{
 		Aliases:              aggregatedConcept.Aliases,
@@ -952,11 +952,11 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		IndustryIdentifier: aggregatedConcept.IndustryIdentifier,
 	}
 
-	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
+	queryBatch = append(queryBatch, createNodeQueries(transID, concept, aggregatedConcept.PrefUUID, "")...)
 
 	// Repopulate
 	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
-		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, "", sourceConcept.UUID)...)
+		queryBatch = append(queryBatch, createNodeQueries(transID, sourceConcept, "", sourceConcept.UUID)...)
 
 		equivQuery := &neoism.CypherQuery{
 			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
@@ -992,13 +992,13 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 }
 
 //Create concept nodes
-func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.CypherQuery {
+func createNodeQueries(transID string, concept Concept, prefUUID string, uuid string) []*neoism.CypherQuery {
 	var queryBatch []*neoism.CypherQuery
 	var createConceptQuery *neoism.CypherQuery
 
 	// Leaf or Lone Node
 	if uuid != "" {
-		allProps := setProps(concept, uuid, true)
+		allProps := setProps(transID, concept, uuid, true)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 											set n={allprops}
@@ -1010,7 +1010,7 @@ func createNodeQueries(concept Concept, prefUUID string, uuid string) []*neoism.
 		}
 	} else {
 		// Canonical node that doesn't have UUID
-		allProps := setProps(concept, prefUUID, false)
+		allProps := setProps(transID, concept, prefUUID, false)
 		createConceptQuery = &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
 											set n={allprops}
@@ -1207,8 +1207,8 @@ func addRelationship(conceptID string, relationshipIDs []string, relationshipTyp
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
-func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept Concept) *neoism.CypherQuery {
-	allProps := setProps(concept, concept.UUID, false)
+func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(transID string, concept Concept) *neoism.CypherQuery {
+	allProps := setProps(transID, concept, concept.UUID, false)
 	logger.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`
@@ -1259,12 +1259,13 @@ func getSourceData(sourceConcepts []Concept) map[string]string {
 
 //This function dictates which properties will be actually
 //written in neo for both canonical and source nodes.
-func setProps(concept Concept, id string, isSource bool) map[string]interface{} {
+func setProps(transID string, concept Concept, id string, isSource bool) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 	//common props
 	if concept.PrefLabel != "" {
 		nodeProps["prefLabel"] = concept.PrefLabel
 	}
+	nodeProps["transaction_id"] = transID
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 	if concept.FigiCode != "" {
 		nodeProps["figiCode"] = concept.FigiCode
