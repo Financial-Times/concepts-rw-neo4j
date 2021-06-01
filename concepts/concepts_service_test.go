@@ -82,11 +82,6 @@ var (
 		RoleUUID:      "fe94adc6-ca44-438f-ad8f-0188d4a74987",
 		InceptionDate: "2011-06-27",
 	}
-	anotherMembershipRole2 = ontology.MembershipRole{
-		RoleUUID:        "83102635-e6d5-3c48-9d5f-ab34c1401c22",
-		InceptionDate:   "2009-09-10",
-		TerminationDate: "2013-02-20",
-	}
 )
 
 //Reusable Neo4J connection
@@ -1035,7 +1030,7 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	ab, err := json.Marshal(cleanHash(result.(ontology.AggregatedConcept)))
+	ab, _ := json.Marshal(cleanHash(result.(ontology.AggregatedConcept)))
 
 	originalMembership := ontology.AggregatedConcept{}
 	json.Unmarshal(ab, &originalMembership)
@@ -1054,7 +1049,7 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 
 	updatedResult, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	cd, err := json.Marshal(cleanHash(updatedResult.(ontology.AggregatedConcept)))
+	cd, _ := json.Marshal(cleanHash(updatedResult.(ontology.AggregatedConcept)))
 
 	updatedMemebership := ontology.AggregatedConcept{}
 	json.Unmarshal(cd, &updatedMemebership)
@@ -1077,7 +1072,7 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	ab, err := json.Marshal(cleanHash(result.(ontology.AggregatedConcept)))
+	ab, _ := json.Marshal(cleanHash(result.(ontology.AggregatedConcept)))
 
 	originalMembership := ontology.AggregatedConcept{}
 	json.Unmarshal(ab, &originalMembership)
@@ -1914,9 +1909,9 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		targetConcordance: ontology.AggregatedConcept{
 			PrefUUID: "1",
 			SourceRepresentations: []ontology.Concept{
-				ontology.Concept{UUID: "1", Authority: "Smartlogic"},
-				ontology.Concept{UUID: "4", Authority: "FACTSET"},
-				ontology.Concept{UUID: "2", Authority: "ManagedLocation"},
+				{UUID: "1", Authority: "Smartlogic"},
+				{UUID: "4", Authority: "FACTSET"},
+				{UUID: "2", Authority: "ManagedLocation"},
 			},
 		},
 	}
@@ -1930,10 +1925,10 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		targetConcordance: ontology.AggregatedConcept{
 			PrefUUID: "1",
 			SourceRepresentations: []ontology.Concept{
-				ontology.Concept{UUID: "1", Authority: "Smartlogic"},
-				ontology.Concept{UUID: "4", Authority: "FACTSET"},
-				ontology.Concept{UUID: "2", Authority: "ManagedLocation"},
-				ontology.Concept{UUID: "5", Authority: "TME"},
+				{UUID: "1", Authority: "Smartlogic"},
+				{UUID: "4", Authority: "FACTSET"},
+				{UUID: "2", Authority: "ManagedLocation"},
+				{UUID: "5", Authority: "TME"},
 			},
 		},
 	}
