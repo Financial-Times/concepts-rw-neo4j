@@ -231,11 +231,13 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 	}
 
 	neoAggregateConcept := results[0]
-	aggregatedConcept, logMsg, err := neoAggregateConcept.ToOntologyAggregateConcept()
+	newAggregatedConcept, logMsg, err := neoAggregateConcept.ToOntologyNewAggregateConcept()
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error(logMsg)
 		return ontology.AggregatedConcept{}, false, err
 	}
+
+	aggregatedConcept := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
 
 	logger.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
 	return aggregatedConcept, true, nil

@@ -57,23 +57,23 @@ type neoAggregatedConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (nac neoAggregatedConcept) ToOntologyAggregateConcept() (ontology.AggregatedConcept, string, error) {
+func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAggregatedConcept, string, error) {
 	typeName, err := mapper.MostSpecificType(nac.Types)
 	if err != nil {
-		return ontology.AggregatedConcept{}, "Returned concept had no recognized type", err
+		return ontology.NewAggregatedConcept{}, "Returned concept had no recognized type", err
 	}
 
-	var sourceConcepts []ontology.Concept
+	var sourceConcepts []ontology.NewConcept
 	for _, srcConcept := range nac.SourceRepresentations {
-		concept, err := srcConcept.ТоOntologyConcept()
+		concept, err := srcConcept.ТоOntologyNewConcept()
 		if err != nil {
-			return ontology.AggregatedConcept{}, "Returned source concept had no recognized type", err
+			return ontology.NewAggregatedConcept{}, "Returned source concept had no recognized type", err
 		}
 
 		sourceConcepts = append(sourceConcepts, concept)
 	}
 
-	aggregateConcept := ontology.AggregatedConcept{
+	aggregateConcept := ontology.NewAggregatedConcept{
 		SourceRepresentations: sourceConcepts,
 		AggregatedHash:        nac.AggregateHash,
 		Aliases:               nac.Aliases,
@@ -117,7 +117,7 @@ func (nac neoAggregatedConcept) ToOntologyAggregateConcept() (ontology.Aggregate
 		IndustryIdentifier: nac.IndustryIdentifier,
 	}
 
-	return cleanConcept(aggregateConcept), "", nil
+	return cleanNewConcept(aggregateConcept), "", nil
 }
 
 type neoConcept struct {
@@ -179,13 +179,13 @@ type neoConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (nc neoConcept) ТоOntologyConcept() (ontology.Concept, error) {
+func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 	conceptType, err := mapper.MostSpecificType(nc.Types)
 	if err != nil {
-		return ontology.Concept{}, err
+		return ontology.NewConcept{}, err
 	}
 
-	return ontology.Concept{
+	return ontology.NewConcept{
 		Authority:                    nc.Authority,
 		AuthorityValue:               nc.AuthorityValue,
 		BroaderUUIDs:                 filterSlice(nc.BroaderUUIDs),
@@ -260,7 +260,7 @@ func cleanNAICS(naics []ontology.NAICSIndustryClassification) []ontology.NAICSIn
 	return res
 }
 
-func cleanConcept(c ontology.AggregatedConcept) ontology.AggregatedConcept {
+func cleanNewConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	for j := range c.SourceRepresentations {
 		c.SourceRepresentations[j].LastModifiedEpoch = 0
 		for i := range c.SourceRepresentations[j].MembershipRoles {
