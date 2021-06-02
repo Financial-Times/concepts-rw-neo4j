@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
 	"strconv"
 	"time"
 
@@ -75,115 +74,6 @@ func (s *ConceptService) Initialise() error {
 		return err
 	}
 	return s.conn.EnsureConstraints(constraintMap)
-}
-
-type neoAggregatedConcept struct {
-	AggregateHash         string                    `json:"aggregateHash,omitempty"`
-	Aliases               []string                  `json:"aliases,omitempty"`
-	Authority             string                    `json:"authority,omitempty"`
-	AuthorityValue        string                    `json:"authorityValue,omitempty"`
-	DescriptionXML        string                    `json:"descriptionXML,omitempty"`
-	EmailAddress          string                    `json:"emailAddress,omitempty"`
-	FacebookPage          string                    `json:"facebookPage,omitempty"`
-	FigiCode              string                    `json:"figiCode,omitempty"`
-	ImageURL              string                    `json:"imageUrl,omitempty"`
-	InceptionDate         string                    `json:"inceptionDate,omitempty"`
-	InceptionDateEpoch    int64                     `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy              string                    `json:"issuedBy,omitempty"`
-	LastModifiedEpoch     int                       `json:"lastModifiedEpoch,omitempty"`
-	MembershipRoles       []ontology.MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID      string                    `json:"organisationUUID,omitempty"`
-	PersonUUID            string                    `json:"personUUID,omitempty"`
-	PrefLabel             string                    `json:"prefLabel"`
-	PrefUUID              string                    `json:"prefUUID,omitempty"`
-	ScopeNote             string                    `json:"scopeNote,omitempty"`
-	ShortLabel            string                    `json:"shortLabel,omitempty"`
-	SourceRepresentations []neoConcept              `json:"sourceRepresentations"`
-	Strapline             string                    `json:"strapline,omitempty"`
-	TerminationDate       string                    `json:"terminationDate,omitempty"`
-	TerminationDateEpoch  int64                     `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle         string                    `json:"twitterHandle,omitempty"`
-	Types                 []string                  `json:"types"`
-	IsDeprecated          bool                      `json:"isDeprecated,omitempty"`
-	// Organisations
-	ProperName             string   `json:"properName,omitempty"`
-	ShortName              string   `json:"shortName,omitempty"`
-	TradeNames             []string `json:"tradeNames,omitempty"`
-	FormerNames            []string `json:"formerNames,omitempty"`
-	CountryCode            string   `json:"countryCode,omitempty"`
-	CountryOfRisk          string   `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations    string   `json:"countryOfOperations,omitempty"`
-	PostalCode             string   `json:"postalCode,omitempty"`
-	YearFounded            int      `json:"yearFounded,omitempty"`
-	LeiCode                string   `json:"leiCode,omitempty"`
-	ParentOrganisation     string   `json:"parentOrganisation,omitempty"`
-	// Location
-	ISO31661 string `json:"iso31661,omitempty"`
-	// Person
-	Salutation string `json:"salutation,omitempty"`
-	BirthYear  int    `json:"birthYear,omitempty"`
-	// Industry Classifications
-	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
-}
-
-type neoConcept struct {
-	Aliases              []string                  `json:"aliases,omitempty"`
-	Authority            string                    `json:"authority,omitempty"`
-	AuthorityValue       string                    `json:"authorityValue,omitempty"`
-	BroaderUUIDs         []string                  `json:"broaderUUIDs,omitempty"`
-	DescriptionXML       string                    `json:"descriptionXML,omitempty"`
-	EmailAddress         string                    `json:"emailAddress,omitempty"`
-	FacebookPage         string                    `json:"facebookPage,omitempty"`
-	FigiCode             string                    `json:"figiCode,omitempty"`
-	ImageURL             string                    `json:"imageUrl,omitempty"`
-	InceptionDate        string                    `json:"inceptionDate,omitempty"`
-	InceptionDateEpoch   int64                     `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy             string                    `json:"issuedBy,omitempty"`
-	LastModifiedEpoch    int                       `json:"lastModifiedEpoch,omitempty"`
-	MembershipRoles      []ontology.MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID     string                    `json:"organisationUUID,omitempty"`
-	ParentUUIDs          []string                  `json:"parentUUIDs,omitempty"`
-	PersonUUID           string                    `json:"personUUID,omitempty"`
-	PrefLabel            string                    `json:"prefLabel,omitempty"`
-	PrefUUID             string                    `json:"prefUUID,omitempty"`
-	RelatedUUIDs         []string                  `json:"relatedUUIDs,omitempty"`
-	SupersededByUUIDs    []string                  `json:"supersededByUUIDs,omitempty"`
-	ImpliedByUUIDs       []string                  `json:"impliedByUUIDs,omitempty"`
-	HasFocusUUIDs        []string                  `json:"hasFocusUUIDs,omitempty"`
-	ScopeNote            string                    `json:"scopeNote,omitempty"`
-	ShortLabel           string                    `json:"shortLabel,omitempty"`
-	Strapline            string                    `json:"strapline,omitempty"`
-	TerminationDate      string                    `json:"terminationDate,omitempty"`
-	TerminationDateEpoch int64                     `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle        string                    `json:"twitterHandle,omitempty"`
-	Types                []string                  `json:"types,omitempty"`
-	UUID                 string                    `json:"uuid,omitempty"`
-	IsDeprecated         bool                      `json:"isDeprecated,omitempty"`
-	// Organisations
-	ProperName                   string                                 `json:"properName,omitempty"`
-	ShortName                    string                                 `json:"shortName,omitempty"`
-	TradeNames                   []string                               `json:"tradeNames,omitempty"`
-	FormerNames                  []string                               `json:"formerNames,omitempty"`
-	CountryCode                  string                                 `json:"countryCode,omitempty"`
-	CountryOfRisk                string                                 `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation       string                                 `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations          string                                 `json:"countryOfOperations,omitempty"`
-	CountryOfRiskUUID            string                                 `json:"countryOfRiskUUID,omitempty"`
-	CountryOfIncorporationUUID   string                                 `json:"countryOfIncorporationUUID,omitempty"`
-	CountryOfOperationsUUID      string                                 `json:"countryOfOperationsUUID,omitempty"`
-	PostalCode                   string                                 `json:"postalCode,omitempty"`
-	YearFounded                  int                                    `json:"yearFounded,omitempty"`
-	LeiCode                      string                                 `json:"leiCode,omitempty"`
-	ParentOrganisation           string                                 `json:"parentOrganisation,omitempty"`
-	NAICSIndustryClassifications []ontology.NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
-	// Location
-	ISO31661 string `json:"iso31661,omitempty"`
-	// Person
-	Salutation string `json:"salutation,omitempty"`
-	BirthYear  int    `json:"birthYear,omitempty"`
-	// Industry Classifications
-	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
 type equivalenceResult struct {
@@ -339,95 +229,16 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 		logger.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
 		return ontology.AggregatedConcept{}, false, nil
 	}
-	typeName, err := mapper.MostSpecificType(results[0].Types)
+
+	neoAggregateConcept := results[0]
+	aggregatedConcept, logMsg, err := neoAggregateConcept.ToOntologyAggregateConcept()
 	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned concept had no recognized type")
+		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error(logMsg)
 		return ontology.AggregatedConcept{}, false, err
 	}
 
-	aggregatedConcept := ontology.AggregatedConcept{
-		AggregatedHash:   results[0].AggregateHash,
-		Aliases:          results[0].Aliases,
-		DescriptionXML:   results[0].DescriptionXML,
-		EmailAddress:     results[0].EmailAddress,
-		FacebookPage:     results[0].FacebookPage,
-		FigiCode:         results[0].FigiCode,
-		ImageURL:         results[0].ImageURL,
-		InceptionDate:    results[0].InceptionDate,
-		IssuedBy:         results[0].IssuedBy,
-		MembershipRoles:  cleanMembershipRoles(results[0].MembershipRoles),
-		OrganisationUUID: results[0].OrganisationUUID,
-		PersonUUID:       results[0].PersonUUID,
-		PrefLabel:        results[0].PrefLabel,
-		PrefUUID:         results[0].PrefUUID,
-		ScopeNote:        results[0].ScopeNote,
-		ShortLabel:       results[0].ShortLabel,
-		Strapline:        results[0].Strapline,
-		TerminationDate:  results[0].TerminationDate,
-		TwitterHandle:    results[0].TwitterHandle,
-		Type:             typeName,
-		IsDeprecated:     results[0].IsDeprecated,
-		// Organisations
-		ProperName:             results[0].ProperName,
-		ShortName:              results[0].ShortName,
-		TradeNames:             results[0].TradeNames,
-		FormerNames:            results[0].FormerNames,
-		CountryCode:            results[0].CountryCode,
-		CountryOfIncorporation: results[0].CountryOfIncorporation,
-		CountryOfRisk:          results[0].CountryOfRisk,
-		CountryOfOperations:    results[0].CountryOfOperations,
-		PostalCode:             results[0].PostalCode,
-		YearFounded:            results[0].YearFounded,
-		LeiCode:                results[0].LeiCode,
-		// Person
-		Salutation: results[0].Salutation,
-		BirthYear:  results[0].BirthYear,
-		// Location
-		ISO31661: results[0].ISO31661,
-		// Industry Classification
-		IndustryIdentifier: results[0].IndustryIdentifier,
-	}
-
-	var sourceConcepts []ontology.Concept
-	for _, srcConcept := range results[0].SourceRepresentations {
-		conceptType, err := mapper.MostSpecificType(srcConcept.Types)
-		if err != nil {
-			logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Returned source concept had no recognized type")
-			return ontology.AggregatedConcept{}, false, err
-		}
-
-		concept := ontology.Concept{
-			Authority:                    srcConcept.Authority,
-			AuthorityValue:               srcConcept.AuthorityValue,
-			BroaderUUIDs:                 filterSlice(srcConcept.BroaderUUIDs),
-			SupersededByUUIDs:            filterSlice(srcConcept.SupersededByUUIDs),
-			FigiCode:                     srcConcept.FigiCode,
-			IssuedBy:                     srcConcept.IssuedBy,
-			LastModifiedEpoch:            srcConcept.LastModifiedEpoch,
-			MembershipRoles:              cleanMembershipRoles(srcConcept.MembershipRoles),
-			OrganisationUUID:             srcConcept.OrganisationUUID,
-			CountryOfIncorporationUUID:   srcConcept.CountryOfIncorporationUUID,
-			CountryOfRiskUUID:            srcConcept.CountryOfRiskUUID,
-			CountryOfOperationsUUID:      srcConcept.CountryOfOperationsUUID,
-			ParentUUIDs:                  filterSlice(srcConcept.ParentUUIDs),
-			PersonUUID:                   srcConcept.PersonUUID,
-			PrefLabel:                    srcConcept.PrefLabel,
-			RelatedUUIDs:                 filterSlice(srcConcept.RelatedUUIDs),
-			ImpliedByUUIDs:               filterSlice(srcConcept.ImpliedByUUIDs),
-			HasFocusUUIDs:                filterSlice(srcConcept.HasFocusUUIDs),
-			NAICSIndustryClassifications: cleanNAICS(srcConcept.NAICSIndustryClassifications),
-			Type:                         conceptType,
-			UUID:                         srcConcept.UUID,
-			IsDeprecated:                 srcConcept.IsDeprecated,
-			// Organisations
-			ParentOrganisation: srcConcept.ParentOrganisation,
-		}
-		sourceConcepts = append(sourceConcepts, concept)
-	}
-
-	aggregatedConcept.SourceRepresentations = sourceConcepts
 	logger.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
-	return cleanConcept(aggregatedConcept), true, nil
+	return aggregatedConcept, true, nil
 }
 
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -1426,26 +1237,6 @@ func processMembershipRoles(v interface{}) interface{} {
 	return v
 }
 
-func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole {
-	deleted := 0
-	for i := range m {
-		j := i - deleted
-		if m[j].RoleUUID == "" {
-			m = m[:j+copy(m[j:], m[j+1:])]
-			deleted++
-			continue
-		}
-		m[j].InceptionDateEpoch = getEpoch(m[j].InceptionDate)
-		m[j].TerminationDateEpoch = getEpoch(m[j].TerminationDate)
-	}
-
-	if len(m) == 0 {
-		return nil
-	}
-
-	return m
-}
-
 func getEpoch(t string) int64 {
 	if t == "" {
 		return 0
@@ -1453,72 +1244,6 @@ func getEpoch(t string) int64 {
 
 	tt, _ := time.Parse(iso8601DateOnly, t)
 	return tt.Unix()
-}
-
-// cleanNAICS returns the same slice of NAICSIndustryClassification if all are valid,
-// skips the invalid ones, returns nil if the input slice doesn't have valid NAICSIndustryClassification objects
-func cleanNAICS(naics []ontology.NAICSIndustryClassification) []ontology.NAICSIndustryClassification {
-	var res []ontology.NAICSIndustryClassification
-	for _, ic := range naics {
-		if ic.UUID != "" {
-			res = append(res, ic)
-		}
-	}
-	return res
-}
-
-func filterSlice(a []string) []string {
-	r := []string{}
-	for _, str := range a {
-		if str != "" {
-			r = append(r, str)
-		}
-	}
-
-	if len(r) == 0 {
-		return nil
-	}
-
-	return a
-}
-
-func cleanConcept(c ontology.AggregatedConcept) ontology.AggregatedConcept {
-	for j := range c.SourceRepresentations {
-		c.SourceRepresentations[j].LastModifiedEpoch = 0
-		for i := range c.SourceRepresentations[j].MembershipRoles {
-			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
-			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
-		}
-		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
-			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
-		})
-		sort.SliceStable(c.SourceRepresentations[j].BroaderUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].BroaderUUIDs[k] < c.SourceRepresentations[j].BroaderUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].RelatedUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].RelatedUUIDs[k] < c.SourceRepresentations[j].RelatedUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].SupersededByUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].SupersededByUUIDs[k] < c.SourceRepresentations[j].SupersededByUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].ImpliedByUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].ImpliedByUUIDs[k] < c.SourceRepresentations[j].ImpliedByUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].HasFocusUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].HasFocusUUIDs[k] < c.SourceRepresentations[j].HasFocusUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].NAICSIndustryClassifications, func(k, l int) bool {
-			return c.SourceRepresentations[j].NAICSIndustryClassifications[k].Rank < c.SourceRepresentations[j].NAICSIndustryClassifications[l].Rank
-		})
-	}
-	for i := range c.MembershipRoles {
-		c.MembershipRoles[i].InceptionDateEpoch = 0
-		c.MembershipRoles[i].TerminationDateEpoch = 0
-	}
-	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
-		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
-	})
-	return c
 }
 
 func cleanHash(c ontology.AggregatedConcept) ontology.AggregatedConcept {
