@@ -729,54 +729,11 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 
 //Curate all queries to populate concept nodes
 func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
-	// Create a sourceConcept from the canonical information - WITH NO UUID
-	concept := ontology.NewConcept{
-		Aliases:              aggregatedConcept.Aliases,
-		DescriptionXML:       aggregatedConcept.DescriptionXML,
-		EmailAddress:         aggregatedConcept.EmailAddress,
-		FacebookPage:         aggregatedConcept.FacebookPage,
-		FigiCode:             aggregatedConcept.FigiCode,
-		Hash:                 aggregatedConcept.AggregatedHash,
-		ImageURL:             aggregatedConcept.ImageURL,
-		InceptionDate:        aggregatedConcept.InceptionDate,
-		InceptionDateEpoch:   aggregatedConcept.InceptionDateEpoch,
-		IssuedBy:             aggregatedConcept.IssuedBy,
-		PrefLabel:            aggregatedConcept.PrefLabel,
-		ScopeNote:            aggregatedConcept.ScopeNote,
-		ShortLabel:           aggregatedConcept.ShortLabel,
-		Strapline:            aggregatedConcept.Strapline,
-		TerminationDate:      aggregatedConcept.TerminationDate,
-		TerminationDateEpoch: aggregatedConcept.TerminationDateEpoch,
-		TwitterHandle:        aggregatedConcept.TwitterHandle,
-		Type:                 aggregatedConcept.Type,
-		//TODO deprecated event?
-		IsDeprecated: aggregatedConcept.IsDeprecated,
-		// Organisations
-		ProperName:             aggregatedConcept.ProperName,
-		ShortName:              aggregatedConcept.ShortName,
-		TradeNames:             aggregatedConcept.TradeNames,
-		FormerNames:            aggregatedConcept.FormerNames,
-		CountryCode:            aggregatedConcept.CountryCode,
-		CountryOfIncorporation: aggregatedConcept.CountryOfIncorporation,
-		CountryOfRisk:          aggregatedConcept.CountryOfRisk,
-		CountryOfOperations:    aggregatedConcept.CountryOfOperations,
-		PostalCode:             aggregatedConcept.PostalCode,
-		YearFounded:            aggregatedConcept.YearFounded,
-		LeiCode:                aggregatedConcept.LeiCode,
-		// Person
-		Salutation: aggregatedConcept.Salutation,
-		BirthYear:  aggregatedConcept.BirthYear,
-		// Location
-		ISO31661: aggregatedConcept.ISO31661,
-		// Industry Classification
-		IndustryIdentifier: aggregatedConcept.IndustryIdentifier,
-	}
-
-	queryBatch = append(queryBatch, createNodeQueries(concept, aggregatedConcept.PrefUUID, "")...)
+	queryBatch = append(queryBatch, createCanonicalNodeQueries(aggregatedConcept, aggregatedConcept.PrefUUID)...)
 
 	// Repopulate
 	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
-		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, "", sourceConcept.UUID)...)
+		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, sourceConcept.UUID)...)
 
 		equivQuery := &neoism.CypherQuery{
 			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
@@ -811,35 +768,39 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 	return queryBatch
 }
 
-//Create concept nodes
-func createNodeQueries(concept ontology.NewConcept, prefUUID string, uuid string) []*neoism.CypherQuery {
+func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUID string) []*neoism.CypherQuery {
 	var queryBatch []*neoism.CypherQuery
 	var createConceptQuery *neoism.CypherQuery
 
-	// Leaf or Lone Node
-	if uuid != "" {
-		allProps := setProps(concept, uuid, true)
-		createConceptQuery = &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
+	concept := canonicalToSource(canonical)
+	allProps := setProps(concept, prefUUID, false)
+	createConceptQuery = &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
+								set n={allprops}
+								set n :%s`, getAllLabels(concept.Type)),
+		Parameters: map[string]interface{}{
+			"prefUUID": prefUUID,
+			"allprops": allProps,
+		},
+	}
+
+	queryBatch = append(queryBatch, createConceptQuery)
+	return queryBatch
+}
+
+func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.CypherQuery {
+	var queryBatch []*neoism.CypherQuery
+	var createConceptQuery *neoism.CypherQuery
+
+	allProps := setProps(concept, uuid, true)
+	createConceptQuery = &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 											set n={allprops}
 											set n :%s`, getAllLabels(concept.Type)),
-			Parameters: map[string]interface{}{
-				"uuid":     uuid,
-				"allprops": allProps,
-			},
-		}
-	} else {
-		// Canonical node that doesn't have UUID
-		allProps := setProps(concept, prefUUID, false)
-		createConceptQuery = &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
-											set n={allprops}
-											set n :%s`, getAllLabels(concept.Type)),
-			Parameters: map[string]interface{}{
-				"prefUUID": prefUUID,
-				"allprops": allProps,
-			},
-		}
+		Parameters: map[string]interface{}{
+			"uuid":     uuid,
+			"allprops": allProps,
+		},
 	}
 
 	for _, parentUUID := range concept.ParentUUIDs {
@@ -1304,4 +1265,49 @@ func stringInArr(searchFor string, values []string) bool {
 		}
 	}
 	return false
+}
+
+func canonicalToSource(canonical ontology.NewAggregatedConcept) ontology.NewConcept {
+	// Create a sourceConcept from the canonical information - WITH NO UUID
+	return ontology.NewConcept{
+		Aliases:              canonical.Aliases,
+		DescriptionXML:       canonical.DescriptionXML,
+		EmailAddress:         canonical.EmailAddress,
+		FacebookPage:         canonical.FacebookPage,
+		FigiCode:             canonical.FigiCode,
+		Hash:                 canonical.AggregatedHash,
+		ImageURL:             canonical.ImageURL,
+		InceptionDate:        canonical.InceptionDate,
+		InceptionDateEpoch:   canonical.InceptionDateEpoch,
+		IssuedBy:             canonical.IssuedBy,
+		PrefLabel:            canonical.PrefLabel,
+		ScopeNote:            canonical.ScopeNote,
+		ShortLabel:           canonical.ShortLabel,
+		Strapline:            canonical.Strapline,
+		TerminationDate:      canonical.TerminationDate,
+		TerminationDateEpoch: canonical.TerminationDateEpoch,
+		TwitterHandle:        canonical.TwitterHandle,
+		Type:                 canonical.Type,
+		//TODO deprecated event?
+		IsDeprecated: canonical.IsDeprecated,
+		// Organisations
+		ProperName:             canonical.ProperName,
+		ShortName:              canonical.ShortName,
+		TradeNames:             canonical.TradeNames,
+		FormerNames:            canonical.FormerNames,
+		CountryCode:            canonical.CountryCode,
+		CountryOfIncorporation: canonical.CountryOfIncorporation,
+		CountryOfRisk:          canonical.CountryOfRisk,
+		CountryOfOperations:    canonical.CountryOfOperations,
+		PostalCode:             canonical.PostalCode,
+		YearFounded:            canonical.YearFounded,
+		LeiCode:                canonical.LeiCode,
+		// Person
+		Salutation: canonical.Salutation,
+		BirthYear:  canonical.BirthYear,
+		// Location
+		ISO31661: canonical.ISO31661,
+		// Industry Classification
+		IndustryIdentifier: canonical.IndustryIdentifier,
+	}
 }
