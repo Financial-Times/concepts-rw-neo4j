@@ -774,12 +774,11 @@ func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUI
 	var queryBatch []*neoism.CypherQuery
 	var createConceptQuery *neoism.CypherQuery
 
-	concept := canonicalToSource(canonical)
-	allProps := setProps(concept, prefUUID, false)
+	allProps := setCanonicalProps(canonical, prefUUID)
 	createConceptQuery = &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
 								set n={allprops}
-								set n :%s`, getAllLabels(concept.Type)),
+								set n :%s`, getAllLabels(canonical.Type)),
 		Parameters: map[string]interface{}{
 			"prefUUID": prefUUID,
 			"allprops": allProps,
@@ -794,7 +793,7 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 	var queryBatch []*neoism.CypherQuery
 	var createConceptQuery *neoism.CypherQuery
 
-	allProps := setProps(concept, uuid, true)
+	allProps := setProps(concept, uuid)
 	createConceptQuery = &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
 											set n={allprops}
@@ -991,8 +990,7 @@ func addRelationship(conceptID string, relationshipIDs []string, relationshipTyp
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
 func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *neoism.CypherQuery {
-	source := canonicalToSource(canonical)
-	allProps := setProps(source, prefUUID, false)
+	allProps := setCanonicalProps(canonical, prefUUID)
 	logger.WithField("UUID", prefUUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`
@@ -1000,7 +998,7 @@ func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical onto
 					MERGE (n:Thing {prefUUID: {prefUUID}})
 					MERGE (n)<-[:EQUIVALENT_TO]-(t)
 					set n={allprops}
-					set n :%s`, getAllLabels(source.Type)),
+					set n :%s`, getAllLabels(canonical.Type)),
 		Parameters: map[string]interface{}{
 			"prefUUID": prefUUID,
 			"allprops": allProps,
@@ -1042,119 +1040,137 @@ func getSourceData(sourceConcepts []ontology.NewConcept) map[string]string {
 }
 
 //This function dictates which properties will be actually
-//written in neo for both canonical and source nodes.
-func setProps(concept ontology.NewConcept, id string, isSource bool) map[string]interface{} {
+//written in neo for source nodes.
+func setProps(source ontology.NewConcept, uuid string) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
-	//common props
-	if concept.PrefLabel != "" {
-		nodeProps["prefLabel"] = concept.PrefLabel
-	}
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
-	if concept.FigiCode != "" {
-		nodeProps["figiCode"] = concept.FigiCode
+
+	if source.PrefLabel != "" {
+		nodeProps["prefLabel"] = source.PrefLabel
 	}
 
-	if concept.IsDeprecated {
+	if source.FigiCode != "" {
+		nodeProps["figiCode"] = source.FigiCode
+	}
+
+	if source.IsDeprecated {
 		nodeProps["isDeprecated"] = true
 	}
-	//source specific props
-	if isSource {
-		nodeProps["uuid"] = id
-		nodeProps["authority"] = concept.Authority
-		nodeProps["authorityValue"] = concept.AuthorityValue
 
-		return nodeProps
-	}
-	//canonical specific props
-	nodeProps["prefUUID"] = id
-	nodeProps["aggregateHash"] = concept.Hash
+	nodeProps["uuid"] = uuid
+	nodeProps["authority"] = source.Authority
+	nodeProps["authorityValue"] = source.AuthorityValue
 
-	if len(concept.Aliases) > 0 {
-		nodeProps["aliases"] = concept.Aliases
+	return nodeProps
+}
+
+//This function dictates which properties will be actually
+//written in neo for canonical nodes.
+func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string) map[string]interface{} {
+	nodeProps := map[string]interface{}{}
+	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
+
+	if canonical.PrefLabel != "" {
+		nodeProps["prefLabel"] = canonical.PrefLabel
 	}
-	if concept.EmailAddress != "" {
-		nodeProps["emailAddress"] = concept.EmailAddress
+
+	if canonical.FigiCode != "" {
+		nodeProps["figiCode"] = canonical.FigiCode
 	}
-	if concept.FacebookPage != "" {
-		nodeProps["facebookPage"] = concept.FacebookPage
+
+	if canonical.IsDeprecated {
+		nodeProps["isDeprecated"] = true
 	}
-	if concept.TwitterHandle != "" {
-		nodeProps["twitterHandle"] = concept.TwitterHandle
+
+	nodeProps["prefUUID"] = prefUUID
+	nodeProps["aggregateHash"] = canonical.AggregatedHash
+
+	if len(canonical.Aliases) > 0 {
+		nodeProps["aliases"] = canonical.Aliases
 	}
-	if concept.ScopeNote != "" {
-		nodeProps["scopeNote"] = concept.ScopeNote
+	if canonical.EmailAddress != "" {
+		nodeProps["emailAddress"] = canonical.EmailAddress
 	}
-	if concept.ShortLabel != "" {
-		nodeProps["shortLabel"] = concept.ShortLabel
+	if canonical.FacebookPage != "" {
+		nodeProps["facebookPage"] = canonical.FacebookPage
 	}
-	if concept.DescriptionXML != "" {
-		nodeProps["descriptionXML"] = concept.DescriptionXML
+	if canonical.TwitterHandle != "" {
+		nodeProps["twitterHandle"] = canonical.TwitterHandle
 	}
-	if concept.ImageURL != "" {
-		nodeProps["imageUrl"] = concept.ImageURL
+	if canonical.ScopeNote != "" {
+		nodeProps["scopeNote"] = canonical.ScopeNote
 	}
-	if concept.Strapline != "" {
-		nodeProps["strapline"] = concept.Strapline
+	if canonical.ShortLabel != "" {
+		nodeProps["shortLabel"] = canonical.ShortLabel
 	}
-	if concept.FigiCode != "" {
-		nodeProps["figiCode"] = concept.FigiCode
+	if canonical.DescriptionXML != "" {
+		nodeProps["descriptionXML"] = canonical.DescriptionXML
 	}
-	if concept.ProperName != "" {
-		nodeProps["properName"] = concept.ProperName
+	if canonical.ImageURL != "" {
+		nodeProps["imageUrl"] = canonical.ImageURL
 	}
-	if concept.ShortName != "" {
-		nodeProps["shortName"] = concept.ShortName
+	if canonical.Strapline != "" {
+		nodeProps["strapline"] = canonical.Strapline
 	}
-	if len(concept.FormerNames) > 0 {
-		nodeProps["formerNames"] = concept.FormerNames
+	if canonical.FigiCode != "" {
+		nodeProps["figiCode"] = canonical.FigiCode
 	}
-	if len(concept.TradeNames) > 0 {
-		nodeProps["tradeNames"] = concept.TradeNames
+	if canonical.ProperName != "" {
+		nodeProps["properName"] = canonical.ProperName
 	}
-	if concept.CountryCode != "" {
-		nodeProps["countryCode"] = concept.CountryCode
+	if canonical.ShortName != "" {
+		nodeProps["shortName"] = canonical.ShortName
 	}
-	if concept.CountryOfIncorporation != "" {
-		nodeProps["countryOfIncorporation"] = concept.CountryOfIncorporation
+	if len(canonical.FormerNames) > 0 {
+		nodeProps["formerNames"] = canonical.FormerNames
 	}
-	if concept.CountryOfRisk != "" {
-		nodeProps["countryOfRisk"] = concept.CountryOfRisk
+	if len(canonical.TradeNames) > 0 {
+		nodeProps["tradeNames"] = canonical.TradeNames
 	}
-	if concept.CountryOfOperations != "" {
-		nodeProps["countryOfOperations"] = concept.CountryOfOperations
+	if canonical.CountryCode != "" {
+		nodeProps["countryCode"] = canonical.CountryCode
 	}
-	if concept.PostalCode != "" {
-		nodeProps["postalCode"] = concept.PostalCode
+	if canonical.CountryOfIncorporation != "" {
+		nodeProps["countryOfIncorporation"] = canonical.CountryOfIncorporation
 	}
-	if concept.YearFounded > 0 {
-		nodeProps["yearFounded"] = concept.YearFounded
+	if canonical.CountryOfRisk != "" {
+		nodeProps["countryOfRisk"] = canonical.CountryOfRisk
 	}
-	if concept.LeiCode != "" {
-		nodeProps["leiCode"] = concept.LeiCode
+	if canonical.CountryOfOperations != "" {
+		nodeProps["countryOfOperations"] = canonical.CountryOfOperations
 	}
-	if concept.InceptionDate != "" {
-		nodeProps["inceptionDate"] = concept.InceptionDate
+	if canonical.PostalCode != "" {
+		nodeProps["postalCode"] = canonical.PostalCode
 	}
-	if concept.TerminationDate != "" {
-		nodeProps["terminationDate"] = concept.TerminationDate
+	if canonical.YearFounded > 0 {
+		nodeProps["yearFounded"] = canonical.YearFounded
 	}
-	if concept.InceptionDateEpoch > 0 {
-		nodeProps["inceptionDateEpoch"] = concept.InceptionDateEpoch
+	if canonical.LeiCode != "" {
+		nodeProps["leiCode"] = canonical.LeiCode
 	}
-	if concept.TerminationDateEpoch > 0 {
-		nodeProps["terminationDateEpoch"] = concept.TerminationDateEpoch
+	if canonical.InceptionDate != "" {
+		nodeProps["inceptionDate"] = canonical.InceptionDate
 	}
-	if concept.Salutation != "" {
-		nodeProps["salutation"] = concept.Salutation
+	if canonical.TerminationDate != "" {
+		nodeProps["terminationDate"] = canonical.TerminationDate
 	}
-	if concept.BirthYear > 0 {
-		nodeProps["birthYear"] = concept.BirthYear
+	if canonical.InceptionDateEpoch > 0 {
+		nodeProps["inceptionDateEpoch"] = canonical.InceptionDateEpoch
 	}
-	if concept.ISO31661 != "" {
-		nodeProps["iso31661"] = concept.ISO31661
+	if canonical.TerminationDateEpoch > 0 {
+		nodeProps["terminationDateEpoch"] = canonical.TerminationDateEpoch
 	}
-	if concept.IndustryIdentifier != "" {
-		nodeProps["industryIdentifier"] = concept.IndustryIdentifier
+	if canonical.Salutation != "" {
+		nodeProps["salutation"] = canonical.Salutation
+	}
+	if canonical.BirthYear > 0 {
+		nodeProps["birthYear"] = canonical.BirthYear
+	}
+	if canonical.ISO31661 != "" {
+		nodeProps["iso31661"] = canonical.ISO31661
+	}
+	if canonical.IndustryIdentifier != "" {
+		nodeProps["industryIdentifier"] = canonical.IndustryIdentifier
 	}
 
 	return nodeProps
@@ -1268,51 +1284,6 @@ func stringInArr(searchFor string, values []string) bool {
 		}
 	}
 	return false
-}
-
-func canonicalToSource(canonical ontology.NewAggregatedConcept) ontology.NewConcept {
-	// Create a sourceConcept from the canonical information - WITH NO UUID
-	return ontology.NewConcept{
-		Aliases:              canonical.Aliases,
-		DescriptionXML:       canonical.DescriptionXML,
-		EmailAddress:         canonical.EmailAddress,
-		FacebookPage:         canonical.FacebookPage,
-		FigiCode:             canonical.FigiCode,
-		Hash:                 canonical.AggregatedHash,
-		ImageURL:             canonical.ImageURL,
-		InceptionDate:        canonical.InceptionDate,
-		InceptionDateEpoch:   canonical.InceptionDateEpoch,
-		IssuedBy:             canonical.IssuedBy,
-		PrefLabel:            canonical.PrefLabel,
-		ScopeNote:            canonical.ScopeNote,
-		ShortLabel:           canonical.ShortLabel,
-		Strapline:            canonical.Strapline,
-		TerminationDate:      canonical.TerminationDate,
-		TerminationDateEpoch: canonical.TerminationDateEpoch,
-		TwitterHandle:        canonical.TwitterHandle,
-		Type:                 canonical.Type,
-		//TODO deprecated event?
-		IsDeprecated: canonical.IsDeprecated,
-		// Organisations
-		ProperName:             canonical.ProperName,
-		ShortName:              canonical.ShortName,
-		TradeNames:             canonical.TradeNames,
-		FormerNames:            canonical.FormerNames,
-		CountryCode:            canonical.CountryCode,
-		CountryOfIncorporation: canonical.CountryOfIncorporation,
-		CountryOfRisk:          canonical.CountryOfRisk,
-		CountryOfOperations:    canonical.CountryOfOperations,
-		PostalCode:             canonical.PostalCode,
-		YearFounded:            canonical.YearFounded,
-		LeiCode:                canonical.LeiCode,
-		// Person
-		Salutation: canonical.Salutation,
-		BirthYear:  canonical.BirthYear,
-		// Location
-		ISO31661: canonical.ISO31661,
-		// Industry Classification
-		IndustryIdentifier: canonical.IndustryIdentifier,
-	}
 }
 
 func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
