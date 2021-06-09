@@ -333,7 +333,9 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					//set this to 0 as otherwise it is empty
 					//TODO fix this up at some point to do it properly?
 					concept.Hash = "0"
-					unconcordQuery := s.writeCanonicalNodeForUnconcordedConcepts(concept)
+
+					canonical := sourceToCanonical(concept)
+					unconcordQuery := s.writeCanonicalNodeForUnconcordedConcepts(canonical, concept.UUID)
 					queryBatch = append(queryBatch, unconcordQuery)
 
 					//We will need to send a notification of ids that have been removed from current concordance
@@ -988,18 +990,19 @@ func addRelationship(conceptID string, relationshipIDs []string, relationshipTyp
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
-func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(concept ontology.NewConcept) *neoism.CypherQuery {
-	allProps := setProps(concept, concept.UUID, false)
-	logger.WithField("UUID", concept.UUID).Debug("Creating prefUUID node for unconcorded concept")
+func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *neoism.CypherQuery {
+	source := canonicalToSource(canonical)
+	allProps := setProps(source, prefUUID, false)
+	logger.WithField("UUID", prefUUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`
 					MATCH (t:Thing{uuid:{prefUUID}})
 					MERGE (n:Thing {prefUUID: {prefUUID}})
 					MERGE (n)<-[:EQUIVALENT_TO]-(t)
 					set n={allprops}
-					set n :%s`, getAllLabels(concept.Type)),
+					set n :%s`, getAllLabels(source.Type)),
 		Parameters: map[string]interface{}{
-			"prefUUID": concept.UUID,
+			"prefUUID": prefUUID,
 			"allprops": allProps,
 		},
 	}
@@ -1309,5 +1312,49 @@ func canonicalToSource(canonical ontology.NewAggregatedConcept) ontology.NewConc
 		ISO31661: canonical.ISO31661,
 		// Industry Classification
 		IndustryIdentifier: canonical.IndustryIdentifier,
+	}
+}
+
+func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
+	return ontology.NewAggregatedConcept{
+		Aliases:              source.Aliases,
+		DescriptionXML:       source.DescriptionXML,
+		EmailAddress:         source.EmailAddress,
+		FacebookPage:         source.FacebookPage,
+		FigiCode:             source.FigiCode,
+		AggregatedHash:       source.Hash,
+		ImageURL:             source.ImageURL,
+		InceptionDate:        source.InceptionDate,
+		InceptionDateEpoch:   source.InceptionDateEpoch,
+		IssuedBy:             source.IssuedBy,
+		PrefLabel:            source.PrefLabel,
+		ScopeNote:            source.ScopeNote,
+		ShortLabel:           source.ShortLabel,
+		Strapline:            source.Strapline,
+		TerminationDate:      source.TerminationDate,
+		TerminationDateEpoch: source.TerminationDateEpoch,
+		TwitterHandle:        source.TwitterHandle,
+		Type:                 source.Type,
+		//TODO deprecated event?
+		IsDeprecated: source.IsDeprecated,
+		// Organisations
+		ProperName:             source.ProperName,
+		ShortName:              source.ShortName,
+		TradeNames:             source.TradeNames,
+		FormerNames:            source.FormerNames,
+		CountryCode:            source.CountryCode,
+		CountryOfIncorporation: source.CountryOfIncorporation,
+		CountryOfRisk:          source.CountryOfRisk,
+		CountryOfOperations:    source.CountryOfOperations,
+		PostalCode:             source.PostalCode,
+		YearFounded:            source.YearFounded,
+		LeiCode:                source.LeiCode,
+		// Person
+		Salutation: source.Salutation,
+		BirthYear:  source.BirthYear,
+		// Location
+		ISO31661: source.ISO31661,
+		// Industry Classification
+		IndustryIdentifier: source.IndustryIdentifier,
 	}
 }
