@@ -996,7 +996,10 @@ func TestWriteService(t *testing.T) {
 				sort.Strings(test.updatedConcepts.UpdatedIds)
 				sort.Strings(updatedConcepts.UpdatedIds)
 
-				assert.Equal(t, test.updatedConcepts, updatedConcepts, "Test "+test.testName+" failed: Updated uuid list differs from expected")
+				cmpOpts := cmpopts.IgnoreFields(Event{}, "AggregateHash")
+				if !cmp.Equal(test.updatedConcepts, updatedConcepts, cmpOpts) {
+					t.Errorf("Test %s failed: Updated uuid list differs from expected:\n%s", test.testName, cmp.Diff(test.updatedConcepts, updatedConcepts, cmpOpts))
+				}
 			} else {
 				if err != nil {
 					assert.Error(t, err, "Error was expected")
@@ -1614,7 +1617,10 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		sort.Strings(scenario.updatedConcepts.UpdatedIds)
 		sort.Strings(actualChanges.UpdatedIds)
 
-		assert.Equal(t, scenario.updatedConcepts, actualChanges, "Scenario "+scenario.testName+" failed: Updated uuid list differs from expected")
+		cmpOpts := cmpopts.IgnoreFields(Event{}, "AggregateHash")
+		if !cmp.Equal(scenario.updatedConcepts, actualChanges, cmpOpts) {
+			t.Errorf("Scenario %s failed: Updated uuid list differs from expected:\n%s", scenario.testName, cmp.Diff(scenario.updatedConcepts, actualChanges, cmpOpts))
+		}
 
 		for _, id := range scenario.uuidsToCheck {
 			conceptIf, found, err := conceptsDriver.Read(id, tid)
