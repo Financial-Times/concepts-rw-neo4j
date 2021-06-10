@@ -1068,6 +1068,13 @@ func setProps(source ontology.NewConcept, uuid string) map[string]interface{} {
 //written in neo for canonical nodes.
 func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
+
+	for field, prop := range ontology.FieldToNeoProps {
+		if val, ok := canonical.GetPropertyValue(field); ok {
+			nodeProps[prop] = val
+		}
+	}
+
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 
 	if canonical.PrefLabel != "" {

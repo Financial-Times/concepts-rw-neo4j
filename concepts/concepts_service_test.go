@@ -2128,6 +2128,59 @@ func TestWriteLocation(t *testing.T) {
 	readConceptAndCompare(t, locationISO31661, "TestWriteLocationISO31661")
 }
 
+func TestSetCanonicalProps(t *testing.T) {
+	tests := []struct {
+		name     string
+		concept  ontology.NewAggregatedConcept
+		prefUUID string
+		expected map[string]interface{}
+	}{
+		{
+			name:    "Concept with default values and no prefUUID should return default props",
+			concept: ontology.NewAggregatedConcept{},
+			expected: map[string]interface{}{
+				"prefUUID":      "",
+				"aggregateHash": "",
+			},
+		},
+		{
+			name:     "Concept with default values with prefUUID should return props with prefUUID",
+			concept:  ontology.NewAggregatedConcept{},
+			prefUUID: "6649aeda-0cd0-4a65-a310-77f28e88b620",
+			expected: map[string]interface{}{
+				"prefUUID":      "6649aeda-0cd0-4a65-a310-77f28e88b620",
+				"aggregateHash": "",
+			},
+		},
+		{
+			name: "Concept with invalid values should return default props",
+			concept: ontology.NewAggregatedConcept{
+				Aliases:     []string{},
+				FormerNames: []string{},
+				TradeNames:  []string{},
+			},
+			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+			expected: map[string]interface{}{
+				"prefUUID":      "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+				"aggregateHash": "",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := setCanonicalProps(test.concept, test.prefUUID)
+
+			// ignore "lastModifiedEpoch"
+			delete(got, "lastModifiedEpoch")
+
+			if !cmp.Equal(got, test.expected) {
+				t.Errorf("Node props differ from expected:\n%s", cmp.Diff(got, test.expected))
+			}
+		})
+	}
+}
+
 func readConceptAndCompare(t *testing.T, payload ontology.AggregatedConcept, testName string, ignoredFields ...string) {
 	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
 	actual := actualIf.(ontology.AggregatedConcept)
