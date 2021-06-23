@@ -79,7 +79,7 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 	_ = json.Unmarshal(nacBytes, &nacMap)
 
 	props := map[string]interface{}{}
-	for field, prop := range ontology.FieldToNeoProps {
+	for field, prop := range ontology.GetConfig().FieldToNeoProps {
 		if val, ok := nacMap[prop]; ok {
 			props[field] = val
 		}

@@ -1069,7 +1069,7 @@ func setProps(source ontology.NewConcept, uuid string) map[string]interface{} {
 func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 
-	for field, prop := range ontology.FieldToNeoProps {
+	for field, prop := range ontology.GetConfig().FieldToNeoProps {
 		if val, ok := canonical.GetPropertyValue(field); ok {
 			nodeProps[prop] = val
 		}
