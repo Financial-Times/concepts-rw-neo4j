@@ -5,12 +5,17 @@ ENV PROJECT=concepts-rw-neo4j
 ENV ORG_PATH="github.com/Financial-Times"
 ENV SRC_FOLDER="${GOPATH}/src/${ORG_PATH}/${PROJECT}"
 
-COPY . ${SRC_FOLDER}
 WORKDIR ${SRC_FOLDER}
 
 RUN echo "Fetching dependencies..." \
   && git clone https://github.com/vishnubob/wait-for-it.git \
   && cd wait-for-it \
   && mv ./wait-for-it.sh ${SRC_FOLDER}
+
+COPY go.mod /
+COPY go.sum /
+RUN go mod download
+
+COPY . ${SRC_FOLDER}
 
 ENTRYPOINT ["./wait-for-it.sh", "neo4j:7474", "-t", "60", "--"]
