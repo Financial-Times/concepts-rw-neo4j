@@ -746,26 +746,11 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			},
 		}
 		queryBatch = append(queryBatch, equivQuery)
-
-		if len(sourceConcept.RelatedUUIDs) > 0 {
-			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO")...)
-		}
-
-		if len(sourceConcept.BroaderUUIDs) > 0 {
-			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER")...)
-		}
-
-		if len(sourceConcept.SupersededByUUIDs) > 0 {
-			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY")...)
-		}
-
-		if len(sourceConcept.ImpliedByUUIDs) > 0 {
-			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY")...)
-		}
-
-		if len(sourceConcept.HasFocusUUIDs) > 0 {
-			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS")...)
-		}
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO")...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER")...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY")...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY")...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS")...)
 	}
 	return queryBatch
 }
@@ -843,7 +828,7 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		queryBatch = append(queryBatch, writePerson)
 	}
 
-	if uuid != "" && concept.IssuedBy != "" {
+	if concept.IssuedBy != "" {
 		writeFinIns := &neoism.CypherQuery{
 			Statement: `MERGE (fi:Thing {uuid: {fiUUID}})
 						MERGE (org:Thing {uuid: {orgUUID}})
@@ -858,7 +843,7 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		queryBatch = append(queryBatch, writeFinIns)
 	}
 
-	if uuid != "" && concept.ParentOrganisation != "" {
+	if concept.ParentOrganisation != "" {
 		writeParentOrganisation := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
 							MERGE (parentOrg:Thing {uuid: {orgUUID}})
@@ -871,7 +856,7 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		queryBatch = append(queryBatch, writeParentOrganisation)
 	}
 
-	if uuid != "" && concept.CountryOfRiskUUID != "" {
+	if concept.CountryOfRiskUUID != "" {
 		writeCountryOfRisk := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
 							MERGE (location:Thing {uuid: {locUUID}})
@@ -883,7 +868,8 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		}
 		queryBatch = append(queryBatch, writeCountryOfRisk)
 	}
-	if uuid != "" && concept.CountryOfIncorporationUUID != "" {
+
+	if concept.CountryOfIncorporationUUID != "" {
 		writeCountryOfIncorporation := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
 							MERGE (location:Thing {uuid: {locUUID}})
@@ -895,7 +881,8 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		}
 		queryBatch = append(queryBatch, writeCountryOfIncorporation)
 	}
-	if uuid != "" && concept.CountryOfOperationsUUID != "" {
+
+	if concept.CountryOfOperationsUUID != "" {
 		writeCountryOfOperations := &neoism.CypherQuery{
 			Statement: `MERGE (org:Thing {uuid: {uuid}})
 							MERGE (location:Thing {uuid: {locUUID}})
@@ -908,48 +895,45 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		queryBatch = append(queryBatch, writeCountryOfOperations)
 	}
 
-	if uuid != "" {
-		for _, naics := range concept.NAICSIndustryClassifications {
-			if naics.UUID != "" {
-				writeNAICS := &neoism.CypherQuery{
-					Statement: `MERGE (org:Thing {uuid: {uuid}})
+	for _, naics := range concept.NAICSIndustryClassifications {
+		if naics.UUID != "" {
+			writeNAICS := &neoism.CypherQuery{
+				Statement: `MERGE (org:Thing {uuid: {uuid}})
 								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
 								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC)`,
-					Parameters: neoism.Props{
-						"naicsUUID": naics.UUID,
-						"rank":      naics.Rank,
-						"uuid":      concept.UUID,
-					},
-				}
-				queryBatch = append(queryBatch, writeNAICS)
+				Parameters: neoism.Props{
+					"naicsUUID": naics.UUID,
+					"rank":      naics.Rank,
+					"uuid":      concept.UUID,
+				},
 			}
+			queryBatch = append(queryBatch, writeNAICS)
 		}
 	}
 
-	if uuid != "" && len(concept.MembershipRoles) > 0 {
-		for _, membershipRole := range concept.MembershipRoles {
-			params := neoism.Props{
-				"inceptionDate":        nil,
-				"inceptionDateEpoch":   nil,
-				"terminationDate":      nil,
-				"terminationDateEpoch": nil,
-				"roleUUID":             membershipRole.RoleUUID,
-				"nodeUUID":             concept.UUID,
-			}
-			if membershipRole.InceptionDate != "" {
-				params["inceptionDate"] = membershipRole.InceptionDate
-			}
-			if membershipRole.InceptionDateEpoch > 0 {
-				params["inceptionDateEpoch"] = membershipRole.InceptionDateEpoch
-			}
-			if membershipRole.TerminationDate != "" {
-				params["terminationDate"] = membershipRole.TerminationDate
-			}
-			if membershipRole.TerminationDateEpoch > 0 {
-				params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
-			}
-			writeParent := &neoism.CypherQuery{
-				Statement: `MERGE (node:Thing{uuid: {nodeUUID}})
+	for _, membershipRole := range concept.MembershipRoles {
+		params := neoism.Props{
+			"inceptionDate":        nil,
+			"inceptionDateEpoch":   nil,
+			"terminationDate":      nil,
+			"terminationDateEpoch": nil,
+			"roleUUID":             membershipRole.RoleUUID,
+			"nodeUUID":             concept.UUID,
+		}
+		if membershipRole.InceptionDate != "" {
+			params["inceptionDate"] = membershipRole.InceptionDate
+		}
+		if membershipRole.InceptionDateEpoch > 0 {
+			params["inceptionDateEpoch"] = membershipRole.InceptionDateEpoch
+		}
+		if membershipRole.TerminationDate != "" {
+			params["terminationDate"] = membershipRole.TerminationDate
+		}
+		if membershipRole.TerminationDateEpoch > 0 {
+			params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
+		}
+		writeParent := &neoism.CypherQuery{
+			Statement: `MERGE (node:Thing{uuid: {nodeUUID}})
 							MERGE (role:Thing{uuid: {roleUUID}})
 								ON CREATE SET
 									role.uuid = {roleUUID}
@@ -960,11 +944,11 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 									rel.terminationDate = {terminationDate},
 									rel.terminationDateEpoch = {terminationDateEpoch}
 							`,
-				Parameters: params,
-			}
-			queryBatch = append(queryBatch, writeParent)
+			Parameters: params,
 		}
+		queryBatch = append(queryBatch, writeParent)
 	}
+
 	queryBatch = append(queryBatch, createConceptQuery)
 	return queryBatch
 }
