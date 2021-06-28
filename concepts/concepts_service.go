@@ -737,11 +737,11 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, sourceConcept.UUID)...)
 		queryBatch = append(queryBatch, createEquivalentToQueries(sourceConcept, aggregatedConcept)...)
 
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO")...)
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER")...)
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY")...)
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY")...)
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS")...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", false)...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", false)...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", false)...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", false)...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", false)...)
 	}
 
 	return queryBatch
@@ -961,22 +961,36 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 }
 
 // createRelQueries creates relationships Cypher queries for concepts
-func createRelQueries(conceptID string, relationshipIDs []string, relationshipType string) []*neoism.CypherQuery {
+func createRelQueries(conceptID string, relationshipIDs []string, relationshipType string, shouldCreate bool) []*neoism.CypherQuery {
+	const createMissing = `
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:%s]->(other)
+	`
+
+	const matchExisting = `
+		MATCH (concept:Concept {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (concept)-[:%s]->(other)	
+	`
+
+	cypherStatement := matchExisting
+	if shouldCreate {
+		cypherStatement = createMissing
+	}
+
 	var queryBatch []*neoism.CypherQuery
 	for _, id := range relationshipIDs {
 		addRelationshipQuery := &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`
-						MATCH (o:Concept {uuid: {uuid}})
-						MERGE (p:Thing {uuid: {id}})
-		            	MERGE (o)-[:%s]->(p)`, relationshipType),
+			Statement: fmt.Sprintf(cypherStatement, relationshipType),
 			Parameters: map[string]interface{}{
-				"uuid":         conceptID,
-				"id":           id,
-				"relationship": relationshipType,
+				"uuid": conceptID,
+				"id":   id,
 			},
 		}
 		queryBatch = append(queryBatch, addRelationshipQuery)
 	}
+
 	return queryBatch
 }
 
