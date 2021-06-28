@@ -796,110 +796,41 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		},
 	}
 
-	for _, parentUUID := range concept.ParentUUIDs {
-		writeParent := &neoism.CypherQuery{
-			Statement: `MERGE (o:Thing {uuid: {uuid}})
-						MERGE (parent:Thing {uuid: {parentUUID}})
-						MERGE (o)-[:HAS_PARENT]->(parent)	`,
-			Parameters: neoism.Props{
-				"parentUUID": parentUUID,
-				"uuid":       concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeParent)
-	}
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, concept.ParentUUIDs, "HAS_PARENT", true)...)
 
 	if concept.OrganisationUUID != "" {
-		writeOrganisation := &neoism.CypherQuery{
-			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-						MERGE (org:Thing {uuid: {orgUUID}})
-						MERGE (membership)-[:HAS_ORGANISATION]->(org)`,
-			Parameters: neoism.Props{
-				"orgUUID": concept.OrganisationUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeOrganisation)
+		relIDs := []string{concept.OrganisationUUID}
+		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_ORGANISATION", true)...)
 	}
 
 	if concept.PersonUUID != "" {
-		writePerson := &neoism.CypherQuery{
-			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-						MERGE (person:Thing {uuid: {personUUID}})
-						MERGE (membership)-[:HAS_MEMBER]->(person)`,
-			Parameters: neoism.Props{
-				"personUUID": concept.PersonUUID,
-				"uuid":       concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writePerson)
+		relIDs := []string{concept.PersonUUID}
+		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_MEMBER", true)...)
 	}
 
 	if concept.IssuedBy != "" {
-		writeFinIns := &neoism.CypherQuery{
-			Statement: `MERGE (fi:Thing {uuid: {fiUUID}})
-						MERGE (org:Thing {uuid: {orgUUID}})
-						MERGE (fi)-[:ISSUED_BY]->(org)
-						`,
-			Parameters: neoism.Props{
-				"fiUUID":  concept.UUID,
-				"fiCode":  concept.FigiCode,
-				"orgUUID": concept.IssuedBy,
-			},
-		}
-		queryBatch = append(queryBatch, writeFinIns)
+		relIDs := []string{concept.IssuedBy}
+		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
 	}
 
 	if concept.ParentOrganisation != "" {
-		writeParentOrganisation := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (parentOrg:Thing {uuid: {orgUUID}})
-							MERGE (org)-[:SUB_ORGANISATION_OF]->(parentOrg)`,
-			Parameters: neoism.Props{
-				"orgUUID": concept.ParentOrganisation,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeParentOrganisation)
+		relIDs := []string{concept.ParentOrganisation}
+		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "SUB_ORGANISATION_OF", true)...)
 	}
 
 	if concept.CountryOfRiskUUID != "" {
-		writeCountryOfRisk := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (org)-[:COUNTRY_OF_RISK]->(location)`,
-			Parameters: neoism.Props{
-				"locUUID": concept.CountryOfRiskUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeCountryOfRisk)
+		relIDs := []string{concept.CountryOfRiskUUID}
+		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_RISK", true)...)
 	}
 
 	if concept.CountryOfIncorporationUUID != "" {
-		writeCountryOfIncorporation := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (org)-[:COUNTRY_OF_INCORPORATION]->(location)`,
-			Parameters: neoism.Props{
-				"locUUID": concept.CountryOfIncorporationUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeCountryOfIncorporation)
+		relIDs := []string{concept.CountryOfIncorporationUUID}
+		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_INCORPORATION", true)...)
 	}
 
 	if concept.CountryOfOperationsUUID != "" {
-		writeCountryOfOperations := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (org)-[:COUNTRY_OF_OPERATIONS]->(location)`,
-			Parameters: neoism.Props{
-				"locUUID": concept.CountryOfOperationsUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeCountryOfOperations)
+		relIDs := []string{concept.CountryOfOperationsUUID}
+		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_OPERATIONS", true)...)
 	}
 
 	for _, naics := range concept.NAICSIndustryClassifications {
