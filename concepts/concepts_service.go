@@ -748,23 +748,23 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		queryBatch = append(queryBatch, equivQuery)
 
 		if len(sourceConcept.RelatedUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", queryBatch)
+			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO")...)
 		}
 
 		if len(sourceConcept.BroaderUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", queryBatch)
+			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER")...)
 		}
 
 		if len(sourceConcept.SupersededByUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", queryBatch)
+			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY")...)
 		}
 
 		if len(sourceConcept.ImpliedByUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", queryBatch)
+			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY")...)
 		}
 
 		if len(sourceConcept.HasFocusUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", queryBatch)
+			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS")...)
 		}
 	}
 	return queryBatch
@@ -969,8 +969,9 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 	return queryBatch
 }
 
-//Add relationships to concepts
-func addRelationship(conceptID string, relationshipIDs []string, relationshipType string, queryBatch []*neoism.CypherQuery) []*neoism.CypherQuery {
+// createRelQueries creates relationships Cypher queries for concepts
+func createRelQueries(conceptID string, relationshipIDs []string, relationshipType string) []*neoism.CypherQuery {
+	var queryBatch []*neoism.CypherQuery
 	for _, id := range relationshipIDs {
 		addRelationshipQuery := &neoism.CypherQuery{
 			Statement: fmt.Sprintf(`
