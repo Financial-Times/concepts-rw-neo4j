@@ -733,25 +733,32 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
 	queryBatch = append(queryBatch, createCanonicalNodeQueries(aggregatedConcept, aggregatedConcept.PrefUUID)...)
 
-	// Repopulate
 	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
 		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, sourceConcept.UUID)...)
+		queryBatch = append(queryBatch, createEquivalentToQueries(sourceConcept, aggregatedConcept)...)
 
-		equivQuery := &neoism.CypherQuery{
-			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
-						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
-			Parameters: map[string]interface{}{
-				"uuid":     sourceConcept.UUID,
-				"prefUUID": aggregatedConcept.PrefUUID,
-			},
-		}
-		queryBatch = append(queryBatch, equivQuery)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO")...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER")...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY")...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY")...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS")...)
 	}
+
+	return queryBatch
+}
+
+func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
+	var queryBatch []*neoism.CypherQuery
+	equivQuery := &neoism.CypherQuery{
+		Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
+		Parameters: map[string]interface{}{
+			"uuid":     sourceConcept.UUID,
+			"prefUUID": aggregatedConcept.PrefUUID,
+		},
+	}
+
+	queryBatch = append(queryBatch, equivQuery)
 	return queryBatch
 }
 
