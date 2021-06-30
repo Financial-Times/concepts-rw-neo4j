@@ -737,6 +737,15 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, sourceConcept.UUID)...)
 		queryBatch = append(queryBatch, createEquivalentToQueries(sourceConcept, aggregatedConcept)...)
 
+		for _, rel := range sourceConcept.Relationships {
+			relCfg, ok := ontology.Relationships[rel.Label]
+			if !ok {
+				continue
+			}
+
+			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, []string{rel.UUID}, rel.Label, relCfg.NeoCreate)...)
+		}
+
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", false)...)

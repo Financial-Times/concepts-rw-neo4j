@@ -198,7 +198,34 @@ func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 		return ontology.NewConcept{}, err
 	}
 
+	ncMap := map[string]interface{}{}
+	ncBytes, _ := json.Marshal(nc)
+	_ = json.Unmarshal(ncBytes, &ncMap)
+
+	rels := []ontology.Relationship{}
+	for rel, relCfg := range ontology.Relationships {
+		if _, ok := ncMap[relCfg.ConceptField]; !ok {
+			continue
+		}
+
+		val := ncMap[relCfg.ConceptField]
+
+		var uuids []string
+		if relCfg.OneToOne {
+			uuids = append(uuids, val.(string))
+		} else {
+			for _, v := range val.([]interface{}) {
+				uuids = append(uuids, v.(string))
+			}
+		}
+
+		for _, uuid := range filterSlice(uuids) {
+			rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel})
+		}
+	}
+
 	return ontology.NewConcept{
+		Relationships:                rels,
 		Authority:                    nc.Authority,
 		AuthorityValue:               nc.AuthorityValue,
 		BroaderUUIDs:                 filterSlice(nc.BroaderUUIDs),
@@ -280,6 +307,7 @@ func cleanNewConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConc
 			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
 			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
 		}
+
 		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
 			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
 		})

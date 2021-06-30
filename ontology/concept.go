@@ -140,7 +140,7 @@ type NAICSIndustryClassification struct {
 }
 
 type Relationship struct {
-	UUIDs      []string               `json:"uuids"`
+	UUID       string                 `json:"uuid"`
 	Label      string                 `json:"label"`
 	Properties map[string]interface{} `json:"properties"`
 }
