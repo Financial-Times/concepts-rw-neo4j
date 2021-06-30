@@ -8,6 +8,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var Relationships = map[string]struct {
+	ConceptField string
+	OneToOne     bool
+	NeoCreate    bool
+}{}
+
 type Config struct {
 	FieldToNeoProps map[string]string `yaml:"fieldToNeoProps"`
 }

@@ -117,7 +117,31 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 }
 
 func TransformToNewSourceConcept(old Concept) NewConcept {
+	oldMap := map[string]interface{}{}
+	oldBytes, _ := json.Marshal(old)
+	_ = json.Unmarshal(oldBytes, &oldMap)
+
+	rels := []Relationship{}
+	for rel, relCfg := range Relationships {
+		if _, ok := oldMap[relCfg.ConceptField]; !ok {
+			continue
+		}
+
+		val := oldMap[relCfg.ConceptField]
+
+		if relCfg.OneToOne {
+			uuid := val.(string)
+			rels = append(rels, Relationship{UUID: uuid, Label: rel})
+		} else {
+			for _, v := range val.([]interface{}) {
+				uuid := v.(string)
+				rels = append(rels, Relationship{UUID: uuid, Label: rel})
+			}
+		}
+	}
+
 	return NewConcept{
+		Relationships:                rels,
 		UUID:                         old.UUID,
 		PrefLabel:                    old.PrefLabel,
 		Type:                         old.Type,
@@ -174,58 +198,89 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 }
 
 func TransformToOldSourceConcept(new NewConcept) Concept {
-	return Concept{
-		UUID:                         new.UUID,
-		PrefLabel:                    new.PrefLabel,
-		Type:                         new.Type,
-		Authority:                    new.Authority,
-		AuthorityValue:               new.AuthorityValue,
-		LastModifiedEpoch:            new.LastModifiedEpoch,
-		Aliases:                      new.Aliases,
-		ParentUUIDs:                  new.ParentUUIDs,
-		Strapline:                    new.Strapline,
-		DescriptionXML:               new.DescriptionXML,
-		ImageURL:                     new.ImageURL,
-		EmailAddress:                 new.EmailAddress,
-		FacebookPage:                 new.FacebookPage,
-		TwitterHandle:                new.TwitterHandle,
-		ScopeNote:                    new.ScopeNote,
-		ShortLabel:                   new.ShortLabel,
-		BroaderUUIDs:                 new.BroaderUUIDs,
-		RelatedUUIDs:                 new.RelatedUUIDs,
-		SupersededByUUIDs:            new.SupersededByUUIDs,
-		ImpliedByUUIDs:               new.ImpliedByUUIDs,
-		HasFocusUUIDs:                new.HasFocusUUIDs,
-		OrganisationUUID:             new.OrganisationUUID,
-		PersonUUID:                   new.PersonUUID,
-		Hash:                         new.Hash,
-		MembershipRoles:              new.MembershipRoles,
-		InceptionDate:                new.InceptionDate,
-		TerminationDate:              new.TerminationDate,
-		InceptionDateEpoch:           new.InceptionDateEpoch,
-		TerminationDateEpoch:         new.TerminationDateEpoch,
-		FigiCode:                     new.FigiCode,
-		IssuedBy:                     new.IssuedBy,
-		ProperName:                   new.ProperName,
-		ShortName:                    new.ShortName,
-		TradeNames:                   new.TradeNames,
-		FormerNames:                  new.FormerNames,
-		CountryCode:                  new.CountryCode,
-		CountryOfRisk:                new.CountryOfRisk,
-		CountryOfIncorporation:       new.CountryOfIncorporation,
-		CountryOfOperations:          new.CountryOfOperations,
-		CountryOfRiskUUID:            new.CountryOfRiskUUID,
-		CountryOfIncorporationUUID:   new.CountryOfIncorporationUUID,
-		CountryOfOperationsUUID:      new.CountryOfOperationsUUID,
-		PostalCode:                   new.PostalCode,
-		YearFounded:                  new.YearFounded,
-		LeiCode:                      new.LeiCode,
-		ParentOrganisation:           new.ParentOrganisation,
-		NAICSIndustryClassifications: new.NAICSIndustryClassifications,
-		IsDeprecated:                 new.IsDeprecated,
-		ISO31661:                     new.ISO31661,
-		Salutation:                   new.Salutation,
-		BirthYear:                    new.BirthYear,
-		IndustryIdentifier:           new.IndustryIdentifier,
+	relMap := map[string]interface{}{}
+	for _, rel := range new.Relationships {
+		if rel.UUID == "" {
+			continue
+		}
+
+		if _, ok := Relationships[rel.Label]; !ok {
+			continue
+		}
+
+		relCfg := Relationships[rel.Label]
+		if relCfg.OneToOne {
+			relMap[relCfg.ConceptField] = rel.UUID
+			continue
+		}
+
+		relVal, ok := relMap[relCfg.ConceptField]
+		if !ok {
+			relMap[relCfg.ConceptField] = []string{rel.UUID}
+			continue
+		}
+
+		relUUIDs := relVal.([]string)
+		relUUIDs = append(relUUIDs, rel.UUID)
+		relMap[relCfg.ConceptField] = relUUIDs
 	}
+
+	old := Concept{}
+	relMapBytes, _ := json.Marshal(relMap)
+	_ = json.Unmarshal(relMapBytes, &old)
+
+	old.UUID = new.UUID
+	old.PrefLabel = new.PrefLabel
+	old.Type = new.Type
+	old.Authority = new.Authority
+	old.AuthorityValue = new.AuthorityValue
+	old.LastModifiedEpoch = new.LastModifiedEpoch
+	old.Aliases = new.Aliases
+	old.ParentUUIDs = new.ParentUUIDs
+	old.Strapline = new.Strapline
+	old.DescriptionXML = new.DescriptionXML
+	old.ImageURL = new.ImageURL
+	old.EmailAddress = new.EmailAddress
+	old.FacebookPage = new.FacebookPage
+	old.TwitterHandle = new.TwitterHandle
+	old.ScopeNote = new.ScopeNote
+	old.ShortLabel = new.ShortLabel
+	old.BroaderUUIDs = new.BroaderUUIDs
+	old.RelatedUUIDs = new.RelatedUUIDs
+	old.SupersededByUUIDs = new.SupersededByUUIDs
+	old.ImpliedByUUIDs = new.ImpliedByUUIDs
+	old.HasFocusUUIDs = new.HasFocusUUIDs
+	old.OrganisationUUID = new.OrganisationUUID
+	old.PersonUUID = new.PersonUUID
+	old.Hash = new.Hash
+	old.MembershipRoles = new.MembershipRoles
+	old.InceptionDate = new.InceptionDate
+	old.TerminationDate = new.TerminationDate
+	old.InceptionDateEpoch = new.InceptionDateEpoch
+	old.TerminationDateEpoch = new.TerminationDateEpoch
+	old.FigiCode = new.FigiCode
+	old.IssuedBy = new.IssuedBy
+	old.ProperName = new.ProperName
+	old.ShortName = new.ShortName
+	old.TradeNames = new.TradeNames
+	old.FormerNames = new.FormerNames
+	old.CountryCode = new.CountryCode
+	old.CountryOfRisk = new.CountryOfRisk
+	old.CountryOfIncorporation = new.CountryOfIncorporation
+	old.CountryOfOperations = new.CountryOfOperations
+	old.CountryOfRiskUUID = new.CountryOfRiskUUID
+	old.CountryOfIncorporationUUID = new.CountryOfIncorporationUUID
+	old.CountryOfOperationsUUID = new.CountryOfOperationsUUID
+	old.PostalCode = new.PostalCode
+	old.YearFounded = new.YearFounded
+	old.LeiCode = new.LeiCode
+	old.ParentOrganisation = new.ParentOrganisation
+	old.NAICSIndustryClassifications = new.NAICSIndustryClassifications
+	old.IsDeprecated = new.IsDeprecated
+	old.ISO31661 = new.ISO31661
+	old.Salutation = new.Salutation
+	old.BirthYear = new.BirthYear
+	old.IndustryIdentifier = new.IndustryIdentifier
+
+	return old
 }
