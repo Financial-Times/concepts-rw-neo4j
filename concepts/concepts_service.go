@@ -798,40 +798,26 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, concept.ParentUUIDs, "HAS_PARENT", true)...)
 
-	if concept.OrganisationUUID != "" {
-		relIDs := []string{concept.OrganisationUUID}
-		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_ORGANISATION", true)...)
-	}
+	relIDs := filterSlice([]string{concept.OrganisationUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_ORGANISATION", true)...)
 
-	if concept.PersonUUID != "" {
-		relIDs := []string{concept.PersonUUID}
-		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_MEMBER", true)...)
-	}
+	relIDs = filterSlice([]string{concept.PersonUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_MEMBER", true)...)
 
-	if concept.IssuedBy != "" {
-		relIDs := []string{concept.IssuedBy}
-		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
-	}
+	relIDs = filterSlice([]string{concept.IssuedBy})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
 
-	if concept.ParentOrganisation != "" {
-		relIDs := []string{concept.ParentOrganisation}
-		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "SUB_ORGANISATION_OF", true)...)
-	}
+	relIDs = filterSlice([]string{concept.ParentOrganisation})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "SUB_ORGANISATION_OF", true)...)
 
-	if concept.CountryOfRiskUUID != "" {
-		relIDs := []string{concept.CountryOfRiskUUID}
-		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_RISK", true)...)
-	}
+	relIDs = filterSlice([]string{concept.CountryOfRiskUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_RISK", true)...)
 
-	if concept.CountryOfIncorporationUUID != "" {
-		relIDs := []string{concept.CountryOfIncorporationUUID}
-		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_INCORPORATION", true)...)
-	}
+	relIDs = filterSlice([]string{concept.CountryOfIncorporationUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_INCORPORATION", true)...)
 
-	if concept.CountryOfOperationsUUID != "" {
-		relIDs := []string{concept.CountryOfOperationsUUID}
-		queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_OPERATIONS", true)...)
-	}
+	relIDs = filterSlice([]string{concept.CountryOfOperationsUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_OPERATIONS", true)...)
 
 	for _, naics := range concept.NAICSIndustryClassifications {
 		if naics.UUID != "" {
