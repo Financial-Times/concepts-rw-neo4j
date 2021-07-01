@@ -2181,6 +2181,30 @@ func TestSetCanonicalProps(t *testing.T) {
 	}
 }
 
+func TestCreateNodeQueries(t *testing.T) {
+	tests := []struct {
+		name               string
+		concept            ontology.NewConcept
+		expectedQueryCount int
+	}{
+		{
+			name:               "Concept with default values and should produce single Cypher query",
+			concept:            ontology.NewConcept{},
+			expectedQueryCount: 1,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := createNodeQueries(test.concept, "")
+
+			if len(got) != test.expectedQueryCount {
+				t.Errorf("Number of Cypher queries differs from expected: got %d, want:%d", len(got), test.expectedQueryCount)
+			}
+		})
+	}
+}
+
 func readConceptAndCompare(t *testing.T, payload ontology.AggregatedConcept, testName string, ignoredFields ...string) {
 	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
 	actual := actualIf.(ontology.AggregatedConcept)
