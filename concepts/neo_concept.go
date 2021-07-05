@@ -209,22 +209,40 @@ func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 
 		val := ncMap[relCfg.ConceptField]
 
-		var uuids []string
 		if relCfg.OneToOne {
-			uuids = append(uuids, val.(string))
+			uuid := val.(string)
+			rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel})
 		} else {
 			for _, v := range val.([]interface{}) {
-				uuids = append(uuids, v.(string))
-			}
-		}
+				if relCfg.HasProperties {
+					relMap := v.(map[string]interface{})
+					uuid, ok := relMap["uuid"]
+					if ok {
+						delete(relMap, "uuid")
 
-		for _, uuid := range filterSlice(uuids) {
-			rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel})
+						rels = append(rels, ontology.Relationship{UUID: uuid.(string), Label: rel, Properties: relMap})
+						continue
+					}
+
+					// Handle membership roles as special case
+					uuid, ok = relMap["membershipRoleUUID"]
+					if !ok {
+						continue
+					}
+
+					delete(relMap, "membershipRoleUUID")
+
+					rels = append(rels, ontology.Relationship{UUID: uuid.(string), Label: rel, Properties: relMap})
+				} else {
+					uuid := v.(string)
+					rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel})
+				}
+			}
 		}
 	}
 
 	return ontology.NewConcept{
-		Relationships:                rels,
+		Relationships:                filterRelationships(rels),
 		Authority:                    nc.Authority,
 		AuthorityValue:               nc.AuthorityValue,
 		BroaderUUIDs:                 filterSlice(nc.BroaderUUIDs),
@@ -265,6 +283,29 @@ func filterSlice(a []string) []string {
 	}
 
 	return a
+}
+
+func filterRelationships(rels []ontology.Relationship) []ontology.Relationship {
+	filtered := []ontology.Relationship{}
+	for _, rel := range rels {
+		if rel.UUID != "" {
+			filtered = append(filtered, rel)
+		}
+
+		if _, ok := rel.Properties["inceptionDateEpoch"]; ok {
+			rel.Properties["inceptionDateEpoch"] = 0
+		}
+
+		if _, ok := rel.Properties["terminationDateEpoch"]; ok {
+			rel.Properties["terminationDateEpoch"] = 0
+		}
+	}
+
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	return rels
 }
 
 func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole {

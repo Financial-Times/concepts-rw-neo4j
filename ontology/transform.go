@@ -66,13 +66,16 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	var oldSources []Concept
 	var roles []MembershipRole
 	for _, s := range new.SourceRepresentations {
-		oldSources = append(oldSources, TransformToOldSourceConcept(s))
-		for _, r := range s.MembershipRoles {
+		oldSource := TransformToOldSourceConcept(s)
+
+		for _, r := range oldSource.MembershipRoles {
 			if r.RoleUUID == "" {
 				continue
 			}
 			roles = append(roles, r)
 		}
+
+		oldSources = append(oldSources, oldSource)
 	}
 
 	old := AggregatedConcept{}
@@ -140,8 +143,29 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 			rels = append(rels, Relationship{UUID: uuid, Label: rel})
 		} else {
 			for _, v := range val.([]interface{}) {
-				uuid := v.(string)
-				rels = append(rels, Relationship{UUID: uuid, Label: rel})
+				if relCfg.HasProperties {
+					relMap := v.(map[string]interface{})
+					uuid, ok := relMap["uuid"]
+					if ok {
+						delete(relMap, "uuid")
+
+						rels = append(rels, Relationship{UUID: uuid.(string), Label: rel, Properties: relMap})
+						continue
+					}
+
+					// Handle membership roles as special case
+					uuid, ok = relMap["membershipRoleUUID"]
+					if !ok {
+						continue
+					}
+
+					delete(relMap, "membershipRoleUUID")
+
+					rels = append(rels, Relationship{UUID: uuid.(string), Label: rel, Properties: relMap})
+				} else {
+					uuid := v.(string)
+					rels = append(rels, Relationship{UUID: uuid, Label: rel})
+				}
 			}
 		}
 	}
@@ -204,7 +228,7 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 }
 
 func TransformToOldSourceConcept(new NewConcept) Concept {
-	relMap := map[string]interface{}{}
+	oldMap := map[string]interface{}{}
 	for _, rel := range new.Relationships {
 		if rel.UUID == "" {
 			continue
@@ -216,23 +240,48 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 
 		relCfg := Relationships[rel.Label]
 		if relCfg.OneToOne {
-			relMap[relCfg.ConceptField] = rel.UUID
+			oldMap[relCfg.ConceptField] = rel.UUID
 			continue
 		}
 
-		relVal, ok := relMap[relCfg.ConceptField]
+		relVal, ok := oldMap[relCfg.ConceptField]
 		if !ok {
-			relMap[relCfg.ConceptField] = []string{rel.UUID}
+			if relCfg.HasProperties {
+				relProps := rel.Properties
+				if rel.Label == "HAS_ROLE" {
+					relProps["membershipRoleUUID"] = rel.UUID
+				} else {
+					relProps["uuid"] = rel.UUID
+				}
+
+				oldMap[relCfg.ConceptField] = []map[string]interface{}{relProps}
+			} else {
+				oldMap[relCfg.ConceptField] = []string{rel.UUID}
+			}
 			continue
 		}
 
-		relUUIDs := relVal.([]string)
-		relUUIDs = append(relUUIDs, rel.UUID)
-		relMap[relCfg.ConceptField] = relUUIDs
+		if relCfg.HasProperties {
+			relProps := rel.Properties
+			if rel.Label == "HAS_ROLE" {
+				relProps["membershipRoleUUID"] = rel.UUID
+			} else {
+				relProps["uuid"] = rel.UUID
+			}
+
+			rels := relVal.([]map[string]interface{})
+			rels = append(rels, relProps)
+
+			oldMap[relCfg.ConceptField] = rels
+		} else {
+			relUUIDs := relVal.([]string)
+			relUUIDs = append(relUUIDs, rel.UUID)
+			oldMap[relCfg.ConceptField] = relUUIDs
+		}
 	}
 
 	old := Concept{}
-	relMapBytes, _ := json.Marshal(relMap)
+	relMapBytes, _ := json.Marshal(oldMap)
 	_ = json.Unmarshal(relMapBytes, &old)
 
 	old.UUID = new.UUID

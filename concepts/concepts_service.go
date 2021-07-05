@@ -743,7 +743,12 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				continue
 			}
 
-			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, []string{rel.UUID}, rel.Label, relCfg.NeoCreate)...)
+			relIDs := filterSlice([]string{rel.UUID})
+			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, relIDs, rel.Label, relCfg.NeoCreate)...)
+
+			if relCfg.HasProperties {
+				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel)...)
+			}
 		}
 
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", false)...)
@@ -917,6 +922,25 @@ func createRelQueries(conceptID string, relationshipIDs []string, relationshipTy
 		queryBatch = append(queryBatch, addRelationshipQuery)
 	}
 
+	return queryBatch
+}
+
+func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*neoism.CypherQuery {
+	var queryBatch []*neoism.CypherQuery
+	setRelProps := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`
+			MATCH (t:Thing {uuid: {uuid}})
+			MATCH (other:Thing {uuid: {otherUUID}})
+			MATCH (t)-[rel:%s]->(other)
+			set rel={relProps}`, rel.Label),
+		Parameters: neoism.Props{
+			"uuid":      conceptID,
+			"otherUUID": rel.UUID,
+			"relProps":  rel.Properties,
+		},
+	}
+
+	queryBatch = append(queryBatch, setRelProps)
 	return queryBatch
 }
 
@@ -1181,6 +1205,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	var cleanSources []ontology.NewConcept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewConcept{
+			Relationships:     source.Relationships,
 			UUID:              source.UUID,
 			PrefLabel:         source.PrefLabel,
 			Type:              source.Type,
