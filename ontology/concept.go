@@ -163,7 +163,6 @@ type NewAggregatedConcept struct {
 	PersonUUID            string                 `json:"personUUID,omitempty"`
 	AggregatedHash        string                 `json:"aggregateHash,omitempty"`
 	SourceRepresentations []NewConcept           `json:"sourceRepresentations,omitempty"`
-	MembershipRoles       []MembershipRole       `json:"membershipRoles,omitempty"`
 	InceptionDate         string                 `json:"inceptionDate,omitempty"`
 	TerminationDate       string                 `json:"terminationDate,omitempty"`
 	InceptionDateEpoch    int64                  `json:"inceptionDateEpoch,omitempty"`

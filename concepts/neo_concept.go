@@ -97,7 +97,6 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 		ImageURL:              nac.ImageURL,
 		InceptionDate:         nac.InceptionDate,
 		IssuedBy:              nac.IssuedBy,
-		MembershipRoles:       cleanMembershipRoles(nac.MembershipRoles),
 		OrganisationUUID:      nac.OrganisationUUID,
 		PersonUUID:            nac.PersonUUID,
 		PrefLabel:             nac.PrefLabel,
@@ -330,10 +329,7 @@ func cleanNewConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConc
 			return c.SourceRepresentations[j].NAICSIndustryClassifications[k].Rank < c.SourceRepresentations[j].NAICSIndustryClassifications[l].Rank
 		})
 	}
-	for i := range c.MembershipRoles {
-		c.MembershipRoles[i].InceptionDateEpoch = 0
-		c.MembershipRoles[i].TerminationDateEpoch = 0
-	}
+
 	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
 		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
 	})
