@@ -129,7 +129,7 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 		IndustryIdentifier: nac.IndustryIdentifier,
 	}
 
-	return cleanNewConcept(aggregateConcept), "", nil
+	return sortSources(aggregateConcept), "", nil
 }
 
 type neoConcept struct {
@@ -231,7 +231,7 @@ func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 		SupersededByUUIDs:            filterSlice(nc.SupersededByUUIDs),
 		FigiCode:                     nc.FigiCode,
 		IssuedBy:                     nc.IssuedBy,
-		LastModifiedEpoch:            nc.LastModifiedEpoch,
+		LastModifiedEpoch:            0,
 		MembershipRoles:              cleanMembershipRoles(nc.MembershipRoles),
 		OrganisationUUID:             nc.OrganisationUUID,
 		CountryOfIncorporationUUID:   nc.CountryOfIncorporationUUID,
@@ -276,8 +276,9 @@ func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole
 			deleted++
 			continue
 		}
-		m[j].InceptionDateEpoch = getEpoch(m[j].InceptionDate)
-		m[j].TerminationDateEpoch = getEpoch(m[j].TerminationDate)
+
+		m[j].InceptionDateEpoch = 0
+		m[j].TerminationDateEpoch = 0
 	}
 
 	if len(m) == 0 {
@@ -299,14 +300,8 @@ func cleanNAICS(naics []ontology.NAICSIndustryClassification) []ontology.NAICSIn
 	return res
 }
 
-func cleanNewConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
+func sortSources(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	for j := range c.SourceRepresentations {
-		c.SourceRepresentations[j].LastModifiedEpoch = 0
-		for i := range c.SourceRepresentations[j].MembershipRoles {
-			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
-			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
-		}
-
 		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
 			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
 		})
