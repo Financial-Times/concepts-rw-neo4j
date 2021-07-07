@@ -36,7 +36,6 @@ func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept 
 		OrganisationUUID:       old.OrganisationUUID,
 		PersonUUID:             old.PersonUUID,
 		AggregatedHash:         old.AggregatedHash,
-		MembershipRoles:        old.MembershipRoles,
 		InceptionDate:          old.InceptionDate,
 		TerminationDate:        old.TerminationDate,
 		InceptionDateEpoch:     old.InceptionDateEpoch,
@@ -65,8 +64,15 @@ func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept 
 
 func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept {
 	var oldSources []Concept
+	var roles []MembershipRole
 	for _, s := range new.SourceRepresentations {
 		oldSources = append(oldSources, TransformToOldSourceConcept(s))
+		for _, r := range s.MembershipRoles {
+			if r.RoleUUID == "" {
+				continue
+			}
+			roles = append(roles, r)
+		}
 	}
 
 	old := AggregatedConcept{}
@@ -88,7 +94,7 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	old.OrganisationUUID = new.OrganisationUUID
 	old.PersonUUID = new.PersonUUID
 	old.AggregatedHash = new.AggregatedHash
-	old.MembershipRoles = new.MembershipRoles
+	old.MembershipRoles = roles
 	old.InceptionDate = new.InceptionDate
 	old.TerminationDate = new.TerminationDate
 	old.InceptionDateEpoch = new.InceptionDateEpoch
