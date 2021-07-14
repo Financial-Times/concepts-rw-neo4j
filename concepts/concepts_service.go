@@ -99,39 +99,40 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 	query := &neoism.CypherQuery{
 		Statement: `
 			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
-			OPTIONAL MATCH (source)-[:HAS_BROADER]->(broader:Thing)
+			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 			OPTIONAL MATCH (source)-[:HAS_MEMBER]->(person:Thing)
 			OPTIONAL MATCH (source)-[:HAS_ORGANISATION]->(org:Thing)
-			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
-			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
-			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
-			OPTIONAL MATCH (source)-[:IMPLIED_BY]->(impliedBy:Thing)
-			OPTIONAL MATCH (source)-[:HAS_FOCUS]->(hasFocus:Thing)
-			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
-			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
 			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
 			OPTIONAL MATCH (source)-[:COUNTRY_OF_OPERATIONS]->(coo:Thing)
 			OPTIONAL MATCH (source)-[:COUNTRY_OF_RISK]->(cor:Thing)
 			OPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(coi:Thing)
+			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
+			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
+			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
+			OPTIONAL MATCH (source)-[:HAS_BROADER]->(broader:Thing)
+			OPTIONAL MATCH (source)-[:IMPLIED_BY]->(impliedBy:Thing)
+			OPTIONAL MATCH (source)-[:HAS_FOCUS]->(hasFocus:Thing)
+			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
 			OPTIONAL MATCH (source)-[hasICRel:HAS_INDUSTRY_CLASSIFICATION]->(naics:NAICSIndustryClassification) 
 			WITH
-				collect(DISTINCT broader.uuid) as broaderUUIDs,
 				canonical,
 				issuer,
-				org,
-				parent,
 				person,
-				collect(DISTINCT related.uuid) as relatedUUIDs,
-				collect(DISTINCT supersededBy.uuid) as supersededByUUIDs,
-				collect(DISTINCT impliedBy.uuid) as impliedByUUIDs,
-				collect(DISTINCT hasFocus.uuid) as hasFocusUUIDs,
-				role,
-				roleRel,
+				org,
 				parentOrg,
 				coo,
 				cor,
 				coi,
-				collect(DISTINCT {UUID: naics.uuid, Rank: hasICRel.rank}) as naicsIndustryClassifications,
+				parent,
+				related,
+				supersededBy,
+				broader,
+				impliedBy,
+				hasFocus,
+				role,
+				roleRel,
+				naics,
+				hasICRel,
 				source
 				ORDER BY
 					source.uuid,
@@ -139,39 +140,42 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 			WITH
 				canonical,
 				issuer,
-				org,
 				person,
+				org,
 				{
+					uuid: source.uuid,
+					prefLabel: source.prefLabel,
+					types: labels(source),
 					authority: source.authority,
 					authorityValue: source.authorityValue,
-					broaderUUIDs: broaderUUIDs,
-					supersededByUUIDs: supersededByUUIDs,
 					figiCode: source.figiCode,
-					issuedBy: issuer.uuid,
 					lastModifiedEpoch: source.lastModifiedEpoch,
-					membershipRoles: collect({
+					isDeprecated: source.isDeprecated,
+					industryIdentifier: source.industryIdentifier,
+					issuedBy: issuer.uuid,
+					personUUID: person.uuid,
+					organisationUUID: org.uuid,
+					parentOrganisation: parentOrg.uuid,
+					countryOfOperationsUUID: coo.uuid,
+					countryOfRiskUUID: cor.uuid,
+					countryOfIncorporationUUID: coi.uuid,
+					parentUUIDs: collect(DISTINCT parent.uuid),
+					relatedUUIDs: collect(DISTINCT related.uuid),
+					supersededByUUIDs: collect(DISTINCT supersededBy.uuid),
+					broaderUUIDs: collect(DISTINCT broader.uuid),
+					impliedByUUIDs: collect(DISTINCT impliedBy.uuid),
+					hasFocusUUIDs: collect(DISTINCT hasFocus.uuid),
+					membershipRoles: collect(DISTINCT {
 						membershipRoleUUID: role.uuid,
 						inceptionDate: roleRel.inceptionDate,
 						terminationDate: roleRel.terminationDate,
 						inceptionDateEpoch: roleRel.inceptionDateEpoch,
 						terminationDateEpoch: roleRel.terminationDateEpoch
 					}),
-					organisationUUID: org.uuid,
-					parentUUIDs: collect(parent.uuid),
-					personUUID: person.uuid,
-					parentOrganisation: parentOrg.uuid,
-					prefLabel: source.prefLabel,
-					relatedUUIDs: relatedUUIDs,
-					impliedByUUIDs: impliedByUUIDs,
-					hasFocusUUIDs: hasFocusUUIDs,
-					types: labels(source),
-					uuid: source.uuid,
-					isDeprecated: source.isDeprecated,
-					countryOfIncorporationUUID: coi.uuid,
-					countryOfOperationsUUID: coo.uuid,
-					countryOfRiskUUID: cor.uuid,
-					industryIdentifier: source.industryIdentifier,
-					naicsIndustryClassifications: naicsIndustryClassifications
+					naicsIndustryClassifications: collect(DISTINCT {
+						UUID: naics.uuid,
+						rank: hasICRel.rank
+					})
 				} as sources,
 				collect({
 					inceptionDate: roleRel.inceptionDate,
@@ -198,12 +202,6 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 				canonical.terminationDate as terminationDate,
 				canonical.terminationDateEpoch as terminationDateEpoch,
 				canonical.twitterHandle as twitterHandle,
-				collect(sources) as sourceRepresentations,
-				issuer.uuid as issuedBy,
-				labels(canonical) as types,
-				membershipRoles,
-				org.uuid as organisationUUID,
-				person.uuid as personUUID,
 				canonical.properName as properName,
 				canonical.shortName as shortName,
 				canonical.tradeNames as tradeNames,
@@ -219,7 +217,13 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 				canonical.salutation as salutation,
 				canonical.birthYear as birthYear,
 				canonical.iso31661 as iso31661,
-				canonical.industryIdentifier as industryIdentifier
+				canonical.industryIdentifier as industryIdentifier,
+				issuer.uuid as issuedBy,
+				org.uuid as organisationUUID,
+				person.uuid as personUUID,
+				membershipRoles,
+				labels(canonical) as types,
+				collect(sources) as sourceRepresentations
 			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
