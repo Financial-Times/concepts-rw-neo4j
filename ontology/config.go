@@ -9,10 +9,11 @@ import (
 )
 
 var Relationships = map[string]struct {
-	ConceptField  string
-	OneToOne      bool
-	NeoCreate     bool
-	HasProperties bool
+	ConceptField    string
+	OneToOne        bool
+	NeoCreate       bool
+	Properties      []string
+	ToNodeWithLabel string
 }{}
 
 type Config struct {

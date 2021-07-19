@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
@@ -24,6 +25,70 @@ const (
 )
 
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
+
+var relationships = map[string]struct {
+	ConceptField    string
+	OneToOne        bool
+	Properties      []string
+	ToNodeWithLabel string
+}{
+	"HAS_MEMBER": {
+		ConceptField: "personUUID",
+		OneToOne:     true,
+	},
+	"HAS_ORGANISATION": {
+		ConceptField: "organisationUUID",
+		OneToOne:     true,
+	},
+	"SUB_ORGANISATION_OF": {
+		ConceptField: "parentOrganisation",
+		OneToOne:     true,
+	},
+	"COUNTRY_OF_OPERATIONS": {
+		ConceptField: "countryOfOperationsUUID",
+		OneToOne:     true,
+	},
+	"COUNTRY_OF_INCORPORATION": {
+		ConceptField: "countryOfIncorporationUUID",
+		OneToOne:     true,
+	},
+	"COUNTRY_OF_RISK": {
+		ConceptField: "countryOfRiskUUID",
+		OneToOne:     true,
+	},
+	"HAS_PARENT": {
+		ConceptField: "parentUUIDs",
+	},
+	"IS_RELATED_TO": {
+		ConceptField: "relatedUUIDs",
+	},
+	"SUPERSEDED_BY": {
+		ConceptField: "supersededByUUIDs",
+	},
+	"HAS_BROADER": {
+		ConceptField: "broaderUUIDs",
+	},
+	"IMPLIED_BY": {
+		ConceptField: "impliedByUUIDs",
+	},
+	"HAS_FOCUS": {
+		ConceptField: "hasFocusUUIDs",
+	},
+	"HAS_ROLE": {
+		ConceptField: "membershipRoles",
+		Properties: []string{
+			"inceptionDate",
+			"terminationDate",
+			"inceptionDateEpoch",
+			"terminationDateEpoch",
+		},
+	},
+	"HAS_INDUSTRY_CLASSIFICATION": {
+		ConceptField:    "naicsIndustryClassifications",
+		Properties:      []string{"rank"},
+		ToNodeWithLabel: "NAICSIndustryClassification",
+	},
+}
 
 // ConceptService - CypherDriver - CypherDriver
 type ConceptService struct {
@@ -84,7 +149,6 @@ type equivalenceResult struct {
 	Authority   string   `json:"authority"`
 }
 
-//Read - read service
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
 	aggregatedConcept := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
@@ -95,136 +159,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
 	var results []neoAggregatedConcept
-
 	query := &neoism.CypherQuery{
-		Statement: `
-			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
-			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
-			OPTIONAL MATCH (source)-[:HAS_MEMBER]->(person:Thing)
-			OPTIONAL MATCH (source)-[:HAS_ORGANISATION]->(org:Thing)
-			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
-			OPTIONAL MATCH (source)-[:COUNTRY_OF_OPERATIONS]->(coo:Thing)
-			OPTIONAL MATCH (source)-[:COUNTRY_OF_RISK]->(cor:Thing)
-			OPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(coi:Thing)
-			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
-			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
-			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
-			OPTIONAL MATCH (source)-[:HAS_BROADER]->(broader:Thing)
-			OPTIONAL MATCH (source)-[:IMPLIED_BY]->(impliedBy:Thing)
-			OPTIONAL MATCH (source)-[:HAS_FOCUS]->(hasFocus:Thing)
-			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
-			OPTIONAL MATCH (source)-[hasICRel:HAS_INDUSTRY_CLASSIFICATION]->(naics:NAICSIndustryClassification) 
-			WITH
-				canonical,
-				issuer,
-				person,
-				org,
-				parentOrg,
-				coo,
-				cor,
-				coi,
-				parent,
-				related,
-				supersededBy,
-				broader,
-				impliedBy,
-				hasFocus,
-				role,
-				roleRel,
-				naics,
-				hasICRel,
-				source
-				ORDER BY
-					source.uuid,
-					role.uuid
-			WITH
-				canonical,
-				issuer,
-				person,
-				org,
-				{
-					uuid: source.uuid,
-					prefLabel: source.prefLabel,
-					types: labels(source),
-					authority: source.authority,
-					authorityValue: source.authorityValue,
-					figiCode: source.figiCode,
-					lastModifiedEpoch: source.lastModifiedEpoch,
-					isDeprecated: source.isDeprecated,
-					industryIdentifier: source.industryIdentifier,
-					issuedBy: issuer.uuid,
-					personUUID: person.uuid,
-					organisationUUID: org.uuid,
-					parentOrganisation: parentOrg.uuid,
-					countryOfOperationsUUID: coo.uuid,
-					countryOfRiskUUID: cor.uuid,
-					countryOfIncorporationUUID: coi.uuid,
-					parentUUIDs: collect(DISTINCT parent.uuid),
-					relatedUUIDs: collect(DISTINCT related.uuid),
-					supersededByUUIDs: collect(DISTINCT supersededBy.uuid),
-					broaderUUIDs: collect(DISTINCT broader.uuid),
-					impliedByUUIDs: collect(DISTINCT impliedBy.uuid),
-					hasFocusUUIDs: collect(DISTINCT hasFocus.uuid),
-					membershipRoles: collect(DISTINCT {
-						membershipRoleUUID: role.uuid,
-						inceptionDate: roleRel.inceptionDate,
-						terminationDate: roleRel.terminationDate,
-						inceptionDateEpoch: roleRel.inceptionDateEpoch,
-						terminationDateEpoch: roleRel.terminationDateEpoch
-					}),
-					naicsIndustryClassifications: collect(DISTINCT {
-						UUID: naics.uuid,
-						rank: hasICRel.rank
-					})
-				} as sources,
-				collect({
-					inceptionDate: roleRel.inceptionDate,
-					inceptionDateEpoch: roleRel.inceptionDateEpoch,
-					membershipRoleUUID: role.uuid,
-					terminationDate: roleRel.terminationDate,
-					terminationDateEpoch: roleRel.terminationDateEpoch
-				}) as membershipRoles
-			RETURN
-				canonical.aggregateHash as aggregateHash,
-				canonical.aliases as aliases,
-				canonical.descriptionXML as descriptionXML,
-				canonical.emailAddress as emailAddress,
-				canonical.facebookPage as facebookPage,
-				canonical.figiCode as figiCode,
-				canonical.imageUrl as imageUrl,
-				canonical.inceptionDate as inceptionDate,
-				canonical.inceptionDateEpoch as inceptionDateEpoch,
-				canonical.prefLabel as prefLabel,
-				canonical.prefUUID as prefUUID,
-				canonical.scopeNote as scopeNote,
-				canonical.shortLabel as shortLabel,
-				canonical.strapline as strapline,
-				canonical.terminationDate as terminationDate,
-				canonical.terminationDateEpoch as terminationDateEpoch,
-				canonical.twitterHandle as twitterHandle,
-				canonical.properName as properName,
-				canonical.shortName as shortName,
-				canonical.tradeNames as tradeNames,
-				canonical.formerNames as formerNames,
-				canonical.countryCode as countryCode,
-				canonical.countryOfIncorporation as countryOfIncorporation,
-				canonical.countryOfOperations as countryOfOperations,
-				canonical.countryOfRisk as countryOfRisk,
-				canonical.postalCode as postalCode,
-				canonical.yearFounded as yearFounded,
-				canonical.leiCode as leiCode,
-				canonical.isDeprecated as isDeprecated,
-				canonical.salutation as salutation,
-				canonical.birthYear as birthYear,
-				canonical.iso31661 as iso31661,
-				canonical.industryIdentifier as industryIdentifier,
-				issuer.uuid as issuedBy,
-				org.uuid as organisationUUID,
-				person.uuid as personUUID,
-				membershipRoles,
-				labels(canonical) as types,
-				collect(sources) as sourceRepresentations
-			`,
+		Statement: getReadStatement(),
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -250,6 +186,253 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 	}
 
 	return newAggregatedConcept, true, nil
+}
+
+func getReadStatement() string {
+	statementTemplate := `
+		MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+		OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
+		%s
+		WITH
+			canonical,
+			issuer,
+			source,
+			%s
+			ORDER BY
+				source.uuid,
+				hasRoleNode.uuid
+		WITH
+			canonical,
+			issuer,
+			hasMemberNode,
+			hasOrganisationNode,
+			{
+				uuid: source.uuid,
+				prefLabel: source.prefLabel,
+				types: labels(source),
+				authority: source.authority,
+				authorityValue: source.authorityValue,
+				figiCode: source.figiCode,
+				lastModifiedEpoch: source.lastModifiedEpoch,
+				isDeprecated: source.isDeprecated,
+				industryIdentifier: source.industryIdentifier,
+				issuedBy: issuer.uuid,
+				%s
+			} as sources,
+			collect({
+				inceptionDate: hasRoleRel.inceptionDate,
+				inceptionDateEpoch: hasRoleRel.inceptionDateEpoch,
+				membershipRoleUUID: hasRoleNode.uuid,
+				terminationDate: hasRoleRel.terminationDate,
+				terminationDateEpoch: hasRoleRel.terminationDateEpoch
+			}) as membershipRoles
+		RETURN
+			canonical.aggregateHash as aggregateHash,
+			canonical.aliases as aliases,
+			canonical.descriptionXML as descriptionXML,
+			canonical.emailAddress as emailAddress,
+			canonical.facebookPage as facebookPage,
+			canonical.figiCode as figiCode,
+			canonical.imageUrl as imageUrl,
+			canonical.inceptionDate as inceptionDate,
+			canonical.inceptionDateEpoch as inceptionDateEpoch,
+			canonical.prefLabel as prefLabel,
+			canonical.prefUUID as prefUUID,
+			canonical.scopeNote as scopeNote,
+			canonical.shortLabel as shortLabel,
+			canonical.strapline as strapline,
+			canonical.terminationDate as terminationDate,
+			canonical.terminationDateEpoch as terminationDateEpoch,
+			canonical.twitterHandle as twitterHandle,
+			canonical.properName as properName,
+			canonical.shortName as shortName,
+			canonical.tradeNames as tradeNames,
+			canonical.formerNames as formerNames,
+			canonical.countryCode as countryCode,
+			canonical.countryOfIncorporation as countryOfIncorporation,
+			canonical.countryOfOperations as countryOfOperations,
+			canonical.countryOfRisk as countryOfRisk,
+			canonical.postalCode as postalCode,
+			canonical.yearFounded as yearFounded,
+			canonical.leiCode as leiCode,
+			canonical.isDeprecated as isDeprecated,
+			canonical.salutation as salutation,
+			canonical.birthYear as birthYear,
+			canonical.iso31661 as iso31661,
+			canonical.industryIdentifier as industryIdentifier,
+			issuer.uuid as issuedBy,
+			hasOrganisationNode.uuid as organisationUUID,
+			hasMemberNode.uuid as personUUID,
+			membershipRoles,
+			labels(canonical) as types,
+			collect(sources) as sourceRepresentations`
+
+	return fmt.Sprintf(statementTemplate,
+		strings.Join(getOptionalMatches(), "\n"),
+		strings.Join(getWithMatched(), ",\n"),
+		strings.Join(getSourceRels(), ",\n"))
+}
+
+func getOptionalMatches() []string {
+	var relOptionalMatches []string
+	for relLabel, relCfg := range ontology.Relationships {
+		r := toCamelCase(relLabel)
+		nodeName := r + "Node"
+
+		var relName string
+		if len(relCfg.Properties) > 0 {
+			relName = r + "Rel"
+		}
+
+		toNodeLabel := "Thing"
+		if relCfg.ToNodeWithLabel != "" {
+			toNodeLabel = relCfg.ToNodeWithLabel
+		}
+
+		relOptionalMatch := fmt.Sprintf("OPTIONAL MATCH (source)-[%s:%s]->(%s:%s)", relName, relLabel, nodeName, toNodeLabel)
+		relOptionalMatches = append(relOptionalMatches, relOptionalMatch)
+	}
+
+	for relLabel, relCfg := range relationships {
+		r := toCamelCase(relLabel)
+		nodeName := r + "Node"
+
+		var relName string
+		if len(relCfg.Properties) > 0 {
+			relName = r + "Rel"
+		}
+
+		toNodeLabel := "Thing"
+		if relCfg.ToNodeWithLabel != "" {
+			toNodeLabel = relCfg.ToNodeWithLabel
+		}
+
+		relOptionalMatch := fmt.Sprintf("OPTIONAL MATCH (source)-[%s:%s]->(%s:%s)", relName, relLabel, nodeName, toNodeLabel)
+		relOptionalMatches = append(relOptionalMatches, relOptionalMatch)
+	}
+
+	return relOptionalMatches
+}
+
+func getWithMatched() []string {
+	var withMatched []string
+	for relLabel, relCfg := range ontology.Relationships {
+		r := toCamelCase(relLabel)
+		nodeName := r + "Node"
+
+		var relName string
+		if len(relCfg.Properties) > 0 {
+			relName = r + "Rel"
+		}
+
+		withMatched = append(withMatched, nodeName)
+		if len(relCfg.Properties) > 0 {
+			withMatched = append(withMatched, relName)
+		}
+	}
+
+	for relLabel, relCfg := range relationships {
+		r := toCamelCase(relLabel)
+		nodeName := r + "Node"
+
+		var relName string
+		if len(relCfg.Properties) > 0 {
+			relName = r + "Rel"
+		}
+
+		withMatched = append(withMatched, nodeName)
+		if len(relCfg.Properties) > 0 {
+			withMatched = append(withMatched, relName)
+		}
+	}
+
+	return withMatched
+}
+
+func getSourceRels() []string {
+	var sourceRels []string
+	for relLabel, relCfg := range ontology.Relationships {
+		r := toCamelCase(relLabel)
+		nodeName := r + "Node"
+
+		var relName string
+		if len(relCfg.Properties) > 0 {
+			relName = r + "Rel"
+		}
+
+		var sourceRel string
+		if relCfg.OneToOne {
+			sourceRel = fmt.Sprintf("%s: %s.uuid", relCfg.ConceptField, nodeName)
+		} else if len(relCfg.Properties) == 0 {
+			sourceRel = fmt.Sprintf("%s: collect(DISTINCT %s.uuid)", relCfg.ConceptField, nodeName)
+		} else {
+			var relProps []string
+			for _, relProp := range relCfg.Properties {
+				relProps = append(relProps, fmt.Sprintf("%s: %s.%s", relProp, relName, relProp))
+			}
+
+			uuidField := "UUID"
+			if relLabel == "HAS_ROLE" {
+				uuidField = "membershipRoleUUID"
+			}
+
+			sourceRel = fmt.Sprintf("%s: collect(DISTINCT {%s: %s.uuid, %s})",
+				relCfg.ConceptField,
+				uuidField,
+				nodeName,
+				strings.Join(relProps, ", "))
+		}
+
+		sourceRels = append(sourceRels, sourceRel)
+	}
+
+	for relLabel, relCfg := range relationships {
+		r := toCamelCase(relLabel)
+		nodeName := r + "Node"
+
+		var relName string
+		if len(relCfg.Properties) > 0 {
+			relName = r + "Rel"
+		}
+
+		var sourceRel string
+		if relCfg.OneToOne {
+			sourceRel = fmt.Sprintf("%s: %s.uuid", relCfg.ConceptField, nodeName)
+		} else if len(relCfg.Properties) == 0 {
+			sourceRel = fmt.Sprintf("%s: collect(DISTINCT %s.uuid)", relCfg.ConceptField, nodeName)
+		} else {
+			var relProps []string
+			for _, relProp := range relCfg.Properties {
+				relProps = append(relProps, fmt.Sprintf("%s: %s.%s", relProp, relName, relProp))
+			}
+
+			uuidField := "UUID"
+			if relLabel == "HAS_ROLE" {
+				uuidField = "membershipRoleUUID"
+			}
+
+			sourceRel = fmt.Sprintf("%s: collect(DISTINCT {%s: %s.uuid, %s})",
+				relCfg.ConceptField,
+				uuidField,
+				nodeName,
+				strings.Join(relProps, ", "))
+		}
+
+		sourceRels = append(sourceRels, sourceRel)
+	}
+
+	return sourceRels
+}
+
+func toCamelCase(relLabel string) string {
+	labelLower := strings.ToLower(relLabel)
+	var vals []string
+	for _, val := range strings.Split(labelLower, "_") {
+		vals = append(vals, strings.Title(val))
+	}
+
+	vals[0] = strings.ToLower(vals[0])
+	return strings.Join(vals, "")
 }
 
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
@@ -684,32 +867,45 @@ func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
 
 //Clear down current concept node
 func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept) []*neoism.CypherQuery {
+	var relOptionalMatches, relNames []string
+	for relLabel := range ontology.Relationships {
+		r := toCamelCase(relLabel)
+		relName := r + "Rel"
+		nodeName := r + "Node"
+		relOptionalMatch := fmt.Sprintf("OPTIONAL MATCH (t)-[%s:%s]->(%s)", relName, relLabel, nodeName)
+
+		relOptionalMatches = append(relOptionalMatches, relOptionalMatch)
+		relNames = append(relNames, relName)
+	}
+
+	for relLabel := range relationships {
+		r := toCamelCase(relLabel)
+		relName := r + "Rel"
+		nodeName := r + "Node"
+		relOptionalMatch := fmt.Sprintf("OPTIONAL MATCH (t)-[%s:%s]->(%s)", relName, relLabel, nodeName)
+
+		relOptionalMatches = append(relOptionalMatches, relOptionalMatch)
+		relNames = append(relNames, relName)
+	}
+
 	acUUID := ac.PrefUUID
-
 	var queryBatch []*neoism.CypherQuery
-
 	for _, sr := range ac.SourceRepresentations {
-		deletePreviousSourceLabelsAndPropertiesQuery := &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
+		//nolint:gosec
+		deleteStatement := fmt.Sprintf(`
+			MATCH (t:Thing {uuid:{id}})
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
-			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
-			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
-			OPTIONAL MATCH (t)-[supersededBy:SUPERSEDED_BY]->(supersedesNode)
-			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
-			OPTIONAL MATCH (t)-[impliedBy:IMPLIED_BY]->(impliesNode)
-			OPTIONAL MATCH (t)-[hasFocus:HAS_FOCUS]->(hasFocusNode)
-			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->(org)
-			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
-			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
 			OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
-			OPTIONAL MATCH (t)-[parentOrgRel:SUB_ORGANISATION_OF]->(parentOrg)
-			OPTIONAL MATCH (t)-[cooRel:COUNTRY_OF_OPERATIONS]->(coo)
-			OPTIONAL MATCH (t)-[coiRel:COUNTRY_OF_INCORPORATION]->(coi)
-			OPTIONAL MATCH (t)-[corRel:COUNTRY_OF_RISK]->(cor)
-			OPTIONAL MATCH (t)-[icRel:HAS_INDUSTRY_CLASSIFICATION]->(ic)
+			%s
 			REMOVE t:%s
 			SET t={uuid:{id}}
-			DELETE x, eq, relatedTo, broader, impliedBy, hasFocus, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel, icRel`, getLabelsToRemove()),
+			DELETE eq, issuerRel, %s`,
+			strings.Join(relOptionalMatches, "\n"),
+			getLabelsToRemove(),
+			strings.Join(relNames, ", "))
+
+		deletePreviousSourceLabelsAndPropertiesQuery := &neoism.CypherQuery{
+			Statement: deleteStatement,
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -750,7 +946,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			relIDs := filterSlice([]string{rel.UUID})
 			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, relIDs, rel.Label, relCfg.NeoCreate)...)
 
-			if relCfg.HasProperties {
+			if len(relCfg.Properties) > 0 {
 				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel)...)
 			}
 		}

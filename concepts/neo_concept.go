@@ -214,7 +214,7 @@ func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 			rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel})
 		} else {
 			for _, v := range val.([]interface{}) {
-				if relCfg.HasProperties {
+				if len(relCfg.Properties) > 0 {
 					relMap := v.(map[string]interface{})
 					uuid, ok := relMap["uuid"]
 					if ok {

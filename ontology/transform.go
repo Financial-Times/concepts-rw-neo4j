@@ -143,7 +143,7 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 			rels = append(rels, Relationship{UUID: uuid, Label: rel})
 		} else {
 			for _, v := range val.([]interface{}) {
-				if relCfg.HasProperties {
+				if len(relCfg.Properties) > 0 {
 					relMap := v.(map[string]interface{})
 					uuid, ok := relMap["uuid"]
 					if ok {
@@ -246,7 +246,7 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 
 		relVal, ok := oldMap[relCfg.ConceptField]
 		if !ok {
-			if relCfg.HasProperties {
+			if len(relCfg.Properties) > 0 {
 				relProps := rel.Properties
 				if rel.Label == "HAS_ROLE" {
 					relProps["membershipRoleUUID"] = rel.UUID
@@ -261,7 +261,7 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 			continue
 		}
 
-		if relCfg.HasProperties {
+		if len(relCfg.Properties) > 0 {
 			relProps := rel.Properties
 			if rel.Label == "HAS_ROLE" {
 				relProps["membershipRoleUUID"] = rel.UUID
