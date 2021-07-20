@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 	"github.com/gorilla/handlers"
@@ -58,7 +59,7 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	agConcept := inst.(AggregatedConcept)
+	agConcept := inst.(ontology.AggregatedConcept)
 	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
 		writeJSONError(w, "Concept type does not match path", http.StatusBadRequest)
 		return
@@ -116,7 +117,7 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	agConcept := obj.(AggregatedConcept)
+	agConcept := obj.(ontology.AggregatedConcept)
 	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
 		writeJSONError(w, "Concept type does not match path", http.StatusBadRequest)
 		return
