@@ -1,9 +1,7 @@
 package ontology
 
 import (
-	"io/ioutil"
-	"path"
-	"runtime"
+	"embed"
 
 	"gopkg.in/yaml.v2"
 )
@@ -23,13 +21,11 @@ type Config struct {
 
 var config Config
 
-func init() {
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("no caller information")
-	}
+//go:embed config.yml
+var f embed.FS
 
-	bytes, err := ioutil.ReadFile(path.Dir(file) + "/config.yml")
+func init() {
+	bytes, err := f.ReadFile("config.yml")
 	if err != nil {
 		panic(err)
 	}

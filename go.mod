@@ -1,6 +1,6 @@
 module github.com/Financial-Times/concepts-rw-neo4j
 
-go 1.15
+go 1.16
 
 require (
 	github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7
