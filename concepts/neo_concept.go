@@ -1,6 +1,7 @@
 package concepts
 
 import (
+	"encoding/json"
 	"sort"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
@@ -73,7 +74,19 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 		sourceConcepts = append(sourceConcepts, concept)
 	}
 
+	nacMap := map[string]interface{}{}
+	nacBytes, _ := json.Marshal(nac)
+	_ = json.Unmarshal(nacBytes, &nacMap)
+
+	props := map[string]interface{}{}
+	for field, prop := range ontology.GetConfig().FieldToNeoProps {
+		if val, ok := nacMap[prop]; ok {
+			props[field] = val
+		}
+	}
+
 	aggregateConcept := ontology.NewAggregatedConcept{
+		Properties:            props,
 		SourceRepresentations: sourceConcepts,
 		AggregatedHash:        nac.AggregateHash,
 		Aliases:               nac.Aliases,

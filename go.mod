@@ -30,6 +30,7 @@ require (
 	golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1 // indirect
 	golang.org/x/sys v0.0.0-20181011152604-fa43e7bc11ba // indirect
 	gopkg.in/jmcvetta/napping.v3 v3.2.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 replace github.com/jmcvetta/neoism => github.com/Financial-Times/neoism v1.3.2-0.20180622150314-0a3ba1ab89c4

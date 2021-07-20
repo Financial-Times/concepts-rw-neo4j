@@ -1,5 +1,23 @@
 package ontology
 
+func (c NewAggregatedConcept) GetPropertyValue(propName string) (interface{}, bool) {
+	val, found := c.Properties[propName]
+	if !found {
+		return nil, false
+	}
+
+	switch v := val.(type) {
+	case []interface{}:
+		return v, len(v) > 0
+	case string:
+		return v, v != ""
+	case float64:
+		return v, v > 0
+	default: // return values of unknown type but indicate that they were not validated
+		return v, false
+	}
+}
+
 type AggregatedConcept struct {
 	PrefUUID              string           `json:"prefUUID,omitempty"`
 	PrefLabel             string           `json:"prefLabel,omitempty"`

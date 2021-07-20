@@ -996,7 +996,10 @@ func TestWriteService(t *testing.T) {
 				sort.Strings(test.updatedConcepts.UpdatedIds)
 				sort.Strings(updatedConcepts.UpdatedIds)
 
-				assert.Equal(t, test.updatedConcepts, updatedConcepts, "Test "+test.testName+" failed: Updated uuid list differs from expected")
+				cmpOpts := cmpopts.IgnoreFields(Event{}, "AggregateHash")
+				if !cmp.Equal(test.updatedConcepts, updatedConcepts, cmpOpts) {
+					t.Errorf("Test %s failed: Updated uuid list differs from expected:\n%s", test.testName, cmp.Diff(test.updatedConcepts, updatedConcepts, cmpOpts))
+				}
 			} else {
 				if err != nil {
 					assert.Error(t, err, "Error was expected")
@@ -1065,7 +1068,7 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 
 	oldConcept := getConcept(t, "old-membership.json")
 	newConcept := ontology.TransformToNewSourceConcept(oldConcept)
-	queries := createNodeQueries(newConcept, "", membershipUUID)
+	queries := createNodeQueries(newConcept, membershipUUID)
 	err := db.CypherBatch(queries)
 	assert.NoError(t, err, "Failed to write source")
 
@@ -1614,7 +1617,10 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		sort.Strings(scenario.updatedConcepts.UpdatedIds)
 		sort.Strings(actualChanges.UpdatedIds)
 
-		assert.Equal(t, scenario.updatedConcepts, actualChanges, "Scenario "+scenario.testName+" failed: Updated uuid list differs from expected")
+		cmpOpts := cmpopts.IgnoreFields(Event{}, "AggregateHash")
+		if !cmp.Equal(scenario.updatedConcepts, actualChanges, cmpOpts) {
+			t.Errorf("Scenario %s failed: Updated uuid list differs from expected:\n%s", scenario.testName, cmp.Diff(scenario.updatedConcepts, actualChanges, cmpOpts))
+		}
 
 		for _, id := range scenario.uuidsToCheck {
 			conceptIf, found, err := conceptsDriver.Read(id, tid)
@@ -2120,6 +2126,59 @@ func TestWriteLocation(t *testing.T) {
 	_, err = conceptsDriver.Write(locationISO31661, "test_tid")
 	assert.NoError(t, err, "Failed to write concept")
 	readConceptAndCompare(t, locationISO31661, "TestWriteLocationISO31661")
+}
+
+func TestSetCanonicalProps(t *testing.T) {
+	tests := []struct {
+		name     string
+		concept  ontology.NewAggregatedConcept
+		prefUUID string
+		expected map[string]interface{}
+	}{
+		{
+			name:    "Concept with default values and no prefUUID should return default props",
+			concept: ontology.NewAggregatedConcept{},
+			expected: map[string]interface{}{
+				"prefUUID":      "",
+				"aggregateHash": "",
+			},
+		},
+		{
+			name:     "Concept with default values with prefUUID should return props with prefUUID",
+			concept:  ontology.NewAggregatedConcept{},
+			prefUUID: "6649aeda-0cd0-4a65-a310-77f28e88b620",
+			expected: map[string]interface{}{
+				"prefUUID":      "6649aeda-0cd0-4a65-a310-77f28e88b620",
+				"aggregateHash": "",
+			},
+		},
+		{
+			name: "Concept with invalid values should return default props",
+			concept: ontology.NewAggregatedConcept{
+				Aliases:     []string{},
+				FormerNames: []string{},
+				TradeNames:  []string{},
+			},
+			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+			expected: map[string]interface{}{
+				"prefUUID":      "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+				"aggregateHash": "",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := setCanonicalProps(test.concept, test.prefUUID)
+
+			// ignore "lastModifiedEpoch"
+			delete(got, "lastModifiedEpoch")
+
+			if !cmp.Equal(got, test.expected) {
+				t.Errorf("Node props differ from expected:\n%s", cmp.Diff(got, test.expected))
+			}
+		})
+	}
 }
 
 func readConceptAndCompare(t *testing.T, payload ontology.AggregatedConcept, testName string, ignoredFields ...string) {

@@ -1,12 +1,26 @@
 package ontology
 
+import "encoding/json"
+
 func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept {
 	var newSources []NewConcept
 	for _, s := range old.SourceRepresentations {
 		newSources = append(newSources, TransformToNewSourceConcept(s))
 	}
 
+	oldMap := map[string]interface{}{}
+	oldBytes, _ := json.Marshal(old)
+	_ = json.Unmarshal(oldBytes, &oldMap)
+
+	props := map[string]interface{}{}
+	for field := range GetConfig().FieldToNeoProps {
+		if val, ok := oldMap[field]; ok {
+			props[field] = val
+		}
+	}
+
 	return NewAggregatedConcept{
+		Properties:             props,
 		PrefUUID:               old.PrefUUID,
 		PrefLabel:              old.PrefLabel,
 		Type:                   old.Type,
@@ -55,47 +69,51 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 		oldSources = append(oldSources, TransformToOldSourceConcept(s))
 	}
 
-	return AggregatedConcept{
-		PrefUUID:               new.PrefUUID,
-		PrefLabel:              new.PrefLabel,
-		Type:                   new.Type,
-		Aliases:                new.Aliases,
-		Strapline:              new.Strapline,
-		DescriptionXML:         new.DescriptionXML,
-		ImageURL:               new.ImageURL,
-		EmailAddress:           new.EmailAddress,
-		FacebookPage:           new.FacebookPage,
-		TwitterHandle:          new.TwitterHandle,
-		ScopeNote:              new.ScopeNote,
-		ShortLabel:             new.ShortLabel,
-		OrganisationUUID:       new.OrganisationUUID,
-		PersonUUID:             new.PersonUUID,
-		AggregatedHash:         new.AggregatedHash,
-		MembershipRoles:        new.MembershipRoles,
-		InceptionDate:          new.InceptionDate,
-		TerminationDate:        new.TerminationDate,
-		InceptionDateEpoch:     new.InceptionDateEpoch,
-		TerminationDateEpoch:   new.TerminationDateEpoch,
-		FigiCode:               new.FigiCode,
-		IssuedBy:               new.IssuedBy,
-		ProperName:             new.ProperName,
-		ShortName:              new.ShortName,
-		TradeNames:             new.TradeNames,
-		FormerNames:            new.FormerNames,
-		CountryCode:            new.CountryCode,
-		CountryOfRisk:          new.CountryOfRisk,
-		CountryOfIncorporation: new.CountryOfIncorporation,
-		CountryOfOperations:    new.CountryOfOperations,
-		PostalCode:             new.PostalCode,
-		YearFounded:            new.YearFounded,
-		LeiCode:                new.LeiCode,
-		IsDeprecated:           new.IsDeprecated,
-		ISO31661:               new.ISO31661,
-		Salutation:             new.Salutation,
-		BirthYear:              new.BirthYear,
-		IndustryIdentifier:     new.IndustryIdentifier,
-		SourceRepresentations:  oldSources,
-	}
+	old := AggregatedConcept{}
+	newPropsBytes, _ := json.Marshal(new.Properties)
+	_ = json.Unmarshal(newPropsBytes, &old)
+
+	old.PrefUUID = new.PrefUUID
+	old.PrefLabel = new.PrefLabel
+	old.Type = new.Type
+	old.Aliases = new.Aliases
+	old.Strapline = new.Strapline
+	old.DescriptionXML = new.DescriptionXML
+	old.ImageURL = new.ImageURL
+	old.EmailAddress = new.EmailAddress
+	old.FacebookPage = new.FacebookPage
+	old.TwitterHandle = new.TwitterHandle
+	old.ScopeNote = new.ScopeNote
+	old.ShortLabel = new.ShortLabel
+	old.OrganisationUUID = new.OrganisationUUID
+	old.PersonUUID = new.PersonUUID
+	old.AggregatedHash = new.AggregatedHash
+	old.MembershipRoles = new.MembershipRoles
+	old.InceptionDate = new.InceptionDate
+	old.TerminationDate = new.TerminationDate
+	old.InceptionDateEpoch = new.InceptionDateEpoch
+	old.TerminationDateEpoch = new.TerminationDateEpoch
+	old.FigiCode = new.FigiCode
+	old.IssuedBy = new.IssuedBy
+	old.ProperName = new.ProperName
+	old.ShortName = new.ShortName
+	old.TradeNames = new.TradeNames
+	old.FormerNames = new.FormerNames
+	old.CountryCode = new.CountryCode
+	old.CountryOfRisk = new.CountryOfRisk
+	old.CountryOfIncorporation = new.CountryOfIncorporation
+	old.CountryOfOperations = new.CountryOfOperations
+	old.PostalCode = new.PostalCode
+	old.YearFounded = new.YearFounded
+	old.LeiCode = new.LeiCode
+	old.IsDeprecated = new.IsDeprecated
+	old.ISO31661 = new.ISO31661
+	old.Salutation = new.Salutation
+	old.BirthYear = new.BirthYear
+	old.IndustryIdentifier = new.IndustryIdentifier
+	old.SourceRepresentations = oldSources
+
+	return old
 }
 
 func TransformToNewSourceConcept(old Concept) NewConcept {
