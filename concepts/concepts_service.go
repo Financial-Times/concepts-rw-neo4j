@@ -26,12 +26,7 @@ const (
 
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
-var relationships = map[string]struct {
-	ConceptField    string
-	OneToOne        bool
-	Properties      []string
-	ToNodeWithLabel string
-}{
+var relationships = map[string]ontology.RelationshipConfig{
 	"HAS_MEMBER": {
 		ConceptField: "personUUID",
 		OneToOne:     true,
@@ -275,40 +270,12 @@ func getReadStatement() string {
 
 func getOptionalMatches() []string {
 	var relOptionalMatches []string
-	for relLabel, relCfg := range ontology.Relationships {
-		r := toCamelCase(relLabel)
-		nodeName := r + "Node"
-
-		var relName string
-		if len(relCfg.Properties) > 0 {
-			relName = r + "Rel"
-		}
-
-		toNodeLabel := "Thing"
-		if relCfg.ToNodeWithLabel != "" {
-			toNodeLabel = relCfg.ToNodeWithLabel
-		}
-
-		relOptionalMatch := fmt.Sprintf("OPTIONAL MATCH (source)-[%s:%s]->(%s:%s)", relName, relLabel, nodeName, toNodeLabel)
-		relOptionalMatches = append(relOptionalMatches, relOptionalMatch)
+	for relLabel, relCfg := range ontology.GetConfig().Relationships {
+		relOptionalMatches = append(relOptionalMatches, getOptionalMatch(relLabel, relCfg))
 	}
 
 	for relLabel, relCfg := range relationships {
-		r := toCamelCase(relLabel)
-		nodeName := r + "Node"
-
-		var relName string
-		if len(relCfg.Properties) > 0 {
-			relName = r + "Rel"
-		}
-
-		toNodeLabel := "Thing"
-		if relCfg.ToNodeWithLabel != "" {
-			toNodeLabel = relCfg.ToNodeWithLabel
-		}
-
-		relOptionalMatch := fmt.Sprintf("OPTIONAL MATCH (source)-[%s:%s]->(%s:%s)", relName, relLabel, nodeName, toNodeLabel)
-		relOptionalMatches = append(relOptionalMatches, relOptionalMatch)
+		relOptionalMatches = append(relOptionalMatches, getOptionalMatch(relLabel, relCfg))
 	}
 
 	return relOptionalMatches
@@ -316,34 +283,12 @@ func getOptionalMatches() []string {
 
 func getWithMatched() []string {
 	var withMatched []string
-	for relLabel, relCfg := range ontology.Relationships {
-		r := toCamelCase(relLabel)
-		nodeName := r + "Node"
-
-		var relName string
-		if len(relCfg.Properties) > 0 {
-			relName = r + "Rel"
-		}
-
-		withMatched = append(withMatched, nodeName)
-		if len(relCfg.Properties) > 0 {
-			withMatched = append(withMatched, relName)
-		}
+	for relLabel, relCfg := range ontology.GetConfig().Relationships {
+		withMatched = append(withMatched, getMatched(relLabel, relCfg)...)
 	}
 
 	for relLabel, relCfg := range relationships {
-		r := toCamelCase(relLabel)
-		nodeName := r + "Node"
-
-		var relName string
-		if len(relCfg.Properties) > 0 {
-			relName = r + "Rel"
-		}
-
-		withMatched = append(withMatched, nodeName)
-		if len(relCfg.Properties) > 0 {
-			withMatched = append(withMatched, relName)
-		}
+		withMatched = append(withMatched, getMatched(relLabel, relCfg)...)
 	}
 
 	return withMatched
@@ -351,77 +296,81 @@ func getWithMatched() []string {
 
 func getSourceRels() []string {
 	var sourceRels []string
-	for relLabel, relCfg := range ontology.Relationships {
-		r := toCamelCase(relLabel)
-		nodeName := r + "Node"
-
-		var relName string
-		if len(relCfg.Properties) > 0 {
-			relName = r + "Rel"
-		}
-
-		var sourceRel string
-		if relCfg.OneToOne {
-			sourceRel = fmt.Sprintf("%s: %s.uuid", relCfg.ConceptField, nodeName)
-		} else if len(relCfg.Properties) == 0 {
-			sourceRel = fmt.Sprintf("%s: collect(DISTINCT %s.uuid)", relCfg.ConceptField, nodeName)
-		} else {
-			var relProps []string
-			for _, relProp := range relCfg.Properties {
-				relProps = append(relProps, fmt.Sprintf("%s: %s.%s", relProp, relName, relProp))
-			}
-
-			uuidField := "UUID"
-			if relLabel == "HAS_ROLE" {
-				uuidField = "membershipRoleUUID"
-			}
-
-			sourceRel = fmt.Sprintf("%s: collect(DISTINCT {%s: %s.uuid, %s})",
-				relCfg.ConceptField,
-				uuidField,
-				nodeName,
-				strings.Join(relProps, ", "))
-		}
-
-		sourceRels = append(sourceRels, sourceRel)
+	for relLabel, relCfg := range ontology.GetConfig().Relationships {
+		sourceRels = append(sourceRels, getSourceRel(relLabel, relCfg))
 	}
 
 	for relLabel, relCfg := range relationships {
-		r := toCamelCase(relLabel)
-		nodeName := r + "Node"
-
-		var relName string
-		if len(relCfg.Properties) > 0 {
-			relName = r + "Rel"
-		}
-
-		var sourceRel string
-		if relCfg.OneToOne {
-			sourceRel = fmt.Sprintf("%s: %s.uuid", relCfg.ConceptField, nodeName)
-		} else if len(relCfg.Properties) == 0 {
-			sourceRel = fmt.Sprintf("%s: collect(DISTINCT %s.uuid)", relCfg.ConceptField, nodeName)
-		} else {
-			var relProps []string
-			for _, relProp := range relCfg.Properties {
-				relProps = append(relProps, fmt.Sprintf("%s: %s.%s", relProp, relName, relProp))
-			}
-
-			uuidField := "UUID"
-			if relLabel == "HAS_ROLE" {
-				uuidField = "membershipRoleUUID"
-			}
-
-			sourceRel = fmt.Sprintf("%s: collect(DISTINCT {%s: %s.uuid, %s})",
-				relCfg.ConceptField,
-				uuidField,
-				nodeName,
-				strings.Join(relProps, ", "))
-		}
-
-		sourceRels = append(sourceRels, sourceRel)
+		sourceRels = append(sourceRels, getSourceRel(relLabel, relCfg))
 	}
 
 	return sourceRels
+}
+
+func getOptionalMatch(relLabel string, relCfg ontology.RelationshipConfig) string {
+	r := toCamelCase(relLabel)
+	nodeName := r + "Node"
+
+	var relName string
+	if len(relCfg.Properties) > 0 {
+		relName = r + "Rel"
+	}
+
+	toNodeLabel := "Thing"
+	if relCfg.ToNodeWithLabel != "" {
+		toNodeLabel = relCfg.ToNodeWithLabel
+	}
+
+	return fmt.Sprintf("OPTIONAL MATCH (source)-[%s:%s]->(%s:%s)", relName, relLabel, nodeName, toNodeLabel)
+}
+
+func getMatched(relLabel string, relCfg ontology.RelationshipConfig) []string {
+	r := toCamelCase(relLabel)
+	nodeName := r + "Node"
+
+	var relName string
+	if len(relCfg.Properties) > 0 {
+		relName = r + "Rel"
+	}
+
+	matched := []string{nodeName}
+	if len(relCfg.Properties) > 0 {
+		matched = append(matched, relName)
+	}
+
+	return matched
+}
+
+func getSourceRel(relLabel string, relCfg ontology.RelationshipConfig) string {
+	r := toCamelCase(relLabel)
+	nodeName := r + "Node"
+
+	var relName string
+	if len(relCfg.Properties) > 0 {
+		relName = r + "Rel"
+	}
+
+	if relCfg.OneToOne {
+		return fmt.Sprintf("%s: %s.uuid", relCfg.ConceptField, nodeName)
+	} else if len(relCfg.Properties) == 0 {
+		return fmt.Sprintf("%s: collect(DISTINCT %s.uuid)", relCfg.ConceptField, nodeName)
+	} else {
+		var relProps []string
+		for _, relProp := range relCfg.Properties {
+			relProps = append(relProps, fmt.Sprintf("%s: %s.%s", relProp, relName, relProp))
+		}
+
+		uuidField := "UUID"
+		if relLabel == "HAS_ROLE" {
+			uuidField = "membershipRoleUUID"
+		}
+
+		return fmt.Sprintf("%s: collect(DISTINCT {%s: %s.uuid, %s})",
+			relCfg.ConceptField,
+			uuidField,
+			nodeName,
+			strings.Join(relProps, ", "))
+	}
 }
 
 func toCamelCase(relLabel string) string {
@@ -868,7 +817,7 @@ func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
 //Clear down current concept node
 func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept) []*neoism.CypherQuery {
 	var relOptionalMatches, relNames []string
-	for relLabel := range ontology.Relationships {
+	for relLabel := range ontology.GetConfig().Relationships {
 		r := toCamelCase(relLabel)
 		relName := r + "Rel"
 		nodeName := r + "Node"
@@ -938,7 +887,7 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		queryBatch = append(queryBatch, createEquivalentToQueries(sourceConcept, aggregatedConcept)...)
 
 		for _, rel := range sourceConcept.Relationships {
-			relCfg, ok := ontology.Relationships[rel.Label]
+			relCfg, ok := ontology.GetConfig().Relationships[rel.Label]
 			if !ok {
 				continue
 			}

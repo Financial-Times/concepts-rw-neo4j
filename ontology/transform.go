@@ -131,7 +131,7 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 	_ = json.Unmarshal(oldBytes, &oldMap)
 
 	rels := []Relationship{}
-	for rel, relCfg := range Relationships {
+	for rel, relCfg := range GetConfig().Relationships {
 		if _, ok := oldMap[relCfg.ConceptField]; !ok {
 			continue
 		}
@@ -234,11 +234,11 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 			continue
 		}
 
-		if _, ok := Relationships[rel.Label]; !ok {
+		if _, ok := GetConfig().Relationships[rel.Label]; !ok {
 			continue
 		}
 
-		relCfg := Relationships[rel.Label]
+		relCfg := GetConfig().Relationships[rel.Label]
 		if relCfg.OneToOne {
 			oldMap[relCfg.ConceptField] = rel.UUID
 			continue

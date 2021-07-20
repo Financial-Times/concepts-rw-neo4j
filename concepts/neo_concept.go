@@ -202,7 +202,7 @@ func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 	_ = json.Unmarshal(ncBytes, &ncMap)
 
 	rels := []ontology.Relationship{}
-	for rel, relCfg := range ontology.Relationships {
+	for rel, relCfg := range ontology.GetConfig().Relationships {
 		if _, ok := ncMap[relCfg.ConceptField]; !ok {
 			continue
 		}
