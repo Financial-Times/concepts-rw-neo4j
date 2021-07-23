@@ -1329,12 +1329,11 @@ func processMembershipRoles(v interface{}) interface{} {
 		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
 		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 
-		cleanedRoles := cleanMembershipRoles(c.MembershipRoles)
-		for _, role := range cleanedRoles {
-			processMembershipRoles(role)
+		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
+		for i := range c.MembershipRoles {
+			processMembershipRoles(&c.MembershipRoles[i])
 		}
-		c.MembershipRoles = cleanedRoles
-	case ontology.MembershipRole:
+	case *ontology.MembershipRole:
 		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
 		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 	}
