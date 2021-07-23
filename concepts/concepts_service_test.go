@@ -1,5 +1,3 @@
-// +build integration
-
 package concepts
 
 import (
@@ -2202,6 +2200,63 @@ func TestCreateNodeQueries(t *testing.T) {
 				t.Errorf("Number of Cypher queries differs from expected: got %d, want:%d", len(got), test.expectedQueryCount)
 			}
 		})
+	}
+}
+
+func TestProcessMembershipRoles(t *testing.T) {
+	defer cleanDB(t)
+	oldAggregatedConcept := getAggregatedConcept(t, "membership.json")
+	aggregateConcept := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
+	aggregateConcept = processMembershipRoles(aggregateConcept).(ontology.NewAggregatedConcept)
+
+	expected := membWithProcessedMembRoles()
+	if !cmp.Equal(expected, aggregateConcept) {
+		t.Errorf("Test %s failed: Concepts were not equal:\n%s", "TestProcessMembershipRoles", cmp.Diff(expected, aggregateConcept))
+	}
+}
+
+func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
+	return ontology.NewAggregatedConcept{
+		Properties:       map[string]interface{}{},
+		PrefUUID:         "cbadd9a7-5da9-407a-a5ec-e379460991f2",
+		PrefLabel:        "Membership Pref Label",
+		Type:             "Membership",
+		OrganisationUUID: "7f40d291-b3cb-47c4-9bce-18413e9350cf",
+		PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
+		InceptionDate:    "2016-01-01",
+		TerminationDate:  "2017-02-02",
+		Salutation:       "Mr",
+		BirthYear:        2018,
+		SourceRepresentations: []ontology.NewConcept{
+			{
+				Relationships:    []ontology.Relationship{},
+				UUID:             "cbadd9a7-5da9-407a-a5ec-e379460991f2",
+				PrefLabel:        "Membership Pref Label",
+				Type:             "Membership",
+				Authority:        "Smartlogic",
+				AuthorityValue:   "746464",
+				OrganisationUUID: "7f40d291-b3cb-47c4-9bce-18413e9350cf",
+				PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
+				InceptionDate:    "2016-01-01",
+				TerminationDate:  "2017-02-02",
+				Salutation:       "Mr",
+				BirthYear:        2018,
+				MembershipRoles: []ontology.MembershipRole{
+					{
+						RoleUUID:             "f807193d-337b-412f-b32c-afa14b385819",
+						InceptionDate:        "2016-01-01",
+						TerminationDate:      "2017-02-02",
+						InceptionDateEpoch:   1451606400,
+						TerminationDateEpoch: 1485993600,
+					},
+					{
+						RoleUUID:           "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+						InceptionDate:      "2011-06-27",
+						InceptionDateEpoch: 1309132800,
+					},
+				},
+			},
+		},
 	}
 }
 
