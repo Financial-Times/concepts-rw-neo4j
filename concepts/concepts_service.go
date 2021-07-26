@@ -411,7 +411,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		return ConceptChanges{}, err
 	}
 
-	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(ontology.NewAggregatedConcept)
+	processMembershipRoles(&aggregatedConceptToWrite)
 
 	var queryBatch []*neoism.CypherQuery
 	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
@@ -1317,27 +1317,14 @@ func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }
 
-func processMembershipRoles(v interface{}) interface{} {
-	switch c := v.(type) {
-	case ontology.NewAggregatedConcept:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
-		for _, s := range c.SourceRepresentations {
-			processMembershipRoles(s)
+func processMembershipRoles(c *ontology.NewAggregatedConcept) {
+	for _, s := range c.SourceRepresentations {
+		s.MembershipRoles = cleanMembershipRoles(s.MembershipRoles)
+		for i := range s.MembershipRoles {
+			s.MembershipRoles[i].InceptionDateEpoch = getEpoch(s.MembershipRoles[i].InceptionDate)
+			s.MembershipRoles[i].TerminationDateEpoch = getEpoch(s.MembershipRoles[i].TerminationDate)
 		}
-	case ontology.NewConcept:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
-
-		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
-		for i := range c.MembershipRoles {
-			processMembershipRoles(&c.MembershipRoles[i])
-		}
-	case *ontology.MembershipRole:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 	}
-	return v
 }
 
 func getEpoch(t string) int64 {

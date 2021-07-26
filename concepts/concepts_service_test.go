@@ -2209,7 +2209,7 @@ func TestProcessMembershipRoles(t *testing.T) {
 	defer cleanDB(t)
 	oldAggregatedConcept := getAggregatedConcept(t, "membership.json")
 	aggregateConcept := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
-	aggregateConcept = processMembershipRoles(aggregateConcept).(ontology.NewAggregatedConcept)
+	processMembershipRoles(&aggregateConcept)
 
 	expected := membWithProcessedMembRoles()
 	if !cmp.Equal(expected, aggregateConcept) {
