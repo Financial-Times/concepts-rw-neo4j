@@ -11,7 +11,7 @@ import (
 
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	logger "github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/Financial-Times/neo-utils-go/v3/neoutils"
 	"github.com/gorilla/mux"
 	cli "github.com/jawher/mow.cli"
 )
@@ -75,7 +75,7 @@ func main() {
 	app.Action = func() {
 		conf := neoutils.DefaultConnectionConfig()
 		conf.BatchSize = *batchSize
-		db, err := neoutils.Connect(*neoURL, conf)
+		db, err := neoutils.Connect(*neoURL, conf, nil)
 
 		if err != nil {
 			logger.Errorf("Could not connect to neo4j, error=[%s]\n", err)

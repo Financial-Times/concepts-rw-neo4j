@@ -11,8 +11,7 @@ import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
-	"github.com/jmcvetta/neoism"
+	"github.com/Financial-Times/neo-utils-go/v3/neoutils"
 	"github.com/mitchellh/hashstructure"
 )
 
@@ -154,7 +153,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
 	var results []neoAggregatedConcept
-	query := &neoism.CypherQuery{
+	query := &neoutils.CypherQuery{
 		Statement: getReadStatement(),
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -162,7 +161,7 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 		Result: &results,
 	}
 
-	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
+	err := s.conn.CypherBatch([]*neoutils.CypherQuery{query})
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Error executing neo4j read query")
 		return ontology.NewAggregatedConcept{}, false, err
@@ -185,7 +184,7 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 
 func getReadStatement() string {
 	statementTemplate := `
-		MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+		MATCH (canonical:Thing {prefUUID:$uuid})<-[:EQUIVALENT_TO]-(source:Thing)
 		OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 		%s
 		WITH
@@ -413,8 +412,8 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(ontology.NewAggregatedConcept)
 
-	var queryBatch []*neoism.CypherQuery
-	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
+	var queryBatch []*neoutils.CypherQuery
+	var prefUUIDsToBeDeletedQueryBatch []*neoutils.CypherQuery
 	var updatedUUIDList []string
 	updateRecord := ConceptChanges{}
 	if exists {
@@ -534,9 +533,9 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	// check that the issuer is not already related to a different org
 	if aggregatedConceptToWrite.IssuedBy != "" {
 		var fiRes []map[string]string
-		issuerQuery := &neoism.CypherQuery{
+		issuerQuery := &neoutils.CypherQuery{
 			Statement: `
-					MATCH (issuer:Thing {uuid: {issuerUUID}})<-[:ISSUED_BY]-(fi)
+					MATCH (issuer:Thing {uuid: $issuerUUID})<-[:ISSUED_BY]-(fi)
 					RETURN fi.uuid AS fiUUID
 				`,
 			Parameters: map[string]interface{}{
@@ -544,7 +543,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			},
 			Result: &fiRes,
 		}
-		if err := s.conn.CypherBatch([]*neoism.CypherQuery{issuerQuery}); err != nil {
+		if err := s.conn.CypherBatch([]*neoutils.CypherQuery{issuerQuery}); err != nil {
 			logger.WithError(err).
 				WithTransactionID(transID).
 				WithUUID(aggregatedConceptToWrite.PrefUUID).
@@ -573,10 +572,10 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					WithUUID(aggregatedConceptToWrite.PrefUUID).
 					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
 
-				deleteIssuerRelations := &neoism.CypherQuery{
+				deleteIssuerRelations := &neoutils.CypherQuery{
 					Statement: `
-					MATCH (issuer:Thing {uuid: {issuerUUID}})
-					MATCH (fi:Thing {uuid: {fiUUID}})
+					MATCH (issuer:Thing {uuid: $issuerUUID})
+					MATCH (fi:Thing {uuid: $fiUUID})
 					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(fi)
 					DELETE issuerRel
 				`,
@@ -648,14 +647,14 @@ func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, second
 }
 
 //Handle new source nodes that have been added to current concordance
-func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]*neoism.CypherQuery, error) {
+func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]*neoutils.CypherQuery, error) {
 	var result []equivalenceResult
-	var deleteLonePrefUUIDQueries []*neoism.CypherQuery
+	var deleteLonePrefUUIDQueries []*neoutils.CypherQuery
 
 	for updatedSourceID := range conceptData {
-		equivQuery := &neoism.CypherQuery{
+		equivQuery := &neoutils.CypherQuery{
 			Statement: `
-					MATCH (t:Thing {uuid:{id}})
+					MATCH (t:Thing {uuid:$id})
 					OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c)
 					OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing)
 					RETURN t.uuid as sourceUuid, labels(t) as types, c.prefUUID as prefUuid, t.authority as authority, COUNT(DISTINCT eq) as count`,
@@ -664,7 +663,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 			},
 			Result: &result,
 		}
-		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
+		err := s.conn.CypherBatch([]*neoutils.CypherQuery{equivQuery})
 		if err != nil {
 			logger.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error("Requests for source nodes canonical information resulted in error")
 			return deleteLonePrefUUIDQueries, err
@@ -803,10 +802,10 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 }
 
 //Clean up canonical nodes of a concept that has become a source of current concept
-func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
+func deleteLonePrefUUID(prefUUID string) *neoutils.CypherQuery {
 	logger.WithField("UUID", prefUUID).Debug("Deleting orphaned prefUUID node")
-	equivQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {prefUUID:{id}}) DETACH DELETE t`,
+	equivQuery := &neoutils.CypherQuery{
+		Statement: `MATCH (t:Thing {prefUUID:$id}) DETACH DELETE t`,
 		Parameters: map[string]interface{}{
 			"id": prefUUID,
 		},
@@ -815,7 +814,7 @@ func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
 }
 
 //Clear down current concept node
-func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept) []*neoism.CypherQuery {
+func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept) []*neoutils.CypherQuery {
 	var relOptionalMatches, relNames []string
 	for relLabel := range ontology.GetConfig().Relationships {
 		r := toCamelCase(relLabel)
@@ -838,22 +837,22 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 	}
 
 	acUUID := ac.PrefUUID
-	var queryBatch []*neoism.CypherQuery
+	var queryBatch []*neoutils.CypherQuery
 	for _, sr := range ac.SourceRepresentations {
 		//nolint:gosec
 		deleteStatement := fmt.Sprintf(`
-			MATCH (t:Thing {uuid:{id}})
+			MATCH (t:Thing {uuid:$id})
 			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
 			OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
 			%s
 			REMOVE t:%s
-			SET t={uuid:{id}}
+			SET t={uuid:$id}
 			DELETE eq, issuerRel, %s`,
 			strings.Join(relOptionalMatches, "\n"),
 			getLabelsToRemove(),
 			strings.Join(relNames, ", "))
 
-		deletePreviousSourceLabelsAndPropertiesQuery := &neoism.CypherQuery{
+		deletePreviousSourceLabelsAndPropertiesQuery := &neoutils.CypherQuery{
 			Statement: deleteStatement,
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
@@ -863,11 +862,11 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 	}
 
 	//cleanUP all the previous Equivalent to relationships
-	deletePreviousCanonicalLabelsAndPropertiesQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MATCH (t:Thing {prefUUID:{acUUID}})
+	deletePreviousCanonicalLabelsAndPropertiesQuery := &neoutils.CypherQuery{
+		Statement: fmt.Sprintf(`MATCH (t:Thing {prefUUID:$acUUID})
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
 			REMOVE t:%s
-			SET t={prefUUID:{acUUID}}
+			SET t={prefUUID:$acUUID}
 			DELETE rel`, getLabelsToRemove()),
 		Parameters: map[string]interface{}{
 			"acUUID": acUUID,
@@ -879,7 +878,7 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 }
 
 //Curate all queries to populate concept nodes
-func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
+func populateConceptQueries(queryBatch []*neoutils.CypherQuery, aggregatedConcept ontology.NewAggregatedConcept) []*neoutils.CypherQuery {
 	queryBatch = append(queryBatch, createCanonicalNodeQueries(aggregatedConcept, aggregatedConcept.PrefUUID)...)
 
 	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
@@ -910,10 +909,10 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 	return queryBatch
 }
 
-func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
-	var queryBatch []*neoism.CypherQuery
-	equivQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConcept ontology.NewAggregatedConcept) []*neoutils.CypherQuery {
+	var queryBatch []*neoutils.CypherQuery
+	equivQuery := &neoutils.CypherQuery{
+		Statement: `MATCH (t:Thing {uuid:$uuid}), (c:Thing {prefUUID:$prefUUID})
 						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
 		Parameters: map[string]interface{}{
 			"uuid":     sourceConcept.UUID,
@@ -925,14 +924,14 @@ func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConc
 	return queryBatch
 }
 
-func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUID string) []*neoism.CypherQuery {
-	var queryBatch []*neoism.CypherQuery
-	var createConceptQuery *neoism.CypherQuery
+func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUID string) []*neoutils.CypherQuery {
+	var queryBatch []*neoutils.CypherQuery
+	var createConceptQuery *neoutils.CypherQuery
 
 	allProps := setCanonicalProps(canonical, prefUUID)
-	createConceptQuery = &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
+	createConceptQuery = &neoutils.CypherQuery{
+		Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: $prefUUID})
+								set n=$allprops
 								set n :%s`, getAllLabels(canonical.Type)),
 		Parameters: map[string]interface{}{
 			"prefUUID": prefUUID,
@@ -944,14 +943,14 @@ func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUI
 	return queryBatch
 }
 
-func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.CypherQuery {
-	var queryBatch []*neoism.CypherQuery
-	var createConceptQuery *neoism.CypherQuery
+func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoutils.CypherQuery {
+	var queryBatch []*neoutils.CypherQuery
+	var createConceptQuery *neoutils.CypherQuery
 
 	allProps := setProps(concept, uuid)
-	createConceptQuery = &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
-											set n={allprops}
+	createConceptQuery = &neoutils.CypherQuery{
+		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: $uuid})
+											set n=$allprops
 											set n :%s`, getAllLabels(concept.Type)),
 		Parameters: map[string]interface{}{
 			"uuid":     uuid,
@@ -984,11 +983,11 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 
 	for _, naics := range concept.NAICSIndustryClassifications {
 		if naics.UUID != "" {
-			writeNAICS := &neoism.CypherQuery{
-				Statement: `MERGE (org:Thing {uuid: {uuid}})
-								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
-								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC)`,
-				Parameters: neoism.Props{
+			writeNAICS := &neoutils.CypherQuery{
+				Statement: `MERGE (org:Thing {uuid: $uuid})
+								MERGE (naicsIC:Thing {uuid: $naicsUUID})
+								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:$rank}]->(naicsIC)`,
+				Parameters: map[string]interface{}{
 					"naicsUUID": naics.UUID,
 					"rank":      naics.Rank,
 					"uuid":      concept.UUID,
@@ -999,7 +998,7 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 	}
 
 	for _, membershipRole := range concept.MembershipRoles {
-		params := neoism.Props{
+		params := map[string]interface{}{
 			"inceptionDate":        nil,
 			"inceptionDateEpoch":   nil,
 			"terminationDate":      nil,
@@ -1019,17 +1018,17 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		if membershipRole.TerminationDateEpoch > 0 {
 			params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
 		}
-		writeParent := &neoism.CypherQuery{
-			Statement: `MERGE (node:Thing{uuid: {nodeUUID}})
-							MERGE (role:Thing{uuid: {roleUUID}})
+		writeParent := &neoutils.CypherQuery{
+			Statement: `MERGE (node:Thing{uuid: $nodeUUID})
+							MERGE (role:Thing{uuid: $roleUUID})
 								ON CREATE SET
-									role.uuid = {roleUUID}
+									role.uuid = $roleUUID
 							MERGE (node)-[rel:HAS_ROLE]->(role)
 								ON CREATE SET
-									rel.inceptionDate = {inceptionDate},
-									rel.inceptionDateEpoch = {inceptionDateEpoch},
-									rel.terminationDate = {terminationDate},
-									rel.terminationDateEpoch = {terminationDateEpoch}
+									rel.inceptionDate = $inceptionDate,
+									rel.inceptionDateEpoch = $inceptionDateEpoch,
+									rel.terminationDate = $terminationDate,
+									rel.terminationDateEpoch = $terminationDateEpoch
 							`,
 			Parameters: params,
 		}
@@ -1041,16 +1040,16 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 }
 
 // createRelQueries creates relationships Cypher queries for concepts
-func createRelQueries(conceptID string, relationshipIDs []string, relationshipType string, shouldCreate bool) []*neoism.CypherQuery {
+func createRelQueries(conceptID string, relationshipIDs []string, relationshipType string, shouldCreate bool) []*neoutils.CypherQuery {
 	const createMissing = `
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing:Thing {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
 		MERGE (thing)-[:%s]->(other)
 	`
 
 	const matchExisting = `
-		MATCH (concept:Concept {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
+		MATCH (concept:Concept {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
 		MERGE (concept)-[:%s]->(other)	
 	`
 
@@ -1059,9 +1058,9 @@ func createRelQueries(conceptID string, relationshipIDs []string, relationshipTy
 		cypherStatement = createMissing
 	}
 
-	var queryBatch []*neoism.CypherQuery
+	var queryBatch []*neoutils.CypherQuery
 	for _, id := range relationshipIDs {
-		addRelationshipQuery := &neoism.CypherQuery{
+		addRelationshipQuery := &neoutils.CypherQuery{
 			Statement: fmt.Sprintf(cypherStatement, relationshipType),
 			Parameters: map[string]interface{}{
 				"uuid": conceptID,
@@ -1074,15 +1073,15 @@ func createRelQueries(conceptID string, relationshipIDs []string, relationshipTy
 	return queryBatch
 }
 
-func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*neoism.CypherQuery {
-	var queryBatch []*neoism.CypherQuery
-	setRelProps := &neoism.CypherQuery{
+func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*neoutils.CypherQuery {
+	var queryBatch []*neoutils.CypherQuery
+	setRelProps := &neoutils.CypherQuery{
 		Statement: fmt.Sprintf(`
-			MATCH (t:Thing {uuid: {uuid}})
-			MATCH (other:Thing {uuid: {otherUUID}})
+			MATCH (t:Thing {uuid: $uuid})
+			MATCH (other:Thing {uuid: $otherUUID})
 			MATCH (t)-[rel:%s]->(other)
-			set rel={relProps}`, rel.Label),
-		Parameters: neoism.Props{
+			set rel=$relProps`, rel.Label),
+		Parameters: map[string]interface{}{
 			"uuid":      conceptID,
 			"otherUUID": rel.UUID,
 			"relProps":  rel.Properties,
@@ -1094,15 +1093,15 @@ func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*neoism.C
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
-func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *neoism.CypherQuery {
+func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *neoutils.CypherQuery {
 	allProps := setCanonicalProps(canonical, prefUUID)
 	logger.WithField("UUID", prefUUID).Debug("Creating prefUUID node for unconcorded concept")
-	createCanonicalNodeQuery := &neoism.CypherQuery{
+	createCanonicalNodeQuery := &neoutils.CypherQuery{
 		Statement: fmt.Sprintf(`
-					MATCH (t:Thing{uuid:{prefUUID}})
-					MERGE (n:Thing {prefUUID: {prefUUID}})
+					MATCH (t:Thing{uuid:$prefUUID})
+					MERGE (n:Thing {prefUUID: $prefUUID})
 					MERGE (n)<-[:EQUIVALENT_TO]-(t)
-					set n={allprops}
+					set n=$allprops
 					set n :%s`, getAllLabels(canonical.Type)),
 		Parameters: map[string]interface{}{
 			"prefUUID": prefUUID,
