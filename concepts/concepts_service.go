@@ -25,6 +25,65 @@ const (
 
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
+var relationships = map[string]ontology.RelationshipConfig{
+	"HAS_MEMBER": {
+		ConceptField: "personUUID",
+		OneToOne:     true,
+	},
+	"HAS_ORGANISATION": {
+		ConceptField: "organisationUUID",
+		OneToOne:     true,
+	},
+	"SUB_ORGANISATION_OF": {
+		ConceptField: "parentOrganisation",
+		OneToOne:     true,
+	},
+	"COUNTRY_OF_OPERATIONS": {
+		ConceptField: "countryOfOperationsUUID",
+		OneToOne:     true,
+	},
+	"COUNTRY_OF_INCORPORATION": {
+		ConceptField: "countryOfIncorporationUUID",
+		OneToOne:     true,
+	},
+	"COUNTRY_OF_RISK": {
+		ConceptField: "countryOfRiskUUID",
+		OneToOne:     true,
+	},
+	"HAS_PARENT": {
+		ConceptField: "parentUUIDs",
+	},
+	"IS_RELATED_TO": {
+		ConceptField: "relatedUUIDs",
+	},
+	"SUPERSEDED_BY": {
+		ConceptField: "supersededByUUIDs",
+	},
+	"HAS_BROADER": {
+		ConceptField: "broaderUUIDs",
+	},
+	"IMPLIED_BY": {
+		ConceptField: "impliedByUUIDs",
+	},
+	"HAS_FOCUS": {
+		ConceptField: "hasFocusUUIDs",
+	},
+	"HAS_ROLE": {
+		ConceptField: "membershipRoles",
+		Properties: []string{
+			"inceptionDate",
+			"terminationDate",
+			"inceptionDateEpoch",
+			"terminationDateEpoch",
+		},
+	},
+	"HAS_INDUSTRY_CLASSIFICATION": {
+		ConceptField:    "naicsIndustryClassifications",
+		Properties:      []string{"rank"},
+		ToNodeWithLabel: "NAICSIndustryClassification",
+	},
+}
+
 // ConceptService - CypherDriver - CypherDriver
 type ConceptService struct {
 	conn neoutils.NeoConnection
@@ -84,7 +143,6 @@ type equivalenceResult struct {
 	Authority   string   `json:"authority"`
 }
 
-//Read - read service
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
 	aggregatedConcept := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
@@ -95,132 +153,8 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
 	var results []neoAggregatedConcept
-
 	query := &neoism.CypherQuery{
-		Statement: `
-			MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
-			OPTIONAL MATCH (source)-[:HAS_BROADER]->(broader:Thing)
-			OPTIONAL MATCH (source)-[:HAS_MEMBER]->(person:Thing)
-			OPTIONAL MATCH (source)-[:HAS_ORGANISATION]->(org:Thing)
-			OPTIONAL MATCH (source)-[:HAS_PARENT]->(parent:Thing)
-			OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(related:Thing)
-			OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededBy:Thing)
-			OPTIONAL MATCH (source)-[:IMPLIED_BY]->(impliedBy:Thing)
-			OPTIONAL MATCH (source)-[:HAS_FOCUS]->(hasFocus:Thing)
-			OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
-			OPTIONAL MATCH (source)-[roleRel:HAS_ROLE]->(role:Thing)
-			OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(parentOrg:Thing)
-			OPTIONAL MATCH (source)-[:COUNTRY_OF_OPERATIONS]->(coo:Thing)
-			OPTIONAL MATCH (source)-[:COUNTRY_OF_RISK]->(cor:Thing)
-			OPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(coi:Thing)
-			OPTIONAL MATCH (source)-[hasICRel:HAS_INDUSTRY_CLASSIFICATION]->(naics:NAICSIndustryClassification) 
-			WITH
-				collect(DISTINCT broader.uuid) as broaderUUIDs,
-				canonical,
-				issuer,
-				org,
-				parent,
-				person,
-				collect(DISTINCT related.uuid) as relatedUUIDs,
-				collect(DISTINCT supersededBy.uuid) as supersededByUUIDs,
-				collect(DISTINCT impliedBy.uuid) as impliedByUUIDs,
-				collect(DISTINCT hasFocus.uuid) as hasFocusUUIDs,
-				role,
-				roleRel,
-				parentOrg,
-				coo,
-				cor,
-				coi,
-				collect(DISTINCT {UUID: naics.uuid, Rank: hasICRel.rank}) as naicsIndustryClassifications,
-				source
-				ORDER BY
-					source.uuid,
-					role.uuid
-			WITH
-				canonical,
-				issuer,
-				org,
-				person,
-				{
-					authority: source.authority,
-					authorityValue: source.authorityValue,
-					broaderUUIDs: broaderUUIDs,
-					supersededByUUIDs: supersededByUUIDs,
-					figiCode: source.figiCode,
-					issuedBy: issuer.uuid,
-					lastModifiedEpoch: source.lastModifiedEpoch,
-					membershipRoles: collect({
-						membershipRoleUUID: role.uuid,
-						inceptionDate: roleRel.inceptionDate,
-						terminationDate: roleRel.terminationDate,
-						inceptionDateEpoch: roleRel.inceptionDateEpoch,
-						terminationDateEpoch: roleRel.terminationDateEpoch
-					}),
-					organisationUUID: org.uuid,
-					parentUUIDs: collect(parent.uuid),
-					personUUID: person.uuid,
-					parentOrganisation: parentOrg.uuid,
-					prefLabel: source.prefLabel,
-					relatedUUIDs: relatedUUIDs,
-					impliedByUUIDs: impliedByUUIDs,
-					hasFocusUUIDs: hasFocusUUIDs,
-					types: labels(source),
-					uuid: source.uuid,
-					isDeprecated: source.isDeprecated,
-					countryOfIncorporationUUID: coi.uuid,
-					countryOfOperationsUUID: coo.uuid,
-					countryOfRiskUUID: cor.uuid,
-					industryIdentifier: source.industryIdentifier,
-					naicsIndustryClassifications: naicsIndustryClassifications
-				} as sources,
-				collect({
-					inceptionDate: roleRel.inceptionDate,
-					inceptionDateEpoch: roleRel.inceptionDateEpoch,
-					membershipRoleUUID: role.uuid,
-					terminationDate: roleRel.terminationDate,
-					terminationDateEpoch: roleRel.terminationDateEpoch
-				}) as membershipRoles
-			RETURN
-				canonical.aggregateHash as aggregateHash,
-				canonical.aliases as aliases,
-				canonical.descriptionXML as descriptionXML,
-				canonical.emailAddress as emailAddress,
-				canonical.facebookPage as facebookPage,
-				canonical.figiCode as figiCode,
-				canonical.imageUrl as imageUrl,
-				canonical.inceptionDate as inceptionDate,
-				canonical.inceptionDateEpoch as inceptionDateEpoch,
-				canonical.prefLabel as prefLabel,
-				canonical.prefUUID as prefUUID,
-				canonical.scopeNote as scopeNote,
-				canonical.shortLabel as shortLabel,
-				canonical.strapline as strapline,
-				canonical.terminationDate as terminationDate,
-				canonical.terminationDateEpoch as terminationDateEpoch,
-				canonical.twitterHandle as twitterHandle,
-				collect(sources) as sourceRepresentations,
-				issuer.uuid as issuedBy,
-				labels(canonical) as types,
-				membershipRoles,
-				org.uuid as organisationUUID,
-				person.uuid as personUUID,
-				canonical.properName as properName,
-				canonical.shortName as shortName,
-				canonical.tradeNames as tradeNames,
-				canonical.formerNames as formerNames,
-				canonical.countryCode as countryCode,
-				canonical.countryOfIncorporation as countryOfIncorporation,
-				canonical.countryOfOperations as countryOfOperations,
-				canonical.countryOfRisk as countryOfRisk,
-				canonical.postalCode as postalCode,
-				canonical.yearFounded as yearFounded,
-				canonical.leiCode as leiCode,
-				canonical.isDeprecated as isDeprecated,
-				canonical.salutation as salutation,
-				canonical.birthYear as birthYear,
-				canonical.iso31661 as iso31661,
-				canonical.industryIdentifier as industryIdentifier
-			`,
+		Statement: getReadStatement(),
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -275,7 +209,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		return ConceptChanges{}, err
 	}
 
-	aggregatedConceptToWrite = processMembershipRoles(aggregatedConceptToWrite).(ontology.NewAggregatedConcept)
+	processMembershipRoles(&aggregatedConceptToWrite)
 
 	var queryBatch []*neoism.CypherQuery
 	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
@@ -681,31 +615,10 @@ func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
 //Clear down current concept node
 func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept) []*neoism.CypherQuery {
 	acUUID := ac.PrefUUID
-
 	var queryBatch []*neoism.CypherQuery
-
 	for _, sr := range ac.SourceRepresentations {
 		deletePreviousSourceLabelsAndPropertiesQuery := &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`MATCH (t:Thing {uuid:{id}})
-			OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
-			OPTIONAL MATCH (t)-[x:HAS_PARENT]->(p)
-			OPTIONAL MATCH (t)-[relatedTo:IS_RELATED_TO]->(relNode)
-			OPTIONAL MATCH (t)-[supersededBy:SUPERSEDED_BY]->(supersedesNode)
-			OPTIONAL MATCH (t)-[broader:HAS_BROADER]->(brNode)
-			OPTIONAL MATCH (t)-[impliedBy:IMPLIED_BY]->(impliesNode)
-			OPTIONAL MATCH (t)-[hasFocus:HAS_FOCUS]->(hasFocusNode)
-			OPTIONAL MATCH (t)-[ho:HAS_ORGANISATION]->(org)
-			OPTIONAL MATCH (t)-[hm:HAS_MEMBER]->(memb)
-			OPTIONAL MATCH (t)-[hr:HAS_ROLE]->(mr)
-			OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
-			OPTIONAL MATCH (t)-[parentOrgRel:SUB_ORGANISATION_OF]->(parentOrg)
-			OPTIONAL MATCH (t)-[cooRel:COUNTRY_OF_OPERATIONS]->(coo)
-			OPTIONAL MATCH (t)-[coiRel:COUNTRY_OF_INCORPORATION]->(coi)
-			OPTIONAL MATCH (t)-[corRel:COUNTRY_OF_RISK]->(cor)
-			OPTIONAL MATCH (t)-[icRel:HAS_INDUSTRY_CLASSIFICATION]->(ic)
-			REMOVE t:%s
-			SET t={uuid:{id}}
-			DELETE x, eq, relatedTo, broader, impliedBy, hasFocus, ho, hm, hr, issuerRel, parentOrgRel, supersededBy, cooRel, coiRel, corRel, icRel`, getLabelsToRemove()),
+			Statement: getDeleteStatement(),
 			Parameters: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -733,40 +646,46 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
 	queryBatch = append(queryBatch, createCanonicalNodeQueries(aggregatedConcept, aggregatedConcept.PrefUUID)...)
 
-	// Repopulate
 	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
 		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, sourceConcept.UUID)...)
+		queryBatch = append(queryBatch, createEquivalentToQueries(sourceConcept, aggregatedConcept)...)
 
-		equivQuery := &neoism.CypherQuery{
-			Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
-						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
-			Parameters: map[string]interface{}{
-				"uuid":     sourceConcept.UUID,
-				"prefUUID": aggregatedConcept.PrefUUID,
-			},
-		}
-		queryBatch = append(queryBatch, equivQuery)
+		for _, rel := range sourceConcept.Relationships {
+			relCfg, ok := ontology.GetConfig().Relationships[rel.Label]
+			if !ok {
+				continue
+			}
 
-		if len(sourceConcept.RelatedUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", queryBatch)
-		}
+			relIDs := filterSlice([]string{rel.UUID})
+			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, relIDs, rel.Label, relCfg.NeoCreate)...)
 
-		if len(sourceConcept.BroaderUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", queryBatch)
+			if len(relCfg.Properties) > 0 {
+				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel)...)
+			}
 		}
 
-		if len(sourceConcept.SupersededByUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", queryBatch)
-		}
-
-		if len(sourceConcept.ImpliedByUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", queryBatch)
-		}
-
-		if len(sourceConcept.HasFocusUUIDs) > 0 {
-			queryBatch = addRelationship(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", queryBatch)
-		}
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", false)...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", false)...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", false)...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", false)...)
+		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", false)...)
 	}
+
+	return queryBatch
+}
+
+func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
+	var queryBatch []*neoism.CypherQuery
+	equivQuery := &neoism.CypherQuery{
+		Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
+		Parameters: map[string]interface{}{
+			"uuid":     sourceConcept.UUID,
+			"prefUUID": aggregatedConcept.PrefUUID,
+		},
+	}
+
+	queryBatch = append(queryBatch, equivQuery)
 	return queryBatch
 }
 
@@ -804,152 +723,68 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		},
 	}
 
-	for _, parentUUID := range concept.ParentUUIDs {
-		writeParent := &neoism.CypherQuery{
-			Statement: `MERGE (o:Thing {uuid: {uuid}})
-						MERGE (parent:Thing {uuid: {parentUUID}})
-						MERGE (o)-[:HAS_PARENT]->(parent)	`,
-			Parameters: neoism.Props{
-				"parentUUID": parentUUID,
-				"uuid":       concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeParent)
-	}
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, concept.ParentUUIDs, "HAS_PARENT", true)...)
 
-	if concept.OrganisationUUID != "" {
-		writeOrganisation := &neoism.CypherQuery{
-			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-						MERGE (org:Thing {uuid: {orgUUID}})
-						MERGE (membership)-[:HAS_ORGANISATION]->(org)`,
-			Parameters: neoism.Props{
-				"orgUUID": concept.OrganisationUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeOrganisation)
-	}
+	relIDs := filterSlice([]string{concept.OrganisationUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_ORGANISATION", true)...)
 
-	if concept.PersonUUID != "" {
-		writePerson := &neoism.CypherQuery{
-			Statement: `MERGE (membership:Thing {uuid: {uuid}})
-						MERGE (person:Thing {uuid: {personUUID}})
-						MERGE (membership)-[:HAS_MEMBER]->(person)`,
-			Parameters: neoism.Props{
-				"personUUID": concept.PersonUUID,
-				"uuid":       concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writePerson)
-	}
+	relIDs = filterSlice([]string{concept.PersonUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_MEMBER", true)...)
 
-	if uuid != "" && concept.IssuedBy != "" {
-		writeFinIns := &neoism.CypherQuery{
-			Statement: `MERGE (fi:Thing {uuid: {fiUUID}})
-						MERGE (org:Thing {uuid: {orgUUID}})
-						MERGE (fi)-[:ISSUED_BY]->(org)
-						`,
-			Parameters: neoism.Props{
-				"fiUUID":  concept.UUID,
-				"fiCode":  concept.FigiCode,
-				"orgUUID": concept.IssuedBy,
-			},
-		}
-		queryBatch = append(queryBatch, writeFinIns)
-	}
+	relIDs = filterSlice([]string{concept.IssuedBy})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
 
-	if uuid != "" && concept.ParentOrganisation != "" {
-		writeParentOrganisation := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (parentOrg:Thing {uuid: {orgUUID}})
-							MERGE (org)-[:SUB_ORGANISATION_OF]->(parentOrg)`,
-			Parameters: neoism.Props{
-				"orgUUID": concept.ParentOrganisation,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeParentOrganisation)
-	}
+	relIDs = filterSlice([]string{concept.ParentOrganisation})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "SUB_ORGANISATION_OF", true)...)
 
-	if uuid != "" && concept.CountryOfRiskUUID != "" {
-		writeCountryOfRisk := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (org)-[:COUNTRY_OF_RISK]->(location)`,
-			Parameters: neoism.Props{
-				"locUUID": concept.CountryOfRiskUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeCountryOfRisk)
-	}
-	if uuid != "" && concept.CountryOfIncorporationUUID != "" {
-		writeCountryOfIncorporation := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (org)-[:COUNTRY_OF_INCORPORATION]->(location)`,
-			Parameters: neoism.Props{
-				"locUUID": concept.CountryOfIncorporationUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeCountryOfIncorporation)
-	}
-	if uuid != "" && concept.CountryOfOperationsUUID != "" {
-		writeCountryOfOperations := &neoism.CypherQuery{
-			Statement: `MERGE (org:Thing {uuid: {uuid}})
-							MERGE (location:Thing {uuid: {locUUID}})
-							MERGE (org)-[:COUNTRY_OF_OPERATIONS]->(location)`,
-			Parameters: neoism.Props{
-				"locUUID": concept.CountryOfOperationsUUID,
-				"uuid":    concept.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, writeCountryOfOperations)
-	}
+	relIDs = filterSlice([]string{concept.CountryOfRiskUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_RISK", true)...)
 
-	if uuid != "" {
-		for _, naics := range concept.NAICSIndustryClassifications {
-			if naics.UUID != "" {
-				writeNAICS := &neoism.CypherQuery{
-					Statement: `MERGE (org:Thing {uuid: {uuid}})
+	relIDs = filterSlice([]string{concept.CountryOfIncorporationUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_INCORPORATION", true)...)
+
+	relIDs = filterSlice([]string{concept.CountryOfOperationsUUID})
+	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_OPERATIONS", true)...)
+
+	for _, naics := range concept.NAICSIndustryClassifications {
+		if naics.UUID != "" {
+			writeNAICS := &neoism.CypherQuery{
+				Statement: `MERGE (org:Thing {uuid: {uuid}})
 								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
 								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC)`,
-					Parameters: neoism.Props{
-						"naicsUUID": naics.UUID,
-						"rank":      naics.Rank,
-						"uuid":      concept.UUID,
-					},
-				}
-				queryBatch = append(queryBatch, writeNAICS)
+				Parameters: neoism.Props{
+					"naicsUUID": naics.UUID,
+					"rank":      naics.Rank,
+					"uuid":      concept.UUID,
+				},
 			}
+			queryBatch = append(queryBatch, writeNAICS)
 		}
 	}
 
-	if uuid != "" && len(concept.MembershipRoles) > 0 {
-		for _, membershipRole := range concept.MembershipRoles {
-			params := neoism.Props{
-				"inceptionDate":        nil,
-				"inceptionDateEpoch":   nil,
-				"terminationDate":      nil,
-				"terminationDateEpoch": nil,
-				"roleUUID":             membershipRole.RoleUUID,
-				"nodeUUID":             concept.UUID,
-			}
-			if membershipRole.InceptionDate != "" {
-				params["inceptionDate"] = membershipRole.InceptionDate
-			}
-			if membershipRole.InceptionDateEpoch > 0 {
-				params["inceptionDateEpoch"] = membershipRole.InceptionDateEpoch
-			}
-			if membershipRole.TerminationDate != "" {
-				params["terminationDate"] = membershipRole.TerminationDate
-			}
-			if membershipRole.TerminationDateEpoch > 0 {
-				params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
-			}
-			writeParent := &neoism.CypherQuery{
-				Statement: `MERGE (node:Thing{uuid: {nodeUUID}})
+	for _, membershipRole := range concept.MembershipRoles {
+		params := neoism.Props{
+			"inceptionDate":        nil,
+			"inceptionDateEpoch":   nil,
+			"terminationDate":      nil,
+			"terminationDateEpoch": nil,
+			"roleUUID":             membershipRole.RoleUUID,
+			"nodeUUID":             concept.UUID,
+		}
+		if membershipRole.InceptionDate != "" {
+			params["inceptionDate"] = membershipRole.InceptionDate
+		}
+		if membershipRole.InceptionDateEpoch > 0 {
+			params["inceptionDateEpoch"] = membershipRole.InceptionDateEpoch
+		}
+		if membershipRole.TerminationDate != "" {
+			params["terminationDate"] = membershipRole.TerminationDate
+		}
+		if membershipRole.TerminationDateEpoch > 0 {
+			params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
+		}
+		writeParent := &neoism.CypherQuery{
+			Statement: `MERGE (node:Thing{uuid: {nodeUUID}})
 							MERGE (role:Thing{uuid: {roleUUID}})
 								ON CREATE SET
 									role.uuid = {roleUUID}
@@ -960,31 +795,65 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 									rel.terminationDate = {terminationDate},
 									rel.terminationDateEpoch = {terminationDateEpoch}
 							`,
-				Parameters: params,
-			}
-			queryBatch = append(queryBatch, writeParent)
+			Parameters: params,
 		}
+		queryBatch = append(queryBatch, writeParent)
 	}
+
 	queryBatch = append(queryBatch, createConceptQuery)
 	return queryBatch
 }
 
-//Add relationships to concepts
-func addRelationship(conceptID string, relationshipIDs []string, relationshipType string, queryBatch []*neoism.CypherQuery) []*neoism.CypherQuery {
+// createRelQueries creates relationships Cypher queries for concepts
+func createRelQueries(conceptID string, relationshipIDs []string, relationshipType string, shouldCreate bool) []*neoism.CypherQuery {
+	const createMissing = `
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:%s]->(other)
+	`
+
+	const matchExisting = `
+		MATCH (concept:Concept {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (concept)-[:%s]->(other)	
+	`
+
+	cypherStatement := matchExisting
+	if shouldCreate {
+		cypherStatement = createMissing
+	}
+
+	var queryBatch []*neoism.CypherQuery
 	for _, id := range relationshipIDs {
 		addRelationshipQuery := &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`
-						MATCH (o:Concept {uuid: {uuid}})
-						MERGE (p:Thing {uuid: {id}})
-		            	MERGE (o)-[:%s]->(p)`, relationshipType),
+			Statement: fmt.Sprintf(cypherStatement, relationshipType),
 			Parameters: map[string]interface{}{
-				"uuid":         conceptID,
-				"id":           id,
-				"relationship": relationshipType,
+				"uuid": conceptID,
+				"id":   id,
 			},
 		}
 		queryBatch = append(queryBatch, addRelationshipQuery)
 	}
+
+	return queryBatch
+}
+
+func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*neoism.CypherQuery {
+	var queryBatch []*neoism.CypherQuery
+	setRelProps := &neoism.CypherQuery{
+		Statement: fmt.Sprintf(`
+			MATCH (t:Thing {uuid: {uuid}})
+			MATCH (other:Thing {uuid: {otherUUID}})
+			MATCH (t)-[rel:%s]->(other)
+			set rel={relProps}`, rel.Label),
+		Parameters: neoism.Props{
+			"uuid":      conceptID,
+			"otherUUID": rel.UUID,
+			"relProps":  rel.Properties,
+		},
+	}
+
+	queryBatch = append(queryBatch, setRelProps)
 	return queryBatch
 }
 
@@ -1212,24 +1081,14 @@ func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }
 
-func processMembershipRoles(v interface{}) interface{} {
-	switch c := v.(type) {
-	case ontology.NewAggregatedConcept:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
-		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
-		for _, s := range c.SourceRepresentations {
-			processMembershipRoles(s)
+func processMembershipRoles(c *ontology.NewAggregatedConcept) {
+	for _, s := range c.SourceRepresentations {
+		s.MembershipRoles = cleanMembershipRoles(s.MembershipRoles)
+		for i := range s.MembershipRoles {
+			s.MembershipRoles[i].InceptionDateEpoch = getEpoch(s.MembershipRoles[i].InceptionDate)
+			s.MembershipRoles[i].TerminationDateEpoch = getEpoch(s.MembershipRoles[i].TerminationDate)
 		}
-	case ontology.NewConcept:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
-		c.MembershipRoles = cleanMembershipRoles(c.MembershipRoles)
-	case ontology.MembershipRole:
-		c.InceptionDateEpoch = getEpoch(c.InceptionDate)
-		c.TerminationDateEpoch = getEpoch(c.TerminationDate)
 	}
-	return v
 }
 
 func getEpoch(t string) int64 {
@@ -1245,6 +1104,7 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	var cleanSources []ontology.NewConcept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewConcept{
+			Relationships:     source.Relationships,
 			UUID:              source.UUID,
 			PrefLabel:         source.PrefLabel,
 			Type:              source.Type,

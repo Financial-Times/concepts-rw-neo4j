@@ -97,7 +97,6 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 		ImageURL:              nac.ImageURL,
 		InceptionDate:         nac.InceptionDate,
 		IssuedBy:              nac.IssuedBy,
-		MembershipRoles:       cleanMembershipRoles(nac.MembershipRoles),
 		OrganisationUUID:      nac.OrganisationUUID,
 		PersonUUID:            nac.PersonUUID,
 		PrefLabel:             nac.PrefLabel,
@@ -130,7 +129,7 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 		IndustryIdentifier: nac.IndustryIdentifier,
 	}
 
-	return cleanNewConcept(aggregateConcept), "", nil
+	return sortSources(aggregateConcept), "", nil
 }
 
 type neoConcept struct {
@@ -198,14 +197,67 @@ func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 		return ontology.NewConcept{}, err
 	}
 
+	ncMap := map[string]interface{}{}
+	ncBytes, _ := json.Marshal(nc)
+	_ = json.Unmarshal(ncBytes, &ncMap)
+
+	rels := []ontology.Relationship{}
+	for rel, relCfg := range ontology.GetConfig().Relationships {
+		if _, ok := ncMap[relCfg.ConceptField]; !ok {
+			continue
+		}
+
+		val := ncMap[relCfg.ConceptField]
+
+		if relCfg.OneToOne {
+			uuid := val.(string)
+			rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel})
+		} else {
+			for _, v := range val.([]interface{}) {
+				if len(relCfg.Properties) > 0 {
+					relMap := v.(map[string]interface{})
+					uuid, ok := relMap["uuid"]
+					if ok {
+						delete(relMap, "uuid")
+
+						rels = append(rels, ontology.Relationship{UUID: uuid.(string), Label: rel, Properties: relMap})
+						continue
+					}
+
+					// Handle membership roles as special case
+					uuid, ok = relMap["membershipRoleUUID"]
+					if !ok {
+						continue
+					}
+
+					delete(relMap, "membershipRoleUUID")
+
+					if _, ok := relMap["inceptionDateEpoch"]; ok {
+						relMap["inceptionDateEpoch"] = 0
+					}
+
+					if _, ok := relMap["terminationDateEpoch"]; ok {
+						relMap["terminationDateEpoch"] = 0
+					}
+
+					rels = append(rels, ontology.Relationship{UUID: uuid.(string), Label: rel, Properties: relMap})
+				} else {
+					uuid := v.(string)
+					rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel})
+				}
+			}
+		}
+	}
+
 	return ontology.NewConcept{
+		Relationships:                filterRelationships(rels),
 		Authority:                    nc.Authority,
 		AuthorityValue:               nc.AuthorityValue,
 		BroaderUUIDs:                 filterSlice(nc.BroaderUUIDs),
 		SupersededByUUIDs:            filterSlice(nc.SupersededByUUIDs),
 		FigiCode:                     nc.FigiCode,
 		IssuedBy:                     nc.IssuedBy,
-		LastModifiedEpoch:            nc.LastModifiedEpoch,
+		LastModifiedEpoch:            0,
 		MembershipRoles:              cleanMembershipRoles(nc.MembershipRoles),
 		OrganisationUUID:             nc.OrganisationUUID,
 		CountryOfIncorporationUUID:   nc.CountryOfIncorporationUUID,
@@ -238,7 +290,22 @@ func filterSlice(a []string) []string {
 		return nil
 	}
 
-	return a
+	return r
+}
+
+func filterRelationships(rels []ontology.Relationship) []ontology.Relationship {
+	filtered := []ontology.Relationship{}
+	for _, rel := range rels {
+		if rel.UUID != "" {
+			filtered = append(filtered, rel)
+		}
+	}
+
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	return filtered
 }
 
 func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole {
@@ -250,8 +317,9 @@ func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole
 			deleted++
 			continue
 		}
-		m[j].InceptionDateEpoch = getEpoch(m[j].InceptionDate)
-		m[j].TerminationDateEpoch = getEpoch(m[j].TerminationDate)
+
+		m[j].InceptionDateEpoch = 0
+		m[j].TerminationDateEpoch = 0
 	}
 
 	if len(m) == 0 {
@@ -273,13 +341,8 @@ func cleanNAICS(naics []ontology.NAICSIndustryClassification) []ontology.NAICSIn
 	return res
 }
 
-func cleanNewConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
+func sortSources(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	for j := range c.SourceRepresentations {
-		c.SourceRepresentations[j].LastModifiedEpoch = 0
-		for i := range c.SourceRepresentations[j].MembershipRoles {
-			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
-			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
-		}
 		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
 			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
 		})
@@ -302,10 +365,7 @@ func cleanNewConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConc
 			return c.SourceRepresentations[j].NAICSIndustryClassifications[k].Rank < c.SourceRepresentations[j].NAICSIndustryClassifications[l].Rank
 		})
 	}
-	for i := range c.MembershipRoles {
-		c.MembershipRoles[i].InceptionDateEpoch = 0
-		c.MembershipRoles[i].TerminationDateEpoch = 0
-	}
+
 	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
 		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
 	})

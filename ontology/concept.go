@@ -140,7 +140,7 @@ type NAICSIndustryClassification struct {
 }
 
 type Relationship struct {
-	UUIDs      []string               `json:"uuids"`
+	UUID       string                 `json:"uuid"`
 	Label      string                 `json:"label"`
 	Properties map[string]interface{} `json:"properties"`
 }
@@ -163,7 +163,6 @@ type NewAggregatedConcept struct {
 	PersonUUID            string                 `json:"personUUID,omitempty"`
 	AggregatedHash        string                 `json:"aggregateHash,omitempty"`
 	SourceRepresentations []NewConcept           `json:"sourceRepresentations,omitempty"`
-	MembershipRoles       []MembershipRole       `json:"membershipRoles,omitempty"`
 	InceptionDate         string                 `json:"inceptionDate,omitempty"`
 	TerminationDate       string                 `json:"terminationDate,omitempty"`
 	InceptionDateEpoch    int64                  `json:"inceptionDateEpoch,omitempty"`

@@ -1,26 +1,31 @@
 package ontology
 
 import (
-	"io/ioutil"
-	"path"
-	"runtime"
+	"embed"
 
 	"gopkg.in/yaml.v2"
 )
 
+type RelationshipConfig struct {
+	ConceptField    string   `yaml:"conceptField"`
+	OneToOne        bool     `yaml:"oneToOne"`
+	NeoCreate       bool     `yaml:"neoCreate"`
+	Properties      []string `yaml:"properties"`
+	ToNodeWithLabel string   `yaml:"toNodeWithLabel"`
+}
+
 type Config struct {
-	FieldToNeoProps map[string]string `yaml:"fieldToNeoProps"`
+	FieldToNeoProps map[string]string             `yaml:"fieldToNeoProps"`
+	Relationships   map[string]RelationshipConfig `yaml:"relationships"`
 }
 
 var config Config
 
-func init() {
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("no caller information")
-	}
+//go:embed config.yml
+var f embed.FS
 
-	bytes, err := ioutil.ReadFile(path.Dir(file) + "/config.yml")
+func init() {
+	bytes, err := f.ReadFile("config.yml")
 	if err != nil {
 		panic(err)
 	}
