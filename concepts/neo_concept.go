@@ -232,6 +232,14 @@ func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 
 					delete(relMap, "membershipRoleUUID")
 
+					if _, ok := relMap["inceptionDateEpoch"]; ok {
+						relMap["inceptionDateEpoch"] = 0
+					}
+
+					if _, ok := relMap["terminationDateEpoch"]; ok {
+						relMap["terminationDateEpoch"] = 0
+					}
+
 					rels = append(rels, ontology.Relationship{UUID: uuid.(string), Label: rel, Properties: relMap})
 				} else {
 					uuid := v.(string)
@@ -290,14 +298,6 @@ func filterRelationships(rels []ontology.Relationship) []ontology.Relationship {
 	for _, rel := range rels {
 		if rel.UUID != "" {
 			filtered = append(filtered, rel)
-		}
-
-		if _, ok := rel.Properties["inceptionDateEpoch"]; ok {
-			rel.Properties["inceptionDateEpoch"] = 0
-		}
-
-		if _, ok := rel.Properties["terminationDateEpoch"]; ok {
-			rel.Properties["terminationDateEpoch"] = 0
 		}
 	}
 
