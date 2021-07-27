@@ -282,7 +282,7 @@ func filterSlice(a []string) []string {
 		return nil
 	}
 
-	return a
+	return r
 }
 
 func filterRelationships(rels []ontology.Relationship) []ontology.Relationship {
@@ -305,7 +305,7 @@ func filterRelationships(rels []ontology.Relationship) []ontology.Relationship {
 		return nil
 	}
 
-	return rels
+	return filtered
 }
 
 func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole {
