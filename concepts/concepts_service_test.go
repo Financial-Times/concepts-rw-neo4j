@@ -2141,7 +2141,7 @@ func readConceptAndCompare(t *testing.T, payload AggregatedConcept, testName str
 func newURL() string {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
-		url = "http://localhost:7474/db/data"
+		url = "http://localhost:7474/db/neo4j"
 	}
 	return url
 }

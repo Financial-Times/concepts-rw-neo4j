@@ -3,30 +3,18 @@ version: 2.1
 orbs:
   ft-golang-ci: financial-times/golang-ci@1
 
-jobs:
-  test:
-    working_directory: /concepts-rw-neo4j
-    docker:
-      - image: golang:1
-        environment:
-          CIRCLE_TEST_REPORTS: /tmp/test-results
-          CIRCLE_COVERAGE_REPORT: /tmp/coverage-results
-          NEO4J_TEST_URL: http://neo4j:7474/db/neo4j
-      - image: neo4j:4.3-enterprise
-        name: neo4j
-        environment:
-          - NEO4J_AUTH=none
-          - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
-    steps:
-      - checkout
-      - ft-golang-ci/build
-      - ft-golang-ci/lint
-      - ft-golang-ci/test
-
 workflows:
   tests_and_docker:
     jobs:
-      - test
+      - ft-golang-ci/build-and-test:
+          name: build-and-test-project
+          executor-name:
+            name: ft-golang-ci/default-with-neo4j
+            neo4j-image-version: 4.3-enterprise
+      - ft-golang-ci/docker-build:
+          name: build-docker-image
+          requires:
+            - build-and-test-project
   snyk-scanning:
     jobs:
       - ft-golang-ci/scan:
