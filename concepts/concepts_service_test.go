@@ -1968,149 +1968,151 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	defer deleteConcordedNodes(t, "1", "2")
 }
 
-func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
-	defer cleanDB(t)
-
-	type testStruct struct {
-		testName      string
+func TestValidateObject(t *testing.T) {
+	tests := []struct {
+		name          string
 		aggConcept    ontology.AggregatedConcept
 		returnedError string
-	}
-
-	aggregateConceptNoPrefLabel := ontology.AggregatedConcept{
-		PrefUUID: basicConceptUUID,
-	}
-	aggregateConceptNoType := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-	}
-	aggregateConceptNoSourceReps := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-	}
-	sourceRepNoPrefLabel := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:           basicConceptUUID,
-				Type:           "Brand",
-				AuthorityValue: "123456-UPP",
-				Authority:      "UPP",
+	}{
+		{
+			name: "aggregate concept without prefLabel should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID: basicConceptUUID,
+				Type:     "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						AuthorityValue: "123456-UPP",
+					},
+				},
 			},
+			returnedError: "Invalid request, no prefLabel has been supplied",
 		},
-	}
-	sourceRepNoType := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:      basicConceptUUID,
+		{
+			name: "aggregate concept without type should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
 				PrefLabel: "The Best Label",
-				Authority: "UPP",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						AuthorityValue: "123456-UPP",
+					},
+				},
 			},
+			returnedError: "Invalid request, no type has been supplied",
 		},
-	}
-	sourceRepNoAuthorityValue := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:      basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Authority: "UPP",
-				Type:      "Brand",
-			},
-		},
-	}
-	sourceRepNoAuthority := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:      basicConceptUUID,
+		{
+			name: "aggregate concept without source representations should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
 				PrefLabel: "The Best Label",
 				Type:      "Brand",
 			},
+			returnedError: "Invalid request, no sourceRepresentation has been supplied",
 		},
-	}
-	returnNoError := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:           basicConceptUUID,
-				PrefLabel:      "The Best Label",
-				Type:           "Brand",
-				AuthorityValue: "123456-UPP",
+		{
+			name: "source representation without prefLabel should be valid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						Type:           "Brand",
+						AuthorityValue: "123456-UPP",
+						Authority:      "UPP",
+					},
+				},
+			},
+		},
+		{
+			name: "source representation without type should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Authority:      "UPP",
+						AuthorityValue: "123456-UPP",
+					},
+				},
+			},
+			returnedError: "Invalid request, no sourceRepresentation.type has been supplied",
+		},
+		{
+			name: "source representation without authorityValue should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:      basicConceptUUID,
+						PrefLabel: "The Best Label",
+						Type:      "Brand",
+						Authority: "UPP",
+					},
+				},
+			},
+			returnedError: "Invalid request, no sourceRepresentation.authorityValue has been supplied",
+		},
+		{
+			name: "source representation without authority should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						AuthorityValue: "123456-UPP",
+					},
+				},
+			},
+			returnedError: "Invalid request, no sourceRepresentation.authority has been supplied",
+		},
+		{
+			name: "valid concept",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						Authority:      "UPP",
+						AuthorityValue: "123456-UPP",
+					},
+				},
 			},
 		},
 	}
-	testAggregateConceptNoPrefLabel := testStruct{
-		testName:      "testAggregateConceptNoPrefLabel",
-		aggConcept:    aggregateConceptNoPrefLabel,
-		returnedError: "Invalid request, no prefLabel has been supplied",
-	}
-	testAggregateConceptNoType := testStruct{
-		testName:      "testAggregateConceptNoType",
-		aggConcept:    aggregateConceptNoType,
-		returnedError: "Invalid request, no type has been supplied",
-	}
-	testAggregateConceptNoSourceReps := testStruct{
-		testName:      "testAggregateConceptNoSourceReps",
-		aggConcept:    aggregateConceptNoSourceReps,
-		returnedError: "Invalid request, no sourceRepresentation has been supplied",
-	}
-	testSourceRepNoPrefLabel := testStruct{
-		testName:   "testSourceRepNoPrefLabel",
-		aggConcept: sourceRepNoPrefLabel,
-	}
-	testSourceRepNoType := testStruct{
-		testName:      "testSourceRepNoType",
-		aggConcept:    sourceRepNoType,
-		returnedError: "Invalid request, no sourceRepresentation.type has been supplied",
-	}
-	testSourceRepNoAuthorityValue := testStruct{
-		testName:      "testSourceRepNoAuthorityValue",
-		aggConcept:    sourceRepNoAuthorityValue,
-		returnedError: "Invalid request, no sourceRepresentation.authorityValue has been supplied",
-	}
-	testSourceRepNoAuthority := testStruct{
-		testName:      "testSourceRepNoAuthority",
-		aggConcept:    sourceRepNoAuthority,
-		returnedError: "Invalid request, no sourceRepresentation.authority has been supplied",
-	}
-	returnNoErrorTest := testStruct{
-		testName:      "returnNoErrorTest",
-		aggConcept:    returnNoError,
-		returnedError: "",
-	}
 
-	scenarios := []testStruct{
-		testAggregateConceptNoPrefLabel,
-		testAggregateConceptNoType,
-		testAggregateConceptNoSourceReps,
-		testSourceRepNoPrefLabel,
-		testSourceRepNoType,
-		testSourceRepNoAuthorityValue,
-		testSourceRepNoAuthority,
-		returnNoErrorTest,
-	}
-
-	for _, scenario := range scenarios {
-		newAggConcept := ontology.TransformToNewAggregateConcept(scenario.aggConcept)
-		err := validateObject(newAggConcept, "transaction_id")
-		if err != nil {
-			assert.Contains(t, err.Error(), scenario.returnedError, scenario.testName)
-		} else {
-			assert.NoError(t, err, scenario.testName)
-		}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			newAggConcept := ontology.TransformToNewAggregateConcept(test.aggConcept)
+			err := validateObject(newAggConcept, "transaction_id")
+			if err != nil {
+				assert.NotEmpty(t, test.returnedError, "test.returnedError should not be empty when there is an error")
+				assert.Contains(t, err.Error(), test.returnedError, test.name)
+			} else {
+				assert.Empty(t, test.returnedError, "test.returnedError should be empty when there is no error")
+				assert.NoError(t, err, test.name)
+			}
+		})
 	}
 }
 
