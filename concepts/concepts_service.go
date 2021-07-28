@@ -407,20 +407,21 @@ func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) er
 	if aggConcept.SourceRepresentations == nil {
 		return requestError{formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
 	}
-	for _, concept := range aggConcept.SourceRepresentations {
-		if concept.Authority == "" {
-			return requestError{formatError("sourceRepresentation.authority", concept.UUID, transID)}
+	for _, sourceConcept := range aggConcept.SourceRepresentations {
+		if err := sourceConcept.Validate(); err != nil {
+			if !errors.Is(err, ontology.ErrUnkownAuthority) {
+				logger.WithError(err).WithTransactionID(transID).WithUUID(sourceConcept.UUID).Error("Validation of payload failed")
+				return requestError{err.Error()}
+			}
+
+			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", sourceConcept.Authority)
 		}
-		if !stringInArr(concept.Authority, authorities) {
-			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", concept.Authority)
+
+		if sourceConcept.Type == "" {
+			return requestError{formatError("sourceRepresentation.type", sourceConcept.UUID, transID)}
 		}
-		if concept.Type == "" {
-			return requestError{formatError("sourceRepresentation.type", concept.UUID, transID)}
-		}
-		if concept.AuthorityValue == "" {
-			return requestError{formatError("sourceRepresentation.authorityValue", concept.UUID, transID)}
-		}
-		if _, ok := constraintMap[concept.Type]; !ok {
+
+		if _, ok := constraintMap[sourceConcept.Type]; !ok {
 			return requestError{formatError("type", aggConcept.PrefUUID, transID)}
 		}
 	}
@@ -542,7 +543,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 		} else {
 			if updatedSourceID == entityEquivalence.PrefUUID {
 				if updatedSourceID != newAggregatedConcept.PrefUUID {
-					authority := getCanonicalAuthority(newAggregatedConcept)
+					authority := newAggregatedConcept.GetCanonicalAuthority()
 					if entityEquivalence.Authority != authority && stringInArr(entityEquivalence.Authority, concordancesSources) {
 						logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transfered to the new concordance", updatedSourceID)
 						// just delete the lone prefUUID node because the other concordances to
@@ -1133,15 +1134,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	}
 	c.SourceRepresentations = cleanSources
 	return c
-}
-
-func getCanonicalAuthority(aggregate ontology.NewAggregatedConcept) string {
-	for _, source := range aggregate.SourceRepresentations {
-		if source.UUID == aggregate.PrefUUID {
-			return source.Authority
-		}
-	}
-	return ""
 }
 
 func stringInArr(searchFor string, values []string) bool {

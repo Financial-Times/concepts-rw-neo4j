@@ -1,22 +1,8 @@
 package ontology
 
-func (c NewAggregatedConcept) GetPropertyValue(propName string) (interface{}, bool) {
-	val, found := c.Properties[propName]
-	if !found {
-		return nil, false
-	}
-
-	switch v := val.(type) {
-	case []interface{}:
-		return v, len(v) > 0
-	case string:
-		return v, v != ""
-	case float64:
-		return v, v > 0
-	default: // return values of unknown type but indicate that they were not validated
-		return v, false
-	}
-}
+import (
+	"errors"
+)
 
 type AggregatedConcept struct {
 	PrefUUID              string           `json:"prefUUID,omitempty"`
@@ -191,6 +177,34 @@ type NewAggregatedConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
+func (c NewAggregatedConcept) GetPropertyValue(propName string) (interface{}, bool) {
+	val, found := c.Properties[propName]
+	if !found {
+		return nil, false
+	}
+
+	switch v := val.(type) {
+	case []interface{}:
+		return v, len(v) > 0
+	case string:
+		return v, v != ""
+	case float64:
+		return v, v > 0
+	default: // return values of unknown type but indicate that they were not validated
+		return v, false
+	}
+}
+
+func (c NewAggregatedConcept) GetCanonicalAuthority() string {
+	for _, source := range c.SourceRepresentations {
+		if source.UUID == c.PrefUUID {
+			return source.Authority
+		}
+	}
+
+	return ""
+}
+
 // NewConcept - could be any concept genre, subject etc
 type NewConcept struct {
 	Relationships        []Relationship   `json:"relationships"`
@@ -250,4 +264,33 @@ type NewConcept struct {
 	BirthYear  int    `json:"birthYear,omitempty"`
 	// Industry Classifications
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
+}
+
+var ErrEmptyAuthority = errors.New("Invalid request, no sourceRepresentation.authority has been supplied")
+var ErrUnkownAuthority = errors.New("unknown authority")
+var ErrEmptyAuthorityValue = errors.New("Invalid request, no sourceRepresentation.authorityValue has been supplied")
+
+func (c NewConcept) Validate() error {
+	if c.Authority == "" {
+		return ErrEmptyAuthority
+	}
+
+	if !stringInArr(c.Authority, authorities) {
+		return ErrUnkownAuthority
+	}
+
+	if c.AuthorityValue == "" {
+		return ErrEmptyAuthorityValue
+	}
+
+	return nil
+}
+
+func stringInArr(searchFor string, values []string) bool {
+	for _, val := range values {
+		if searchFor == val {
+			return true
+		}
+	}
+	return false
 }
