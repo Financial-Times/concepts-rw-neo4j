@@ -266,9 +266,9 @@ type NewConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-var ErrEmptyAuthority = errors.New("Invalid request, no sourceRepresentation.authority has been supplied")
+var ErrEmptyAuthority = errors.New("invalid request, no sourceRepresentation.authority has been supplied")
 var ErrUnkownAuthority = errors.New("unknown authority")
-var ErrEmptyAuthorityValue = errors.New("Invalid request, no sourceRepresentation.authorityValue has been supplied")
+var ErrEmptyAuthorityValue = errors.New("invalid request, no sourceRepresentation.authorityValue has been supplied")
 
 func (c NewConcept) Validate() error {
 	if c.Authority == "" {

@@ -305,7 +305,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Throws validation error for invalid concept",
 			aggregatedConcept: ontology.AggregatedConcept{PrefUUID: basicConceptUUID},
-			errStr:            "Invalid request, no prefLabel has been supplied",
+			errStr:            "invalid request, no prefLabel has been supplied",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
@@ -1988,7 +1988,7 @@ func TestValidateObject(t *testing.T) {
 					},
 				},
 			},
-			returnedError: "Invalid request, no prefLabel has been supplied",
+			returnedError: "invalid request, no prefLabel has been supplied",
 		},
 		{
 			name: "aggregate concept without type should be invalid",
@@ -2004,7 +2004,7 @@ func TestValidateObject(t *testing.T) {
 					},
 				},
 			},
-			returnedError: "Invalid request, no type has been supplied",
+			returnedError: "invalid request, no type has been supplied",
 		},
 		{
 			name: "aggregate concept without source representations should be invalid",
@@ -2013,7 +2013,7 @@ func TestValidateObject(t *testing.T) {
 				PrefLabel: "The Best Label",
 				Type:      "Brand",
 			},
-			returnedError: "Invalid request, no sourceRepresentation has been supplied",
+			returnedError: "invalid request, no sourceRepresentation has been supplied",
 		},
 		{
 			name: "source representation without prefLabel should be valid",
@@ -2046,7 +2046,7 @@ func TestValidateObject(t *testing.T) {
 					},
 				},
 			},
-			returnedError: "Invalid request, no sourceRepresentation.type has been supplied",
+			returnedError: "invalid request, no sourceRepresentation.type has been supplied",
 		},
 		{
 			name: "source representation without authorityValue should be invalid",
@@ -2063,7 +2063,7 @@ func TestValidateObject(t *testing.T) {
 					},
 				},
 			},
-			returnedError: "Invalid request, no sourceRepresentation.authorityValue has been supplied",
+			returnedError: "invalid request, no sourceRepresentation.authorityValue has been supplied",
 		},
 		{
 			name: "source representation without authority should be invalid",
@@ -2080,7 +2080,7 @@ func TestValidateObject(t *testing.T) {
 					},
 				},
 			},
-			returnedError: "Invalid request, no sourceRepresentation.authority has been supplied",
+			returnedError: "invalid request, no sourceRepresentation.authority has been supplied",
 		},
 		{
 			name: "valid concept",

@@ -429,7 +429,7 @@ func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) er
 }
 
 func formatError(field string, uuid string, transID string) string {
-	err := errors.New("Invalid request, no " + field + " has been supplied")
+	err := errors.New("invalid request, no " + field + " has been supplied")
 	logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Validation of payload failed")
 	return err.Error()
 }
