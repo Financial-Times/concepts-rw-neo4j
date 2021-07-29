@@ -863,7 +863,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Unknown Authority Should Fail",
 			aggregatedConcept: getAggregatedConcept(t, "unknown-authority.json"),
-			errStr:            "Invalid Request",
+			errStr:            "unknown authority",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},

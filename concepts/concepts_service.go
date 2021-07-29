@@ -409,12 +409,13 @@ func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) er
 	}
 	for _, sourceConcept := range aggConcept.SourceRepresentations {
 		if err := sourceConcept.Validate(); err != nil {
-			if !errors.Is(err, ontology.ErrUnkownAuthority) {
+			if errors.Is(err, ontology.ErrUnkownAuthority) {
+				logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", sourceConcept.Authority)
+			} else {
 				logger.WithError(err).WithTransactionID(transID).WithUUID(sourceConcept.UUID).Error("Validation of payload failed")
-				return requestError{err.Error()}
 			}
 
-			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", sourceConcept.Authority)
+			return requestError{err.Error()}
 		}
 
 		if sourceConcept.Type == "" {
