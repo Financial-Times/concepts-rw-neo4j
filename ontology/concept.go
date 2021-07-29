@@ -275,7 +275,7 @@ func (c NewConcept) Validate() error {
 		return ErrEmptyAuthority
 	}
 
-	if !stringInArr(c.Authority, authorities) {
+	if !stringInArr(c.Authority, GetConfig().Authorities) {
 		return ErrUnkownAuthority
 	}
 

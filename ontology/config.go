@@ -6,20 +6,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var authorities = []string{
-	"TME",
-	"FACTSET",
-	"UPP",
-	"LEI",
-	"Smartlogic",
-	"ManagedLocation",
-	"ISO-3166-1",
-	"Geonames",
-	"Wikidata",
-	"DBPedia",
-	"NAICS",
-}
-
 type RelationshipConfig struct {
 	ConceptField    string   `yaml:"conceptField"`
 	OneToOne        bool     `yaml:"oneToOne"`
@@ -31,6 +17,7 @@ type RelationshipConfig struct {
 type Config struct {
 	FieldToNeoProps map[string]string             `yaml:"fieldToNeoProps"`
 	Relationships   map[string]RelationshipConfig `yaml:"relationships"`
+	Authorities     []string                      `yaml:"authorities"`
 }
 
 var config Config
