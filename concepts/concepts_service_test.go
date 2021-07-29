@@ -1001,11 +1001,8 @@ func TestWriteService(t *testing.T) {
 					t.Errorf("Test %s failed: Updated uuid list differs from expected:\n%s", test.testName, cmp.Diff(test.updatedConcepts, updatedConcepts, cmpOpts))
 				}
 			} else {
-				if err != nil {
-					assert.Error(t, err, "Error was expected")
-					assert.Contains(t, err.Error(), test.errStr, "Error message is not correct")
-				}
-				// TODO: Check these errors better
+				assert.Error(t, err, "Error was expected")
+				assert.Contains(t, err.Error(), test.errStr, "Error message is not correct")
 			}
 		})
 	}
