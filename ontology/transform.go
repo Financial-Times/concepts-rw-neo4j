@@ -20,45 +20,26 @@ func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept 
 	}
 
 	return NewAggregatedConcept{
-		Properties:             props,
-		PrefUUID:               old.PrefUUID,
-		PrefLabel:              old.PrefLabel,
-		Type:                   old.Type,
-		Aliases:                old.Aliases,
-		Strapline:              old.Strapline,
-		DescriptionXML:         old.DescriptionXML,
-		ImageURL:               old.ImageURL,
-		EmailAddress:           old.EmailAddress,
-		FacebookPage:           old.FacebookPage,
-		TwitterHandle:          old.TwitterHandle,
-		ScopeNote:              old.ScopeNote,
-		ShortLabel:             old.ShortLabel,
-		OrganisationUUID:       old.OrganisationUUID,
-		PersonUUID:             old.PersonUUID,
-		AggregatedHash:         old.AggregatedHash,
-		InceptionDate:          old.InceptionDate,
-		TerminationDate:        old.TerminationDate,
-		InceptionDateEpoch:     old.InceptionDateEpoch,
-		TerminationDateEpoch:   old.TerminationDateEpoch,
-		FigiCode:               old.FigiCode,
-		IssuedBy:               old.IssuedBy,
-		ProperName:             old.ProperName,
-		ShortName:              old.ShortName,
-		TradeNames:             old.TradeNames,
-		FormerNames:            old.FormerNames,
-		CountryCode:            old.CountryCode,
-		CountryOfRisk:          old.CountryOfRisk,
-		CountryOfIncorporation: old.CountryOfIncorporation,
-		CountryOfOperations:    old.CountryOfOperations,
-		PostalCode:             old.PostalCode,
-		YearFounded:            old.YearFounded,
-		LeiCode:                old.LeiCode,
-		IsDeprecated:           old.IsDeprecated,
-		ISO31661:               old.ISO31661,
-		Salutation:             old.Salutation,
-		BirthYear:              old.BirthYear,
-		IndustryIdentifier:     old.IndustryIdentifier,
-		SourceRepresentations:  newSources,
+		Properties:            props,
+		PrefUUID:              old.PrefUUID,
+		PrefLabel:             old.PrefLabel,
+		Type:                  old.Type,
+		IsDeprecated:          old.IsDeprecated,
+		Aliases:               old.Aliases,
+		OrganisationUUID:      old.OrganisationUUID,
+		PersonUUID:            old.PersonUUID,
+		AggregatedHash:        old.AggregatedHash,
+		InceptionDate:         old.InceptionDate,
+		TerminationDate:       old.TerminationDate,
+		InceptionDateEpoch:    old.InceptionDateEpoch,
+		TerminationDateEpoch:  old.TerminationDateEpoch,
+		FigiCode:              old.FigiCode,
+		IssuedBy:              old.IssuedBy,
+		TradeNames:            old.TradeNames,
+		FormerNames:           old.FormerNames,
+		YearFounded:           old.YearFounded,
+		BirthYear:             old.BirthYear,
+		SourceRepresentations: newSources,
 	}
 }
 
@@ -86,14 +67,6 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	old.PrefLabel = new.PrefLabel
 	old.Type = new.Type
 	old.Aliases = new.Aliases
-	old.Strapline = new.Strapline
-	old.DescriptionXML = new.DescriptionXML
-	old.ImageURL = new.ImageURL
-	old.EmailAddress = new.EmailAddress
-	old.FacebookPage = new.FacebookPage
-	old.TwitterHandle = new.TwitterHandle
-	old.ScopeNote = new.ScopeNote
-	old.ShortLabel = new.ShortLabel
 	old.OrganisationUUID = new.OrganisationUUID
 	old.PersonUUID = new.PersonUUID
 	old.AggregatedHash = new.AggregatedHash
@@ -104,22 +77,11 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
-	old.ProperName = new.ProperName
-	old.ShortName = new.ShortName
 	old.TradeNames = new.TradeNames
 	old.FormerNames = new.FormerNames
-	old.CountryCode = new.CountryCode
-	old.CountryOfRisk = new.CountryOfRisk
-	old.CountryOfIncorporation = new.CountryOfIncorporation
-	old.CountryOfOperations = new.CountryOfOperations
-	old.PostalCode = new.PostalCode
 	old.YearFounded = new.YearFounded
-	old.LeiCode = new.LeiCode
 	old.IsDeprecated = new.IsDeprecated
-	old.ISO31661 = new.ISO31661
-	old.Salutation = new.Salutation
 	old.BirthYear = new.BirthYear
-	old.IndustryIdentifier = new.IndustryIdentifier
 	old.SourceRepresentations = oldSources
 
 	return old
@@ -180,14 +142,6 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		LastModifiedEpoch:            old.LastModifiedEpoch,
 		Aliases:                      old.Aliases,
 		ParentUUIDs:                  old.ParentUUIDs,
-		Strapline:                    old.Strapline,
-		DescriptionXML:               old.DescriptionXML,
-		ImageURL:                     old.ImageURL,
-		EmailAddress:                 old.EmailAddress,
-		FacebookPage:                 old.FacebookPage,
-		TwitterHandle:                old.TwitterHandle,
-		ScopeNote:                    old.ScopeNote,
-		ShortLabel:                   old.ShortLabel,
 		BroaderUUIDs:                 old.BroaderUUIDs,
 		RelatedUUIDs:                 old.RelatedUUIDs,
 		SupersededByUUIDs:            old.SupersededByUUIDs,
@@ -203,27 +157,16 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		TerminationDateEpoch:         old.TerminationDateEpoch,
 		FigiCode:                     old.FigiCode,
 		IssuedBy:                     old.IssuedBy,
-		ProperName:                   old.ProperName,
-		ShortName:                    old.ShortName,
 		TradeNames:                   old.TradeNames,
 		FormerNames:                  old.FormerNames,
-		CountryCode:                  old.CountryCode,
-		CountryOfRisk:                old.CountryOfRisk,
-		CountryOfIncorporation:       old.CountryOfIncorporation,
-		CountryOfOperations:          old.CountryOfOperations,
 		CountryOfRiskUUID:            old.CountryOfRiskUUID,
 		CountryOfIncorporationUUID:   old.CountryOfIncorporationUUID,
 		CountryOfOperationsUUID:      old.CountryOfOperationsUUID,
-		PostalCode:                   old.PostalCode,
 		YearFounded:                  old.YearFounded,
-		LeiCode:                      old.LeiCode,
 		ParentOrganisation:           old.ParentOrganisation,
 		NAICSIndustryClassifications: old.NAICSIndustryClassifications,
 		IsDeprecated:                 old.IsDeprecated,
-		ISO31661:                     old.ISO31661,
-		Salutation:                   old.Salutation,
 		BirthYear:                    old.BirthYear,
-		IndustryIdentifier:           old.IndustryIdentifier,
 	}
 }
 
@@ -292,14 +235,6 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.LastModifiedEpoch = new.LastModifiedEpoch
 	old.Aliases = new.Aliases
 	old.ParentUUIDs = new.ParentUUIDs
-	old.Strapline = new.Strapline
-	old.DescriptionXML = new.DescriptionXML
-	old.ImageURL = new.ImageURL
-	old.EmailAddress = new.EmailAddress
-	old.FacebookPage = new.FacebookPage
-	old.TwitterHandle = new.TwitterHandle
-	old.ScopeNote = new.ScopeNote
-	old.ShortLabel = new.ShortLabel
 	old.BroaderUUIDs = new.BroaderUUIDs
 	old.RelatedUUIDs = new.RelatedUUIDs
 	old.SupersededByUUIDs = new.SupersededByUUIDs
@@ -315,27 +250,16 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
-	old.ProperName = new.ProperName
-	old.ShortName = new.ShortName
 	old.TradeNames = new.TradeNames
 	old.FormerNames = new.FormerNames
-	old.CountryCode = new.CountryCode
-	old.CountryOfRisk = new.CountryOfRisk
-	old.CountryOfIncorporation = new.CountryOfIncorporation
-	old.CountryOfOperations = new.CountryOfOperations
 	old.CountryOfRiskUUID = new.CountryOfRiskUUID
 	old.CountryOfIncorporationUUID = new.CountryOfIncorporationUUID
 	old.CountryOfOperationsUUID = new.CountryOfOperationsUUID
-	old.PostalCode = new.PostalCode
 	old.YearFounded = new.YearFounded
-	old.LeiCode = new.LeiCode
 	old.ParentOrganisation = new.ParentOrganisation
 	old.NAICSIndustryClassifications = new.NAICSIndustryClassifications
 	old.IsDeprecated = new.IsDeprecated
-	old.ISO31661 = new.ISO31661
-	old.Salutation = new.Salutation
 	old.BirthYear = new.BirthYear
-	old.IndustryIdentifier = new.IndustryIdentifier
 
 	return old
 }

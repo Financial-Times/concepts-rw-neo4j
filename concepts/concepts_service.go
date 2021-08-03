@@ -966,65 +966,14 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	if len(canonical.Aliases) > 0 {
 		nodeProps["aliases"] = canonical.Aliases
 	}
-	if canonical.EmailAddress != "" {
-		nodeProps["emailAddress"] = canonical.EmailAddress
-	}
-	if canonical.FacebookPage != "" {
-		nodeProps["facebookPage"] = canonical.FacebookPage
-	}
-	if canonical.TwitterHandle != "" {
-		nodeProps["twitterHandle"] = canonical.TwitterHandle
-	}
-	if canonical.ScopeNote != "" {
-		nodeProps["scopeNote"] = canonical.ScopeNote
-	}
-	if canonical.ShortLabel != "" {
-		nodeProps["shortLabel"] = canonical.ShortLabel
-	}
-	if canonical.DescriptionXML != "" {
-		nodeProps["descriptionXML"] = canonical.DescriptionXML
-	}
-	if canonical.ImageURL != "" {
-		nodeProps["imageUrl"] = canonical.ImageURL
-	}
-	if canonical.Strapline != "" {
-		nodeProps["strapline"] = canonical.Strapline
-	}
-	if canonical.FigiCode != "" {
-		nodeProps["figiCode"] = canonical.FigiCode
-	}
-	if canonical.ProperName != "" {
-		nodeProps["properName"] = canonical.ProperName
-	}
-	if canonical.ShortName != "" {
-		nodeProps["shortName"] = canonical.ShortName
-	}
 	if len(canonical.FormerNames) > 0 {
 		nodeProps["formerNames"] = canonical.FormerNames
 	}
 	if len(canonical.TradeNames) > 0 {
 		nodeProps["tradeNames"] = canonical.TradeNames
 	}
-	if canonical.CountryCode != "" {
-		nodeProps["countryCode"] = canonical.CountryCode
-	}
-	if canonical.CountryOfIncorporation != "" {
-		nodeProps["countryOfIncorporation"] = canonical.CountryOfIncorporation
-	}
-	if canonical.CountryOfRisk != "" {
-		nodeProps["countryOfRisk"] = canonical.CountryOfRisk
-	}
-	if canonical.CountryOfOperations != "" {
-		nodeProps["countryOfOperations"] = canonical.CountryOfOperations
-	}
-	if canonical.PostalCode != "" {
-		nodeProps["postalCode"] = canonical.PostalCode
-	}
 	if canonical.YearFounded > 0 {
 		nodeProps["yearFounded"] = canonical.YearFounded
-	}
-	if canonical.LeiCode != "" {
-		nodeProps["leiCode"] = canonical.LeiCode
 	}
 	if canonical.InceptionDate != "" {
 		nodeProps["inceptionDate"] = canonical.InceptionDate
@@ -1038,17 +987,8 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	if canonical.TerminationDateEpoch > 0 {
 		nodeProps["terminationDateEpoch"] = canonical.TerminationDateEpoch
 	}
-	if canonical.Salutation != "" {
-		nodeProps["salutation"] = canonical.Salutation
-	}
 	if canonical.BirthYear > 0 {
 		nodeProps["birthYear"] = canonical.BirthYear
-	}
-	if canonical.ISO31661 != "" {
-		nodeProps["iso31661"] = canonical.ISO31661
-	}
-	if canonical.IndustryIdentifier != "" {
-		nodeProps["industryIdentifier"] = canonical.IndustryIdentifier
 	}
 
 	return nodeProps
@@ -1149,43 +1089,21 @@ func stringInArr(searchFor string, values []string) bool {
 func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
 		Aliases:              source.Aliases,
-		DescriptionXML:       source.DescriptionXML,
-		EmailAddress:         source.EmailAddress,
-		FacebookPage:         source.FacebookPage,
-		FigiCode:             source.FigiCode,
 		AggregatedHash:       source.Hash,
-		ImageURL:             source.ImageURL,
 		InceptionDate:        source.InceptionDate,
 		InceptionDateEpoch:   source.InceptionDateEpoch,
 		IssuedBy:             source.IssuedBy,
 		PrefLabel:            source.PrefLabel,
-		ScopeNote:            source.ScopeNote,
-		ShortLabel:           source.ShortLabel,
-		Strapline:            source.Strapline,
 		TerminationDate:      source.TerminationDate,
 		TerminationDateEpoch: source.TerminationDateEpoch,
-		TwitterHandle:        source.TwitterHandle,
 		Type:                 source.Type,
 		//TODO deprecated event?
 		IsDeprecated: source.IsDeprecated,
 		// Organisations
-		ProperName:             source.ProperName,
-		ShortName:              source.ShortName,
-		TradeNames:             source.TradeNames,
-		FormerNames:            source.FormerNames,
-		CountryCode:            source.CountryCode,
-		CountryOfIncorporation: source.CountryOfIncorporation,
-		CountryOfRisk:          source.CountryOfRisk,
-		CountryOfOperations:    source.CountryOfOperations,
-		PostalCode:             source.PostalCode,
-		YearFounded:            source.YearFounded,
-		LeiCode:                source.LeiCode,
+		TradeNames:  source.TradeNames,
+		FormerNames: source.FormerNames,
+		YearFounded: source.YearFounded,
 		// Person
-		Salutation: source.Salutation,
-		BirthYear:  source.BirthYear,
-		// Location
-		ISO31661: source.ISO31661,
-		// Industry Classification
-		IndustryIdentifier: source.IndustryIdentifier,
+		BirthYear: source.BirthYear,
 	}
 }

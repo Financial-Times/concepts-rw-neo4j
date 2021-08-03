@@ -1,4 +1,23 @@
 fieldToNeoProps:
+  strapline: "strapline"
+  descriptionXML: "descriptionXML"
+  _imageUrl: "imageUrl"
+  emailAddress: "emailAddress"
+  facebookPage: "facebookPage"
+  twitterHandle: "twitterHandle"
+  scopeNote: "scopeNote"
+  shortLabel: "shortLabel"
+  properName: "properName"
+  shortName: "shortName"
+  countryCode: "countryCode"
+  countryOfRisk: "countryOfRisk"
+  countryOfIncorporation: "countryOfIncorporation"
+  countryOfOperations: "countryOfOperations"
+  postalCode: "postalCode"
+  leiCode: "leiCode"
+  iso31661: "iso31661"
+  salutation: "salutation"
+  industryIdentifier: "industryIdentifier"
 relationships:
 authorities:
   - TME

@@ -2154,9 +2154,32 @@ func TestSetCanonicalProps(t *testing.T) {
 		{
 			name: "Concept with invalid values should return default props",
 			concept: ontology.NewAggregatedConcept{
+				Properties: map[string]interface{}{
+					"strapline":              "",
+					"descriptionXML":         "",
+					"imageUrl":               "",
+					"emailAddress":           "",
+					"facebookPage":           "",
+					"twitterHandle":          "",
+					"scopeNote":              "",
+					"shortLabel":             "",
+					"properName":             "",
+					"shortName":              "",
+					"countryCode":            "",
+					"countryOfRisk":          "",
+					"countryOfIncorporation": "",
+					"countryOfOperations":    "",
+					"postalCode":             "",
+					"leiCode":                "",
+					"iso31661":               "",
+					"salutation":             "",
+					"industryIdentifier":     "",
+				},
 				Aliases:     []string{},
 				FormerNames: []string{},
 				TradeNames:  []string{},
+				YearFounded: 0,
+				BirthYear:   0,
 			},
 			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
 			expected: map[string]interface{}{
@@ -2218,7 +2241,9 @@ func TestProcessMembershipRoles(t *testing.T) {
 
 func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
-		Properties:       map[string]interface{}{},
+		Properties: map[string]interface{}{
+			"salutation": "Mr",
+		},
 		PrefUUID:         "cbadd9a7-5da9-407a-a5ec-e379460991f2",
 		PrefLabel:        "Membership Pref Label",
 		Type:             "Membership",
@@ -2226,7 +2251,6 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 		PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
 		InceptionDate:    "2016-01-01",
 		TerminationDate:  "2017-02-02",
-		Salutation:       "Mr",
 		BirthYear:        2018,
 		SourceRepresentations: []ontology.NewConcept{
 			{
@@ -2240,7 +2264,6 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 				PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
 				InceptionDate:    "2016-01-01",
 				TerminationDate:  "2017-02-02",
-				Salutation:       "Mr",
 				BirthYear:        2018,
 				MembershipRoles: []ontology.MembershipRole{
 					{
