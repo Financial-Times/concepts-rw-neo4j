@@ -17,6 +17,7 @@ type RelationshipConfig struct {
 type Config struct {
 	FieldToNeoProps map[string]string             `yaml:"fieldToNeoProps"`
 	Relationships   map[string]RelationshipConfig `yaml:"relationships"`
+	Authorities     []string                      `yaml:"authorities"`
 }
 
 var config Config

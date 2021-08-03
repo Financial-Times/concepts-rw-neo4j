@@ -11,8 +11,6 @@ import (
 type neoAggregatedConcept struct {
 	AggregateHash         string                    `json:"aggregateHash,omitempty"`
 	Aliases               []string                  `json:"aliases,omitempty"`
-	Authority             string                    `json:"authority,omitempty"`
-	AuthorityValue        string                    `json:"authorityValue,omitempty"`
 	DescriptionXML        string                    `json:"descriptionXML,omitempty"`
 	EmailAddress          string                    `json:"emailAddress,omitempty"`
 	FacebookPage          string                    `json:"facebookPage,omitempty"`
