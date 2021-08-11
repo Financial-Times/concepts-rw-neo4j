@@ -112,3 +112,43 @@ func TestFilterRelationships(t *testing.T) {
 		})
 	}
 }
+
+func TestToOntologyNewAggregateConcept(t *testing.T) {
+	tests := []struct {
+		name        string
+		neoConcept  neoAggregatedConcept
+		ontologyCfg ontology.Config
+		expected    ontology.NewAggregatedConcept
+	}{
+		{
+			name: "string props",
+			neoConcept: neoAggregatedConcept{
+				Types:        []string{"Brand"},
+				EmailAddress: "test@example.com",
+				ImageURL:     "image url",
+			},
+			ontologyCfg: ontology.Config{
+				FieldToNeoProps: map[string]string{
+					"emailAddress": "emailAddress",
+					"_imageUrl":    "imageUrl",
+				},
+			},
+			expected: ontology.NewAggregatedConcept{
+				Type: "Brand",
+				Properties: map[string]interface{}{
+					"emailAddress": "test@example.com",
+					"_imageUrl":    "image url",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, _, _ := test.neoConcept.ToOntologyNewAggregateConcept(test.ontologyCfg)
+			if !cmp.Equal(got, test.expected) {
+				t.Error(cmp.Diff(got, test.expected))
+			}
+		})
+	}
+}

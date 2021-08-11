@@ -2152,7 +2152,7 @@ func TestSetCanonicalProps(t *testing.T) {
 			},
 		},
 		{
-			name: "Concept with invalid values should return default props",
+			name: "Concept with empty values for properties should return default props",
 			concept: ontology.NewAggregatedConcept{
 				Properties: map[string]interface{}{
 					"strapline":              "",
@@ -2187,13 +2187,80 @@ func TestSetCanonicalProps(t *testing.T) {
 				"aggregateHash": "",
 			},
 		},
+		{
+			name: "Concept with non-empty valid values should return valid props",
+			concept: ontology.NewAggregatedConcept{
+				PrefLabel:            "prefLabel value",
+				AggregatedHash:       "aggregateHash value",
+				InceptionDate:        "inceptionDate value",
+				TerminationDate:      "terminationDate value",
+				InceptionDateEpoch:   1,
+				TerminationDateEpoch: 2,
+				FigiCode:             "figiCode value",
+				IsDeprecated:         true,
+				Properties: map[string]interface{}{
+					"strapline":              "strapline value",
+					"descriptionXML":         "descriptionXML value",
+					"_imageUrl":              "imageUrl value",
+					"emailAddress":           "emailAddress value",
+					"facebookPage":           "facebookPage value",
+					"twitterHandle":          "twitterHandle value",
+					"scopeNote":              "scopeNote value",
+					"shortLabel":             "shortLabel value",
+					"properName":             "properName value",
+					"shortName":              "shortName value",
+					"countryCode":            "countryCode value",
+					"countryOfRisk":          "countryOfRisk value",
+					"countryOfIncorporation": "countryOfIncorporation value",
+					"countryOfOperations":    "countryOfOperations value",
+					"postalCode":             "postalCode value",
+					"leiCode":                "leiCode value",
+					"iso31661":               "iso31661 value",
+					"salutation":             "salutation value",
+					"industryIdentifier":     "industryIdentifier value",
+				},
+			},
+			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+			expected: map[string]interface{}{
+				"prefUUID":               "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+				"prefLabel":              "prefLabel value",
+				"aggregateHash":          "aggregateHash value",
+				"inceptionDate":          "inceptionDate value",
+				"terminationDate":        "terminationDate value",
+				"inceptionDateEpoch":     int64(1),
+				"terminationDateEpoch":   int64(2),
+				"figiCode":               "figiCode value",
+				"isDeprecated":           true,
+				"strapline":              "strapline value",
+				"descriptionXML":         "descriptionXML value",
+				"imageUrl":               "imageUrl value",
+				"emailAddress":           "emailAddress value",
+				"facebookPage":           "facebookPage value",
+				"twitterHandle":          "twitterHandle value",
+				"scopeNote":              "scopeNote value",
+				"shortLabel":             "shortLabel value",
+				"properName":             "properName value",
+				"shortName":              "shortName value",
+				"countryCode":            "countryCode value",
+				"countryOfRisk":          "countryOfRisk value",
+				"countryOfIncorporation": "countryOfIncorporation value",
+				"countryOfOperations":    "countryOfOperations value",
+				"postalCode":             "postalCode value",
+				"leiCode":                "leiCode value",
+				"iso31661":               "iso31661 value",
+				"salutation":             "salutation value",
+				"industryIdentifier":     "industryIdentifier value",
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got := setCanonicalProps(test.concept, test.prefUUID)
 
-			// ignore "lastModifiedEpoch"
+			// check that "lastModifiedEpoch" is always set and ignore it
+			_, ok := got["lastModifiedEpoch"]
+			assert.True(t, ok, "expected lastModifiedEpoch to be set")
 			delete(got, "lastModifiedEpoch")
 
 			if !cmp.Equal(got, test.expected) {
