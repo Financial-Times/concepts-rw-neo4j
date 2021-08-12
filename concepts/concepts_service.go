@@ -963,15 +963,6 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	nodeProps["prefUUID"] = prefUUID
 	nodeProps["aggregateHash"] = canonical.AggregatedHash
 
-	if len(canonical.Aliases) > 0 {
-		nodeProps["aliases"] = canonical.Aliases
-	}
-	if len(canonical.FormerNames) > 0 {
-		nodeProps["formerNames"] = canonical.FormerNames
-	}
-	if len(canonical.TradeNames) > 0 {
-		nodeProps["tradeNames"] = canonical.TradeNames
-	}
 	if canonical.YearFounded > 0 {
 		nodeProps["yearFounded"] = canonical.YearFounded
 	}
@@ -1088,7 +1079,6 @@ func stringInArr(searchFor string, values []string) bool {
 
 func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
-		Aliases:              source.Aliases,
 		AggregatedHash:       source.Hash,
 		InceptionDate:        source.InceptionDate,
 		InceptionDateEpoch:   source.InceptionDateEpoch,
@@ -1100,8 +1090,6 @@ func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept
 		//TODO deprecated event?
 		IsDeprecated: source.IsDeprecated,
 		// Organisations
-		TradeNames:  source.TradeNames,
-		FormerNames: source.FormerNames,
 		YearFounded: source.YearFounded,
 		// Person
 		BirthYear: source.BirthYear,

@@ -18,6 +18,9 @@ fieldToNeoProps:
   iso31661: "iso31661"
   salutation: "salutation"
   industryIdentifier: "industryIdentifier"
+  aliases: "aliases"
+  formerNames: "formerNames"
+  tradeNames: "tradeNames"
 relationships:
 authorities:
   - TME

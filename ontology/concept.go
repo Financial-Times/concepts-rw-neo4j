@@ -136,7 +136,6 @@ type NewAggregatedConcept struct {
 	PrefUUID              string                 `json:"prefUUID,omitempty"`
 	PrefLabel             string                 `json:"prefLabel,omitempty"`
 	Type                  string                 `json:"type,omitempty"`
-	Aliases               []string               `json:"aliases,omitempty"`
 	OrganisationUUID      string                 `json:"organisationUUID,omitempty"`
 	PersonUUID            string                 `json:"personUUID,omitempty"`
 	AggregatedHash        string                 `json:"aggregateHash,omitempty"`
@@ -148,11 +147,9 @@ type NewAggregatedConcept struct {
 	FigiCode              string                 `json:"figiCode,omitempty"`
 	IssuedBy              string                 `json:"issuedBy,omitempty"`
 	// Organisations
-	TradeNames   []string `json:"tradeNames,omitempty"`
-	FormerNames  []string `json:"formerNames,omitempty"`
-	YearFounded  int      `json:"yearFounded,omitempty"`
-	IsDeprecated bool     `json:"isDeprecated,omitempty"`
-	BirthYear    int      `json:"birthYear,omitempty"`
+	YearFounded  int  `json:"yearFounded,omitempty"`
+	IsDeprecated bool `json:"isDeprecated,omitempty"`
+	BirthYear    int  `json:"birthYear,omitempty"`
 }
 
 func (c NewAggregatedConcept) GetPropertyValue(propName string) (interface{}, bool) {
@@ -192,7 +189,6 @@ type NewConcept struct {
 	Authority            string           `json:"authority,omitempty"`
 	AuthorityValue       string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	Aliases              []string         `json:"aliases,omitempty"`
 	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
 	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
 	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
@@ -210,8 +206,6 @@ type NewConcept struct {
 	FigiCode             string           `json:"figiCode,omitempty"`
 	IssuedBy             string           `json:"issuedBy,omitempty"`
 	// Organisations
-	TradeNames                   []string                      `json:"tradeNames,omitempty"`
-	FormerNames                  []string                      `json:"formerNames,omitempty"`
 	CountryOfRiskUUID            string                        `json:"countryOfRiskUUID,omitempty"`
 	CountryOfIncorporationUUID   string                        `json:"countryOfIncorporationUUID,omitempty"`
 	CountryOfOperationsUUID      string                        `json:"countryOfOperationsUUID,omitempty"`

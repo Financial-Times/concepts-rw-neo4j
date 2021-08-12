@@ -87,7 +87,6 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontolo
 		Properties:            props,
 		SourceRepresentations: sourceConcepts,
 		AggregatedHash:        nac.AggregateHash,
-		Aliases:               nac.Aliases,
 		FigiCode:              nac.FigiCode,
 		InceptionDate:         nac.InceptionDate,
 		IssuedBy:              nac.IssuedBy,
@@ -99,8 +98,6 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontolo
 		Type:                  typeName,
 		IsDeprecated:          nac.IsDeprecated,
 		// Organisations
-		TradeNames:  nac.TradeNames,
-		FormerNames: nac.FormerNames,
 		YearFounded: nac.YearFounded,
 		// Person
 		BirthYear: nac.BirthYear,
@@ -110,7 +107,6 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontolo
 }
 
 type neoConcept struct {
-	Aliases              []string                  `json:"aliases,omitempty"`
 	Authority            string                    `json:"authority,omitempty"`
 	AuthorityValue       string                    `json:"authorityValue,omitempty"`
 	BroaderUUIDs         []string                  `json:"broaderUUIDs,omitempty"`
@@ -135,8 +131,6 @@ type neoConcept struct {
 	UUID                 string                    `json:"uuid,omitempty"`
 	IsDeprecated         bool                      `json:"isDeprecated,omitempty"`
 	// Organisations
-	TradeNames                   []string                               `json:"tradeNames,omitempty"`
-	FormerNames                  []string                               `json:"formerNames,omitempty"`
 	CountryOfRiskUUID            string                                 `json:"countryOfRiskUUID,omitempty"`
 	CountryOfIncorporationUUID   string                                 `json:"countryOfIncorporationUUID,omitempty"`
 	CountryOfOperationsUUID      string                                 `json:"countryOfOperationsUUID,omitempty"`

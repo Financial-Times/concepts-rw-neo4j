@@ -25,7 +25,6 @@ func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept 
 		PrefLabel:             old.PrefLabel,
 		Type:                  old.Type,
 		IsDeprecated:          old.IsDeprecated,
-		Aliases:               old.Aliases,
 		OrganisationUUID:      old.OrganisationUUID,
 		PersonUUID:            old.PersonUUID,
 		AggregatedHash:        old.AggregatedHash,
@@ -35,8 +34,6 @@ func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept 
 		TerminationDateEpoch:  old.TerminationDateEpoch,
 		FigiCode:              old.FigiCode,
 		IssuedBy:              old.IssuedBy,
-		TradeNames:            old.TradeNames,
-		FormerNames:           old.FormerNames,
 		YearFounded:           old.YearFounded,
 		BirthYear:             old.BirthYear,
 		SourceRepresentations: newSources,
@@ -66,7 +63,6 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	old.PrefUUID = new.PrefUUID
 	old.PrefLabel = new.PrefLabel
 	old.Type = new.Type
-	old.Aliases = new.Aliases
 	old.OrganisationUUID = new.OrganisationUUID
 	old.PersonUUID = new.PersonUUID
 	old.AggregatedHash = new.AggregatedHash
@@ -77,8 +73,6 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
-	old.TradeNames = new.TradeNames
-	old.FormerNames = new.FormerNames
 	old.YearFounded = new.YearFounded
 	old.IsDeprecated = new.IsDeprecated
 	old.BirthYear = new.BirthYear
@@ -140,7 +134,6 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		Authority:                    old.Authority,
 		AuthorityValue:               old.AuthorityValue,
 		LastModifiedEpoch:            old.LastModifiedEpoch,
-		Aliases:                      old.Aliases,
 		ParentUUIDs:                  old.ParentUUIDs,
 		BroaderUUIDs:                 old.BroaderUUIDs,
 		RelatedUUIDs:                 old.RelatedUUIDs,
@@ -157,8 +150,6 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		TerminationDateEpoch:         old.TerminationDateEpoch,
 		FigiCode:                     old.FigiCode,
 		IssuedBy:                     old.IssuedBy,
-		TradeNames:                   old.TradeNames,
-		FormerNames:                  old.FormerNames,
 		CountryOfRiskUUID:            old.CountryOfRiskUUID,
 		CountryOfIncorporationUUID:   old.CountryOfIncorporationUUID,
 		CountryOfOperationsUUID:      old.CountryOfOperationsUUID,
@@ -233,7 +224,6 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.Authority = new.Authority
 	old.AuthorityValue = new.AuthorityValue
 	old.LastModifiedEpoch = new.LastModifiedEpoch
-	old.Aliases = new.Aliases
 	old.ParentUUIDs = new.ParentUUIDs
 	old.BroaderUUIDs = new.BroaderUUIDs
 	old.RelatedUUIDs = new.RelatedUUIDs
@@ -250,8 +240,6 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
-	old.TradeNames = new.TradeNames
-	old.FormerNames = new.FormerNames
 	old.CountryOfRiskUUID = new.CountryOfRiskUUID
 	old.CountryOfIncorporationUUID = new.CountryOfIncorporationUUID
 	old.CountryOfOperationsUUID = new.CountryOfOperationsUUID
