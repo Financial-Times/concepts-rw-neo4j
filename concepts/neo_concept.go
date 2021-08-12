@@ -56,7 +56,7 @@ type neoAggregatedConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAggregatedConcept, string, error) {
+func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontology.Config) (ontology.NewAggregatedConcept, string, error) {
 	typeName, err := mapper.MostSpecificType(nac.Types)
 	if err != nil {
 		return ontology.NewAggregatedConcept{}, "Returned concept had no recognized type", err
@@ -64,7 +64,7 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 
 	var sourceConcepts []ontology.NewConcept
 	for _, srcConcept := range nac.SourceRepresentations {
-		concept, err := srcConcept.ТоOntologyNewConcept()
+		concept, err := srcConcept.ТоOntologyNewConcept(ontologyCfg.Relationships)
 		if err != nil {
 			return ontology.NewAggregatedConcept{}, "Returned source concept had no recognized type", err
 		}
@@ -77,7 +77,7 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 	_ = json.Unmarshal(nacBytes, &nacMap)
 
 	props := map[string]interface{}{}
-	for field, prop := range ontology.GetConfig().FieldToNeoProps {
+	for field, prop := range ontologyCfg.FieldToNeoProps {
 		if val, ok := nacMap[prop]; ok {
 			props[field] = val
 		}
@@ -147,7 +147,7 @@ type neoConcept struct {
 	BirthYear int `json:"birthYear,omitempty"`
 }
 
-func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
+func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.RelationshipConfig) (ontology.NewConcept, error) {
 	conceptType, err := mapper.MostSpecificType(nc.Types)
 	if err != nil {
 		return ontology.NewConcept{}, err
@@ -158,7 +158,7 @@ func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 	_ = json.Unmarshal(ncBytes, &ncMap)
 
 	rels := []ontology.Relationship{}
-	for rel, relCfg := range ontology.GetConfig().Relationships {
+	for rel, relCfg := range ontologyRels {
 		if _, ok := ncMap[relCfg.ConceptField]; !ok {
 			continue
 		}
