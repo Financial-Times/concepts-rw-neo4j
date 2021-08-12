@@ -47,50 +47,27 @@ func getReadStatement() string {
 				terminationDateEpoch: hasRoleRel.terminationDateEpoch
 			}) as membershipRoles
 		RETURN
+			canonical.prefUUID as prefUUID,
+			canonical.prefLabel as prefLabel,
+			labels(canonical) as types,
 			canonical.aggregateHash as aggregateHash,
-			canonical.aliases as aliases,
-			canonical.descriptionXML as descriptionXML,
-			canonical.emailAddress as emailAddress,
-			canonical.facebookPage as facebookPage,
-			canonical.figiCode as figiCode,
-			canonical.imageUrl as imageUrl,
 			canonical.inceptionDate as inceptionDate,
 			canonical.inceptionDateEpoch as inceptionDateEpoch,
-			canonical.prefLabel as prefLabel,
-			canonical.prefUUID as prefUUID,
-			canonical.scopeNote as scopeNote,
-			canonical.shortLabel as shortLabel,
-			canonical.strapline as strapline,
 			canonical.terminationDate as terminationDate,
 			canonical.terminationDateEpoch as terminationDateEpoch,
-			canonical.twitterHandle as twitterHandle,
-			canonical.properName as properName,
-			canonical.shortName as shortName,
-			canonical.tradeNames as tradeNames,
-			canonical.formerNames as formerNames,
-			canonical.countryCode as countryCode,
-			canonical.countryOfIncorporation as countryOfIncorporation,
-			canonical.countryOfOperations as countryOfOperations,
-			canonical.countryOfRisk as countryOfRisk,
-			canonical.postalCode as postalCode,
-			canonical.yearFounded as yearFounded,
-			canonical.leiCode as leiCode,
-			canonical.isDeprecated as isDeprecated,
-			canonical.salutation as salutation,
-			canonical.birthYear as birthYear,
-			canonical.iso31661 as iso31661,
-			canonical.industryIdentifier as industryIdentifier,
+			canonical.figiCode as figiCode,
 			issuer.uuid as issuedBy,
 			hasOrganisationNode.uuid as organisationUUID,
 			hasMemberNode.uuid as personUUID,
 			membershipRoles,
-			labels(canonical) as types,
-			collect(sources) as sourceRepresentations`
+			collect(sources) as sourceRepresentations,
+			%s`
 
 	return fmt.Sprintf(statementTemplate,
 		strings.Join(getOptionalMatchesForRead(), "\n"),
 		strings.Join(getWithMatchedForRead(), ",\n"),
-		strings.Join(getSourceRelsForRead(), ",\n"))
+		strings.Join(getSourceRelsForRead(), ",\n"),
+		strings.Join(getCanonicalPropsForRead(), ",\n"))
 }
 
 func getDeleteStatement() string {
@@ -149,6 +126,16 @@ func getSourceRelsForRead() []string {
 
 	sort.Strings(sourceRels)
 	return sourceRels
+}
+
+func getCanonicalPropsForRead() []string {
+	var canonicalProps []string
+	for _, propName := range ontology.GetConfig().FieldToNeoProps {
+		canonicalProps = append(canonicalProps, getCanonicalPropForRead(propName))
+	}
+
+	sort.Strings(canonicalProps)
+	return canonicalProps
 }
 
 func getOptionalMatchesForDelete() []string {
@@ -247,6 +234,10 @@ func getSourceRelForRead(relLabel string, relCfg ontology.RelationshipConfig) st
 			nodeName,
 			strings.Join(relProps, ", "))
 	}
+}
+
+func getCanonicalPropForRead(propName string) string {
+	return fmt.Sprintf("canonical.%s as %s", propName, propName)
 }
 
 func getOptionalMatchForDelete(relLabel string) string {
