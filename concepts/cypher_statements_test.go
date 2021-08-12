@@ -43,13 +43,13 @@ func TestGenerateCypherStatements(t *testing.T) {
 func getFromGoldenFile(t *testing.T, fileName string, actual string, update bool) string {
 	t.Helper()
 
-	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		t.Fatalf("failed to open golden file %s: %v", fileName, err)
-	}
-	defer file.Close()
-
 	if update {
+		file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+		if err != nil {
+			t.Fatalf("failed to open golden file %s: %v", fileName, err)
+		}
+		defer file.Close()
+
 		_, err = file.WriteString(actual)
 		if err != nil {
 			t.Fatalf("failed writing to golden file %s: %v", fileName, err)
@@ -57,6 +57,12 @@ func getFromGoldenFile(t *testing.T, fileName string, actual string, update bool
 
 		return actual
 	}
+
+	file, err := os.OpenFile(fileName, os.O_RDONLY, 0755)
+	if err != nil {
+		t.Fatalf("failed to open golden file %s: %v", fileName, err)
+	}
+	defer file.Close()
 
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
