@@ -141,6 +141,30 @@ func TestToOntologyNewAggregateConcept(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "slice of strings props",
+			neoConcept: neoAggregatedConcept{
+				Types:       []string{"Brand"},
+				Aliases:     []string{"alias1", "alias2"},
+				TradeNames:  []string{"trade name 1", "trade name 2"},
+				FormerNames: []string{"former name 1", "former name 2"},
+			},
+			ontologyCfg: ontology.Config{
+				FieldToNeoProps: map[string]string{
+					"aliases":     "aliases",
+					"formerNames": "formerNames",
+					"tradeNames":  "tradeNames",
+				},
+			},
+			expected: ontology.NewAggregatedConcept{
+				Type: "Brand",
+				Properties: map[string]interface{}{
+					"aliases":     []interface{}{"alias1", "alias2"},
+					"formerNames": []interface{}{"former name 1", "former name 2"},
+					"tradeNames":  []interface{}{"trade name 1", "trade name 2"},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
