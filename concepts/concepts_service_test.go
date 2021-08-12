@@ -2221,6 +2221,8 @@ func TestSetCanonicalProps(t *testing.T) {
 					"aliases":                []interface{}{"alias1", "alias2"},
 					"formerNames":            []interface{}{"former name 1", "former name 2"},
 					"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
+					"yearFounded":            float64(1),
+					"birthYear":              float64(2),
 				},
 			},
 			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
@@ -2256,6 +2258,8 @@ func TestSetCanonicalProps(t *testing.T) {
 				"aliases":                []interface{}{"alias1", "alias2"},
 				"formerNames":            []interface{}{"former name 1", "former name 2"},
 				"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
+				"yearFounded":            float64(1),
+				"birthYear":              float64(2),
 			},
 		},
 	}

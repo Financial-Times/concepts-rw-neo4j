@@ -165,6 +165,27 @@ func TestToOntologyNewAggregateConcept(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "int props",
+			neoConcept: neoAggregatedConcept{
+				Types:       []string{"Brand"},
+				YearFounded: 1,
+				BirthYear:   2,
+			},
+			ontologyCfg: ontology.Config{
+				FieldToNeoProps: map[string]string{
+					"yearFounded": "yearFounded",
+					"birthYear":   "birthYear",
+				},
+			},
+			expected: ontology.NewAggregatedConcept{
+				Type: "Brand",
+				Properties: map[string]interface{}{
+					"yearFounded": float64(1),
+					"birthYear":   float64(2),
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
