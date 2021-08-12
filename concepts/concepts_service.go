@@ -963,9 +963,6 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	nodeProps["prefUUID"] = prefUUID
 	nodeProps["aggregateHash"] = canonical.AggregatedHash
 
-	if canonical.YearFounded > 0 {
-		nodeProps["yearFounded"] = canonical.YearFounded
-	}
 	if canonical.InceptionDate != "" {
 		nodeProps["inceptionDate"] = canonical.InceptionDate
 	}
@@ -977,9 +974,6 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	}
 	if canonical.TerminationDateEpoch > 0 {
 		nodeProps["terminationDateEpoch"] = canonical.TerminationDateEpoch
-	}
-	if canonical.BirthYear > 0 {
-		nodeProps["birthYear"] = canonical.BirthYear
 	}
 
 	return nodeProps
@@ -1087,11 +1081,6 @@ func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept
 		TerminationDate:      source.TerminationDate,
 		TerminationDateEpoch: source.TerminationDateEpoch,
 		Type:                 source.Type,
-		//TODO deprecated event?
-		IsDeprecated: source.IsDeprecated,
-		// Organisations
-		YearFounded: source.YearFounded,
-		// Person
-		BirthYear: source.BirthYear,
+		IsDeprecated:         source.IsDeprecated,
 	}
 }

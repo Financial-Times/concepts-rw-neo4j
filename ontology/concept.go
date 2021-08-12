@@ -146,10 +146,7 @@ type NewAggregatedConcept struct {
 	TerminationDateEpoch  int64                  `json:"terminationDateEpoch,omitempty"`
 	FigiCode              string                 `json:"figiCode,omitempty"`
 	IssuedBy              string                 `json:"issuedBy,omitempty"`
-	// Organisations
-	YearFounded  int  `json:"yearFounded,omitempty"`
-	IsDeprecated bool `json:"isDeprecated,omitempty"`
-	BirthYear    int  `json:"birthYear,omitempty"`
+	IsDeprecated          bool                   `json:"isDeprecated,omitempty"`
 }
 
 func (c NewAggregatedConcept) GetPropertyValue(propName string) (interface{}, bool) {
@@ -209,11 +206,9 @@ type NewConcept struct {
 	CountryOfRiskUUID            string                        `json:"countryOfRiskUUID,omitempty"`
 	CountryOfIncorporationUUID   string                        `json:"countryOfIncorporationUUID,omitempty"`
 	CountryOfOperationsUUID      string                        `json:"countryOfOperationsUUID,omitempty"`
-	YearFounded                  int                           `json:"yearFounded,omitempty"`
 	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
 	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 	IsDeprecated                 bool                          `json:"isDeprecated,omitempty"`
-	BirthYear                    int                           `json:"birthYear,omitempty"`
 }
 
 var ErrEmptyAuthority = errors.New("invalid request, no sourceRepresentation.authority has been supplied")

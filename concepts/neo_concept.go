@@ -97,10 +97,6 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontolo
 		TerminationDate:       nac.TerminationDate,
 		Type:                  typeName,
 		IsDeprecated:          nac.IsDeprecated,
-		// Organisations
-		YearFounded: nac.YearFounded,
-		// Person
-		BirthYear: nac.BirthYear,
 	}
 
 	return sortSources(aggregateConcept), "", nil
@@ -134,11 +130,8 @@ type neoConcept struct {
 	CountryOfRiskUUID            string                                 `json:"countryOfRiskUUID,omitempty"`
 	CountryOfIncorporationUUID   string                                 `json:"countryOfIncorporationUUID,omitempty"`
 	CountryOfOperationsUUID      string                                 `json:"countryOfOperationsUUID,omitempty"`
-	YearFounded                  int                                    `json:"yearFounded,omitempty"`
 	ParentOrganisation           string                                 `json:"parentOrganisation,omitempty"`
 	NAICSIndustryClassifications []ontology.NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
-	// Person
-	BirthYear int `json:"birthYear,omitempty"`
 }
 
 func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.RelationshipConfig) (ontology.NewConcept, error) {

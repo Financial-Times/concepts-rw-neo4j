@@ -2177,9 +2177,9 @@ func TestSetCanonicalProps(t *testing.T) {
 					"aliases":                []string{},
 					"formerNames":            []string{},
 					"tradeNames":             []string{},
+					"yearFounded":            0,
+					"birthYear":              0,
 				},
-				YearFounded: 0,
-				BirthYear:   0,
 			},
 			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
 			expected: map[string]interface{}{
@@ -2316,6 +2316,7 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
 		Properties: map[string]interface{}{
 			"salutation": "Mr",
+			"birthYear":  float64(2018),
 		},
 		PrefUUID:         "cbadd9a7-5da9-407a-a5ec-e379460991f2",
 		PrefLabel:        "Membership Pref Label",
@@ -2324,7 +2325,6 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 		PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
 		InceptionDate:    "2016-01-01",
 		TerminationDate:  "2017-02-02",
-		BirthYear:        2018,
 		SourceRepresentations: []ontology.NewConcept{
 			{
 				Relationships:    []ontology.Relationship{},
@@ -2337,7 +2337,6 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 				PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
 				InceptionDate:    "2016-01-01",
 				TerminationDate:  "2017-02-02",
-				BirthYear:        2018,
 				MembershipRoles: []ontology.MembershipRole{
 					{
 						RoleUUID:             "f807193d-337b-412f-b32c-afa14b385819",

@@ -34,8 +34,6 @@ func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept 
 		TerminationDateEpoch:  old.TerminationDateEpoch,
 		FigiCode:              old.FigiCode,
 		IssuedBy:              old.IssuedBy,
-		YearFounded:           old.YearFounded,
-		BirthYear:             old.BirthYear,
 		SourceRepresentations: newSources,
 	}
 }
@@ -73,9 +71,7 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
-	old.YearFounded = new.YearFounded
 	old.IsDeprecated = new.IsDeprecated
-	old.BirthYear = new.BirthYear
 	old.SourceRepresentations = oldSources
 
 	return old
@@ -153,11 +149,9 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		CountryOfRiskUUID:            old.CountryOfRiskUUID,
 		CountryOfIncorporationUUID:   old.CountryOfIncorporationUUID,
 		CountryOfOperationsUUID:      old.CountryOfOperationsUUID,
-		YearFounded:                  old.YearFounded,
 		ParentOrganisation:           old.ParentOrganisation,
 		NAICSIndustryClassifications: old.NAICSIndustryClassifications,
 		IsDeprecated:                 old.IsDeprecated,
-		BirthYear:                    old.BirthYear,
 	}
 }
 
@@ -243,11 +237,9 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.CountryOfRiskUUID = new.CountryOfRiskUUID
 	old.CountryOfIncorporationUUID = new.CountryOfIncorporationUUID
 	old.CountryOfOperationsUUID = new.CountryOfOperationsUUID
-	old.YearFounded = new.YearFounded
 	old.ParentOrganisation = new.ParentOrganisation
 	old.NAICSIndustryClassifications = new.NAICSIndustryClassifications
 	old.IsDeprecated = new.IsDeprecated
-	old.BirthYear = new.BirthYear
 
 	return old
 }

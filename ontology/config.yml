@@ -21,6 +21,8 @@ fieldToNeoProps:
   aliases: "aliases"
   formerNames: "formerNames"
   tradeNames: "tradeNames"
+  yearFounded: "yearFounded"
+  birthYear: "birthYear"
 relationships:
 authorities:
   - TME
