@@ -130,8 +130,8 @@ func getSourceRelsForRead() []string {
 
 func getCanonicalPropsForRead() []string {
 	var canonicalProps []string
-	for _, propName := range ontology.GetConfig().FieldToNeoProps {
-		canonicalProps = append(canonicalProps, getCanonicalPropForRead(propName))
+	for _, propCfg := range ontology.GetConfig().Fields {
+		canonicalProps = append(canonicalProps, getCanonicalPropForRead(propCfg.NeoProp))
 	}
 
 	sort.Strings(canonicalProps)

@@ -13,7 +13,7 @@ func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept 
 	_ = json.Unmarshal(oldBytes, &oldMap)
 
 	props := map[string]interface{}{}
-	for field := range GetConfig().FieldToNeoProps {
+	for field := range GetConfig().Fields {
 		if val, ok := oldMap[field]; ok {
 			props[field] = val
 		}

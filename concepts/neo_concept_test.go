@@ -128,9 +128,9 @@ func TestToOntologyNewAggregateConcept(t *testing.T) {
 				ImageURL:     "image url",
 			},
 			ontologyCfg: ontology.Config{
-				FieldToNeoProps: map[string]string{
-					"emailAddress": "emailAddress",
-					"_imageUrl":    "imageUrl",
+				Fields: map[string]ontology.FieldConfig{
+					"emailAddress": {NeoProp: "emailAddress", FieldType: "string"},
+					"_imageUrl":    {NeoProp: "imageUrl", FieldType: "string"},
 				},
 			},
 			expected: ontology.NewAggregatedConcept{
@@ -150,10 +150,10 @@ func TestToOntologyNewAggregateConcept(t *testing.T) {
 				FormerNames: []string{"former name 1", "former name 2"},
 			},
 			ontologyCfg: ontology.Config{
-				FieldToNeoProps: map[string]string{
-					"aliases":     "aliases",
-					"formerNames": "formerNames",
-					"tradeNames":  "tradeNames",
+				Fields: map[string]ontology.FieldConfig{
+					"aliases":     {NeoProp: "aliases", FieldType: "[]string"},
+					"formerNames": {NeoProp: "formerNames", FieldType: "[]string"},
+					"tradeNames":  {NeoProp: "tradeNames", FieldType: "[]string"},
 				},
 			},
 			expected: ontology.NewAggregatedConcept{
@@ -173,9 +173,9 @@ func TestToOntologyNewAggregateConcept(t *testing.T) {
 				BirthYear:   2,
 			},
 			ontologyCfg: ontology.Config{
-				FieldToNeoProps: map[string]string{
-					"yearFounded": "yearFounded",
-					"birthYear":   "birthYear",
+				Fields: map[string]ontology.FieldConfig{
+					"yearFounded": {NeoProp: "yearFounded", FieldType: "int"},
+					"birthYear":   {NeoProp: "birthYear", FieldType: "int"},
 				},
 			},
 			expected: ontology.NewAggregatedConcept{

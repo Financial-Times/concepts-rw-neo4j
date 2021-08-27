@@ -6,6 +6,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type FieldConfig struct {
+	NeoProp   string `yaml:"neoProp"`
+	FieldType string `yaml:"type"`
+}
+
 type RelationshipConfig struct {
 	ConceptField    string   `yaml:"conceptField"`
 	OneToOne        bool     `yaml:"oneToOne"`
@@ -15,9 +20,9 @@ type RelationshipConfig struct {
 }
 
 type Config struct {
-	FieldToNeoProps map[string]string             `yaml:"fieldToNeoProps"`
-	Relationships   map[string]RelationshipConfig `yaml:"relationships"`
-	Authorities     []string                      `yaml:"authorities"`
+	Fields        map[string]FieldConfig        `yaml:"fields"`
+	Relationships map[string]RelationshipConfig `yaml:"relationships"`
+	Authorities   []string                      `yaml:"authorities"`
 }
 
 var config Config
