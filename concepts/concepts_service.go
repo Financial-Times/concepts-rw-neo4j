@@ -401,12 +401,19 @@ func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) er
 	if aggConcept.PrefLabel == "" {
 		return requestError{formatError("prefLabel", aggConcept.PrefUUID, transID)}
 	}
+
 	if _, ok := constraintMap[aggConcept.Type]; !ok {
 		return requestError{formatError("type", aggConcept.PrefUUID, transID)}
 	}
+
 	if aggConcept.SourceRepresentations == nil {
 		return requestError{formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
 	}
+
+	if err := ontology.GetConfig().ValidateProperties(aggConcept.Properties); err != nil {
+		return requestError{err.Error()}
+	}
+
 	for _, sourceConcept := range aggConcept.SourceRepresentations {
 		if err := sourceConcept.Validate(); err != nil {
 			if errors.Is(err, ontology.ErrUnkownAuthority) {
@@ -426,6 +433,7 @@ func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) er
 			return requestError{formatError("type", aggConcept.PrefUUID, transID)}
 		}
 	}
+
 	return nil
 }
 
@@ -940,8 +948,13 @@ func setProps(source ontology.NewConcept, uuid string) map[string]interface{} {
 func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 
-	for field, propCfg := range ontology.GetConfig().Fields {
+	ontologyCfg := ontology.GetConfig()
+	for field, propCfg := range ontologyCfg.Fields {
 		if val, ok := canonical.GetPropertyValue(field); ok {
+			if !ontologyCfg.IsPropValueValid(field, val) {
+				continue
+			}
+
 			nodeProps[propCfg.NeoProp] = val
 		}
 	}

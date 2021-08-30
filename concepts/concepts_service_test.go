@@ -2082,9 +2082,12 @@ func TestValidateObject(t *testing.T) {
 		{
 			name: "valid concept",
 			aggConcept: ontology.AggregatedConcept{
-				PrefUUID:  basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Type:      "Brand",
+				PrefUUID:    basicConceptUUID,
+				PrefLabel:   "The Best Label",
+				Type:        "Brand",
+				Aliases:     []string{"alias1", "alias2"},
+				Strapline:   "strapline",
+				YearFounded: 2000,
 				SourceRepresentations: []ontology.Concept{
 					{
 						UUID:           basicConceptUUID,

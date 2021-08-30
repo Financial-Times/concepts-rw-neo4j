@@ -2,6 +2,8 @@ package ontology
 
 import (
 	"embed"
+	"errors"
+	"fmt"
 
 	"gopkg.in/yaml.v2"
 )
@@ -23,6 +25,66 @@ type Config struct {
 	Fields        map[string]FieldConfig        `yaml:"fields"`
 	Relationships map[string]RelationshipConfig `yaml:"relationships"`
 	Authorities   []string                      `yaml:"authorities"`
+}
+
+var ErrUnkownProperty = errors.New("unknown concept property")
+var ErrInvalidPropertyValue = errors.New("invalid property value")
+
+func (cfg Config) ValidateProperties(props map[string]interface{}) error {
+	for propName, propVal := range props {
+		if !cfg.HasField(propName) {
+			return fmt.Errorf("propName=%s: %w", propName, ErrUnkownProperty)
+		}
+
+		if !cfg.IsPropValueValid(propName, propVal) {
+			return fmt.Errorf("propName=%s, value=%v: %w", propName, propVal, ErrInvalidPropertyValue)
+		}
+	}
+
+	return nil
+}
+
+func (cfg Config) HasField(propName string) bool {
+	_, has := cfg.Fields[propName]
+	return has
+}
+
+func (cfg Config) IsPropValueValid(propName string, val interface{}) bool {
+	fieldType := cfg.Fields[propName].FieldType
+	switch fieldType {
+	case "string":
+		_, ok := val.(string)
+		return ok
+	case "[]string":
+		_, ok := val.([]string)
+		if ok {
+			return true
+		}
+
+		vs, ok := val.([]interface{}) // []interface{}, for JSON arrays
+		if !ok {
+			return false
+		}
+
+		for _, v := range vs {
+			_, ok := v.(string)
+			if !ok {
+				return false
+			}
+		}
+
+		return true
+	case "int":
+		_, ok := val.(int)
+		if ok {
+			return true
+		}
+
+		_, ok = val.(float64) // float64, for JSON numbers
+		return ok
+	default:
+		return false
+	}
 }
 
 var config Config
