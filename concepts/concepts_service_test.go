@@ -2283,22 +2283,23 @@ func TestSetCanonicalProps(t *testing.T) {
 	}
 }
 
-func TestCreateNodeQueries(t *testing.T) {
+func TestPopulateConceptQueries(t *testing.T) {
 	tests := []struct {
 		name               string
-		concept            ontology.NewConcept
+		concept            ontology.NewAggregatedConcept
 		expectedQueryCount int
 	}{
 		{
 			name:               "Concept with default values and should produce single Cypher query",
-			concept:            ontology.NewConcept{},
+			concept:            ontology.NewAggregatedConcept{},
 			expectedQueryCount: 1,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := createNodeQueries(test.concept, "")
+			var queryBatch []*neoism.CypherQuery
+			got := populateConceptQueries(queryBatch, test.concept)
 
 			if len(got) != test.expectedQueryCount {
 				t.Errorf("Number of Cypher queries differs from expected: got %d, want:%d", len(got), test.expectedQueryCount)
