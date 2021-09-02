@@ -1,0 +1,61 @@
+Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
+								set n={allprops}
+								set n :Organisation:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "aggregateHash": "",
+    "prefLabel": "Pref Label",
+    "prefUUID": "a39a4558-f562-4dca-8774-000246e6eebe"
+  },
+  "prefUUID": "a39a4558-f562-4dca-8774-000246e6eebe"
+}
+==============================================================================
+Statement: MERGE (n:Thing {uuid: {uuid}})
+											set n={allprops}
+											set n :Organisation:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "authority": "Smartlogic",
+    "authorityValue": "1234",
+    "prefLabel": "Pref Label",
+    "uuid": "a39a4558-f562-4dca-8774-000246e6eebe"
+  },
+  "uuid": "a39a4558-f562-4dca-8774-000246e6eebe"
+}
+==============================================================================
+Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+						MERGE (t)-[:EQUIVALENT_TO]->(c),
+Paremeters: {
+  "prefUUID": "a39a4558-f562-4dca-8774-000246e6eebe",
+  "uuid": "a39a4558-f562-4dca-8774-000246e6eebe"
+}
+==============================================================================
+Statement: 
+		MATCH (concept:Concept {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (concept)-[:HAS_FOCUS]->(other)	
+	,
+Paremeters: {
+  "id": "2e7429bd-7a84-41cb-a619-2c702893e359",
+  "uuid": "a39a4558-f562-4dca-8774-000246e6eebe"
+}
+==============================================================================
+Statement: 
+		MATCH (concept:Concept {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (concept)-[:HAS_FOCUS]->(other)	
+	,
+Paremeters: {
+  "id": "740c604b-8d97-443e-be70-33de6f1d6e67",
+  "uuid": "a39a4558-f562-4dca-8774-000246e6eebe"
+}
+==============================================================================
+Statement: 
+		MATCH (concept:Concept {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (concept)-[:HAS_FOCUS]->(other)	
+	,
+Paremeters: {
+  "id": "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+  "uuid": "a39a4558-f562-4dca-8774-000246e6eebe"
+}

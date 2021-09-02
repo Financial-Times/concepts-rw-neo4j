@@ -1,0 +1,98 @@
+Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
+								set n={allprops}
+								set n :PublicCompany:Company:Organisation:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "aggregateHash": "",
+    "aliases": [
+      "New York Times Company",
+      "The New York Times",
+      "The New York Times Co.",
+      "The New York Times Company",
+      "New York Times",
+      "New York Times Co"
+    ],
+    "countryCode": "US",
+    "countryOfIncorporation": "US",
+    "countryOfOperations": "US",
+    "countryOfRisk": "US",
+    "emailAddress": "help@nytimes.com",
+    "leiCode": "529900J1WEMMIW7BOH57",
+    "postalCode": "10018",
+    "prefLabel": "New York Times Co",
+    "prefUUID": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed",
+    "properName": "The New York Times Co.",
+    "scopeNote": "American media company, publisher of The New York Times",
+    "shortName": "The New York Times",
+    "yearFounded": 1851
+  },
+  "prefUUID": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:COUNTRY_OF_RISK]->(other)
+	,
+Paremeters: {
+  "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:COUNTRY_OF_INCORPORATION]->(other)
+	,
+Paremeters: {
+  "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:COUNTRY_OF_OPERATIONS]->(other)
+	,
+Paremeters: {
+  "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: MERGE (org:Thing {uuid: {uuid}})
+								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
+								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC),
+Paremeters: {
+  "naicsUUID": "49da878c-67ce-4343-9a09-a4a767e584a2",
+  "rank": 1,
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: MERGE (org:Thing {uuid: {uuid}})
+								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
+								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC),
+Paremeters: {
+  "naicsUUID": "38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
+  "rank": 2,
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: MERGE (n:Thing {uuid: {uuid}})
+											set n={allprops}
+											set n :PublicCompany:Company:Organisation:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "authority": "FACTSET",
+    "authorityValue": "000R9L-E",
+    "prefLabel": "The New York Times Co.",
+    "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+  },
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+						MERGE (t)-[:EQUIVALENT_TO]->(c),
+Paremeters: {
+  "prefUUID": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed",
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}

@@ -2303,6 +2303,51 @@ func TestPopulateConceptQueries(t *testing.T) {
 			},
 			goldenFileName: "testdata/concept-queries-default-source.golden",
 		},
+		{
+			name:           "Aggregate concept with HAS_PARENT relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "full-concorded-aggregated-concept.json")),
+			goldenFileName: "testdata/concept-queries-has-parent-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with HAS_BROADER relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-has-broader.json")),
+			goldenFileName: "testdata/concept-queries-has-broader-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with IS_RELATED_TO relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-related-to.json")),
+			goldenFileName: "testdata/concept-queries-is-related-to-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with SUPERSEDED_BY relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-superseded-by.json")),
+			goldenFileName: "testdata/concept-queries-superseded-by-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with IMPLIED_BY relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "brand-with-multiple-implied-by.json")),
+			goldenFileName: "testdata/concept-queries-implied-by-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with HAS_FOCUS relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-has-focus.json")),
+			goldenFileName: "testdata/concept-queries-has-focus-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with HAS_MEMBER, HAS_ORGANISATION & HAS_ROLE relationships",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "updated-membership.json")),
+			goldenFileName: "testdata/concept-queries-membership-rels.golden",
+		},
+		{
+			name:           "Aggregate concept with COUNTRY_OF & NAICS relationships",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "organisation-with-naics.json")),
+			goldenFileName: "testdata/concept-queries-country-of-naics-rels.golden",
+		},
+		{
+			name:           "Aggregate concept with SUB_ORGANISATION_OF relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "organisation.json")),
+			goldenFileName: "testdata/concept-queries-sub-organisation-of-rel.golden",
+		},
 	}
 
 	for _, test := range tests {
