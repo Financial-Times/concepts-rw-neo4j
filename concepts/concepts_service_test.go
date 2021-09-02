@@ -2285,27 +2285,55 @@ func TestSetCanonicalProps(t *testing.T) {
 
 func TestPopulateConceptQueries(t *testing.T) {
 	tests := []struct {
-		name               string
-		concept            ontology.NewAggregatedConcept
-		expectedQueryCount int
+		name           string
+		concept        ontology.NewAggregatedConcept
+		goldenFileName string
 	}{
 		{
-			name:               "Concept with default values and should produce single Cypher query",
-			concept:            ontology.NewAggregatedConcept{},
-			expectedQueryCount: 1,
+			name:           "Aggregate concept with default values",
+			concept:        ontology.NewAggregatedConcept{},
+			goldenFileName: "testdata/concept-queries-default.golden",
+		},
+		{
+			name: "Aggregate concept with default values and single default source",
+			concept: ontology.NewAggregatedConcept{
+				SourceRepresentations: []ontology.NewConcept{
+					{},
+				},
+			},
+			goldenFileName: "testdata/concept-queries-default-source.golden",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var queryBatch []*neoism.CypherQuery
-			got := populateConceptQueries(queryBatch, test.concept)
+			queries := populateConceptQueries(queryBatch, test.concept)
+			got := cypherBatchToString(queries)
 
-			if len(got) != test.expectedQueryCount {
-				t.Errorf("Number of Cypher queries differs from expected: got %d, want:%d", len(got), test.expectedQueryCount)
+			expectedStatement := getFromGoldenFile(t, test.goldenFileName, got, *update)
+			if !cmp.Equal(expectedStatement, got) {
+				t.Errorf("Got unexpected Cypher query batch:\n%s", cmp.Diff(expectedStatement, got))
 			}
 		})
 	}
+}
+
+func cypherBatchToString(queryBatch []*neoism.CypherQuery) string {
+	var queries []string
+	for _, query := range queryBatch {
+		// ignore lastModifiedEpoch from allprops
+		if _, ok := query.Parameters["allprops"]; ok {
+			props := query.Parameters["allprops"].(map[string]interface{})
+			delete(props, "lastModifiedEpoch")
+			query.Parameters["allprops"] = props
+		}
+
+		params, _ := json.MarshalIndent(query.Parameters, "", "  ")
+		queries = append(queries, fmt.Sprintf("Statement: %v,\nParemeters: %v", query.Statement, string(params)))
+	}
+
+	return strings.Join(queries, "\n==============================================================================\n")
 }
 
 func TestProcessMembershipRoles(t *testing.T) {
