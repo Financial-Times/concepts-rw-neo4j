@@ -212,7 +212,7 @@ type NewConcept struct {
 }
 
 var ErrEmptyAuthority = errors.New("invalid request, no sourceRepresentation.authority has been supplied")
-var ErrUnkownAuthority = errors.New("unknown authority")
+var ErrUnknownAuthority = errors.New("unknown authority")
 var ErrEmptyAuthorityValue = errors.New("invalid request, no sourceRepresentation.authorityValue has been supplied")
 
 func (c NewConcept) Validate() error {
@@ -221,7 +221,7 @@ func (c NewConcept) Validate() error {
 	}
 
 	if !stringInArr(c.Authority, GetConfig().Authorities) {
-		return ErrUnkownAuthority
+		return ErrUnknownAuthority
 	}
 
 	if c.AuthorityValue == "" {

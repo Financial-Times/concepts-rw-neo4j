@@ -27,13 +27,13 @@ type Config struct {
 	Authorities   []string                      `yaml:"authorities"`
 }
 
-var ErrUnkownProperty = errors.New("unknown concept property")
+var ErrUnknownProperty = errors.New("unknown concept property")
 var ErrInvalidPropertyValue = errors.New("invalid property value")
 
 func (cfg Config) ValidateProperties(props map[string]interface{}) error {
 	for propName, propVal := range props {
 		if !cfg.HasField(propName) {
-			return fmt.Errorf("propName=%s: %w", propName, ErrUnkownProperty)
+			return fmt.Errorf("propName=%s: %w", propName, ErrUnknownProperty)
 		}
 
 		if !cfg.IsPropValueValid(propName, propVal) {

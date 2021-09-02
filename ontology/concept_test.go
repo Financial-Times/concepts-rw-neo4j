@@ -218,7 +218,7 @@ func TestValidateProperties(t *testing.T) {
 			props: map[string]interface{}{
 				"non-existent": "prop",
 			},
-			expectedErr: ErrUnkownProperty,
+			expectedErr: ErrUnknownProperty,
 		},
 	}
 
