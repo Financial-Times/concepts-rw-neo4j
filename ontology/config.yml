@@ -75,6 +75,8 @@ relationships:
   HAS_PARENT:
     conceptField: "parentUUIDs"
     neoCreate: true
+  HAS_BROADER:
+    conceptField: "broaderUUIDs"
 authorities:
   - TME
   - FACTSET

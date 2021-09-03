@@ -130,7 +130,6 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		Authority:                    old.Authority,
 		AuthorityValue:               old.AuthorityValue,
 		LastModifiedEpoch:            old.LastModifiedEpoch,
-		BroaderUUIDs:                 old.BroaderUUIDs,
 		RelatedUUIDs:                 old.RelatedUUIDs,
 		SupersededByUUIDs:            old.SupersededByUUIDs,
 		ImpliedByUUIDs:               old.ImpliedByUUIDs,
@@ -217,7 +216,6 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.Authority = new.Authority
 	old.AuthorityValue = new.AuthorityValue
 	old.LastModifiedEpoch = new.LastModifiedEpoch
-	old.BroaderUUIDs = new.BroaderUUIDs
 	old.RelatedUUIDs = new.RelatedUUIDs
 	old.SupersededByUUIDs = new.SupersededByUUIDs
 	old.ImpliedByUUIDs = new.ImpliedByUUIDs

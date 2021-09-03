@@ -56,9 +56,6 @@ var relationships = map[string]ontology.RelationshipConfig{
 	"SUPERSEDED_BY": {
 		ConceptField: "supersededByUUIDs",
 	},
-	"HAS_BROADER": {
-		ConceptField: "broaderUUIDs",
-	},
 	"IMPLIED_BY": {
 		ConceptField: "impliedByUUIDs",
 	},
@@ -672,7 +669,6 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 		}
 
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", false)...)
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", false)...)
@@ -1048,7 +1044,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			OrganisationUUID:  source.OrganisationUUID,
 			PersonUUID:        source.PersonUUID,
 			RelatedUUIDs:      source.RelatedUUIDs,
-			BroaderUUIDs:      source.BroaderUUIDs,
 			SupersededByUUIDs: source.SupersededByUUIDs,
 			ImpliedByUUIDs:    source.ImpliedByUUIDs,
 			HasFocusUUIDs:     source.HasFocusUUIDs,
