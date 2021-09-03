@@ -200,7 +200,6 @@ func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.Rel
 		IssuedBy:                     nc.IssuedBy,
 		LastModifiedEpoch:            0,
 		MembershipRoles:              cleanMembershipRoles(nc.MembershipRoles),
-		OrganisationUUID:             nc.OrganisationUUID,
 		CountryOfIncorporationUUID:   nc.CountryOfIncorporationUUID,
 		CountryOfRiskUUID:            nc.CountryOfRiskUUID,
 		CountryOfOperationsUUID:      nc.CountryOfOperationsUUID,

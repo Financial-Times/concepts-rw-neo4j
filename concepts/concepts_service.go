@@ -30,10 +30,6 @@ var relationships = map[string]ontology.RelationshipConfig{
 		ConceptField: "personUUID",
 		OneToOne:     true,
 	},
-	"HAS_ORGANISATION": {
-		ConceptField: "organisationUUID",
-		OneToOne:     true,
-	},
 	"SUB_ORGANISATION_OF": {
 		ConceptField: "parentOrganisation",
 		OneToOne:     true,
@@ -709,10 +705,7 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		},
 	}
 
-	relIDs := filterSlice([]string{concept.OrganisationUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_ORGANISATION", true)...)
-
-	relIDs = filterSlice([]string{concept.PersonUUID})
+	relIDs := filterSlice([]string{concept.PersonUUID})
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_MEMBER", true)...)
 
 	relIDs = filterSlice([]string{concept.IssuedBy})
@@ -1018,18 +1011,17 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	var cleanSources []ontology.NewConcept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewConcept{
-			Relationships:    source.Relationships,
-			UUID:             source.UUID,
-			PrefLabel:        source.PrefLabel,
-			Type:             source.Type,
-			Authority:        source.Authority,
-			AuthorityValue:   source.AuthorityValue,
-			OrganisationUUID: source.OrganisationUUID,
-			PersonUUID:       source.PersonUUID,
-			MembershipRoles:  source.MembershipRoles,
-			IssuedBy:         source.IssuedBy,
-			FigiCode:         source.FigiCode,
-			IsDeprecated:     source.IsDeprecated,
+			Relationships:   source.Relationships,
+			UUID:            source.UUID,
+			PrefLabel:       source.PrefLabel,
+			Type:            source.Type,
+			Authority:       source.Authority,
+			AuthorityValue:  source.AuthorityValue,
+			PersonUUID:      source.PersonUUID,
+			MembershipRoles: source.MembershipRoles,
+			IssuedBy:        source.IssuedBy,
+			FigiCode:        source.FigiCode,
+			IsDeprecated:    source.IsDeprecated,
 			// Organisations
 			ParentOrganisation:           source.ParentOrganisation,
 			CountryOfOperationsUUID:      source.CountryOfOperationsUUID,

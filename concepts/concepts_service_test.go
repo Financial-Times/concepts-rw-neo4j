@@ -2408,16 +2408,20 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 		TerminationDate:  "2017-02-02",
 		SourceRepresentations: []ontology.NewConcept{
 			{
-				Relationships:    []ontology.Relationship{},
-				UUID:             "cbadd9a7-5da9-407a-a5ec-e379460991f2",
-				PrefLabel:        "Membership Pref Label",
-				Type:             "Membership",
-				Authority:        "Smartlogic",
-				AuthorityValue:   "746464",
-				OrganisationUUID: "7f40d291-b3cb-47c4-9bce-18413e9350cf",
-				PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
-				InceptionDate:    "2016-01-01",
-				TerminationDate:  "2017-02-02",
+				Relationships: []ontology.Relationship{
+					{
+						UUID:  "7f40d291-b3cb-47c4-9bce-18413e9350cf",
+						Label: "HAS_ORGANISATION",
+					},
+				},
+				UUID:            "cbadd9a7-5da9-407a-a5ec-e379460991f2",
+				PrefLabel:       "Membership Pref Label",
+				Type:            "Membership",
+				Authority:       "Smartlogic",
+				AuthorityValue:  "746464",
+				PersonUUID:      "35946807-0205-4fc1-8516-bb1ae141659b",
+				InceptionDate:   "2016-01-01",
+				TerminationDate: "2017-02-02",
 				MembershipRoles: []ontology.MembershipRole{
 					{
 						RoleUUID:             "f807193d-337b-412f-b32c-afa14b385819",
