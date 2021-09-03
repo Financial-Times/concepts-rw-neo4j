@@ -50,9 +50,6 @@ var relationships = map[string]ontology.RelationshipConfig{
 		ConceptField: "countryOfRiskUUID",
 		OneToOne:     true,
 	},
-	"HAS_FOCUS": {
-		ConceptField: "hasFocusUUIDs",
-	},
 	"HAS_ROLE": {
 		ConceptField: "membershipRoles",
 		Properties: []string{
@@ -658,8 +655,6 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel)...)
 			}
 		}
-
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", false)...)
 	}
 
 	return queryBatch
@@ -1031,7 +1026,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			AuthorityValue:   source.AuthorityValue,
 			OrganisationUUID: source.OrganisationUUID,
 			PersonUUID:       source.PersonUUID,
-			HasFocusUUIDs:    source.HasFocusUUIDs,
 			MembershipRoles:  source.MembershipRoles,
 			IssuedBy:         source.IssuedBy,
 			FigiCode:         source.FigiCode,

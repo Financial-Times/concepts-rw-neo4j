@@ -130,7 +130,6 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		Authority:                    old.Authority,
 		AuthorityValue:               old.AuthorityValue,
 		LastModifiedEpoch:            old.LastModifiedEpoch,
-		HasFocusUUIDs:                old.HasFocusUUIDs,
 		OrganisationUUID:             old.OrganisationUUID,
 		PersonUUID:                   old.PersonUUID,
 		Hash:                         old.Hash,
@@ -213,7 +212,6 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.Authority = new.Authority
 	old.AuthorityValue = new.AuthorityValue
 	old.LastModifiedEpoch = new.LastModifiedEpoch
-	old.HasFocusUUIDs = new.HasFocusUUIDs
 	old.OrganisationUUID = new.OrganisationUUID
 	old.PersonUUID = new.PersonUUID
 	old.Hash = new.Hash
