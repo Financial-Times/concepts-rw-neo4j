@@ -56,7 +56,7 @@ type neoAggregatedConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAggregatedConcept, string, error) {
+func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontology.Config) (ontology.NewAggregatedConcept, string, error) {
 	typeName, err := mapper.MostSpecificType(nac.Types)
 	if err != nil {
 		return ontology.NewAggregatedConcept{}, "Returned concept had no recognized type", err
@@ -64,7 +64,7 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 
 	var sourceConcepts []ontology.NewConcept
 	for _, srcConcept := range nac.SourceRepresentations {
-		concept, err := srcConcept.ТоOntologyNewConcept()
+		concept, err := srcConcept.ТоOntologyNewConcept(ontologyCfg.Relationships)
 		if err != nil {
 			return ontology.NewAggregatedConcept{}, "Returned source concept had no recognized type", err
 		}
@@ -77,8 +77,8 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 	_ = json.Unmarshal(nacBytes, &nacMap)
 
 	props := map[string]interface{}{}
-	for field, prop := range ontology.GetConfig().FieldToNeoProps {
-		if val, ok := nacMap[prop]; ok {
+	for field, propCfg := range ontologyCfg.Fields {
+		if val, ok := nacMap[propCfg.NeoProp]; ok {
 			props[field] = val
 		}
 	}
@@ -87,59 +87,26 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept() (ontology.NewAgg
 		Properties:            props,
 		SourceRepresentations: sourceConcepts,
 		AggregatedHash:        nac.AggregateHash,
-		Aliases:               nac.Aliases,
-		DescriptionXML:        nac.DescriptionXML,
-		EmailAddress:          nac.EmailAddress,
-		FacebookPage:          nac.FacebookPage,
 		FigiCode:              nac.FigiCode,
-		ImageURL:              nac.ImageURL,
 		InceptionDate:         nac.InceptionDate,
 		IssuedBy:              nac.IssuedBy,
 		OrganisationUUID:      nac.OrganisationUUID,
 		PersonUUID:            nac.PersonUUID,
 		PrefLabel:             nac.PrefLabel,
 		PrefUUID:              nac.PrefUUID,
-		ScopeNote:             nac.ScopeNote,
-		ShortLabel:            nac.ShortLabel,
-		Strapline:             nac.Strapline,
 		TerminationDate:       nac.TerminationDate,
-		TwitterHandle:         nac.TwitterHandle,
 		Type:                  typeName,
 		IsDeprecated:          nac.IsDeprecated,
-		// Organisations
-		ProperName:             nac.ProperName,
-		ShortName:              nac.ShortName,
-		TradeNames:             nac.TradeNames,
-		FormerNames:            nac.FormerNames,
-		CountryCode:            nac.CountryCode,
-		CountryOfIncorporation: nac.CountryOfIncorporation,
-		CountryOfRisk:          nac.CountryOfRisk,
-		CountryOfOperations:    nac.CountryOfOperations,
-		PostalCode:             nac.PostalCode,
-		YearFounded:            nac.YearFounded,
-		LeiCode:                nac.LeiCode,
-		// Person
-		Salutation: nac.Salutation,
-		BirthYear:  nac.BirthYear,
-		// Location
-		ISO31661: nac.ISO31661,
-		// Industry Classification
-		IndustryIdentifier: nac.IndustryIdentifier,
 	}
 
 	return sortSources(aggregateConcept), "", nil
 }
 
 type neoConcept struct {
-	Aliases              []string                  `json:"aliases,omitempty"`
 	Authority            string                    `json:"authority,omitempty"`
 	AuthorityValue       string                    `json:"authorityValue,omitempty"`
 	BroaderUUIDs         []string                  `json:"broaderUUIDs,omitempty"`
-	DescriptionXML       string                    `json:"descriptionXML,omitempty"`
-	EmailAddress         string                    `json:"emailAddress,omitempty"`
-	FacebookPage         string                    `json:"facebookPage,omitempty"`
 	FigiCode             string                    `json:"figiCode,omitempty"`
-	ImageURL             string                    `json:"imageUrl,omitempty"`
 	InceptionDate        string                    `json:"inceptionDate,omitempty"`
 	InceptionDateEpoch   int64                     `json:"inceptionDateEpoch,omitempty"`
 	IssuedBy             string                    `json:"issuedBy,omitempty"`
@@ -154,42 +121,20 @@ type neoConcept struct {
 	SupersededByUUIDs    []string                  `json:"supersededByUUIDs,omitempty"`
 	ImpliedByUUIDs       []string                  `json:"impliedByUUIDs,omitempty"`
 	HasFocusUUIDs        []string                  `json:"hasFocusUUIDs,omitempty"`
-	ScopeNote            string                    `json:"scopeNote,omitempty"`
-	ShortLabel           string                    `json:"shortLabel,omitempty"`
-	Strapline            string                    `json:"strapline,omitempty"`
 	TerminationDate      string                    `json:"terminationDate,omitempty"`
 	TerminationDateEpoch int64                     `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle        string                    `json:"twitterHandle,omitempty"`
 	Types                []string                  `json:"types,omitempty"`
 	UUID                 string                    `json:"uuid,omitempty"`
 	IsDeprecated         bool                      `json:"isDeprecated,omitempty"`
 	// Organisations
-	ProperName                   string                                 `json:"properName,omitempty"`
-	ShortName                    string                                 `json:"shortName,omitempty"`
-	TradeNames                   []string                               `json:"tradeNames,omitempty"`
-	FormerNames                  []string                               `json:"formerNames,omitempty"`
-	CountryCode                  string                                 `json:"countryCode,omitempty"`
-	CountryOfRisk                string                                 `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation       string                                 `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations          string                                 `json:"countryOfOperations,omitempty"`
 	CountryOfRiskUUID            string                                 `json:"countryOfRiskUUID,omitempty"`
 	CountryOfIncorporationUUID   string                                 `json:"countryOfIncorporationUUID,omitempty"`
 	CountryOfOperationsUUID      string                                 `json:"countryOfOperationsUUID,omitempty"`
-	PostalCode                   string                                 `json:"postalCode,omitempty"`
-	YearFounded                  int                                    `json:"yearFounded,omitempty"`
-	LeiCode                      string                                 `json:"leiCode,omitempty"`
 	ParentOrganisation           string                                 `json:"parentOrganisation,omitempty"`
 	NAICSIndustryClassifications []ontology.NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
-	// Location
-	ISO31661 string `json:"iso31661,omitempty"`
-	// Person
-	Salutation string `json:"salutation,omitempty"`
-	BirthYear  int    `json:"birthYear,omitempty"`
-	// Industry Classifications
-	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
+func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.RelationshipConfig) (ontology.NewConcept, error) {
 	conceptType, err := mapper.MostSpecificType(nc.Types)
 	if err != nil {
 		return ontology.NewConcept{}, err
@@ -200,7 +145,7 @@ func (nc neoConcept) ТоOntologyNewConcept() (ontology.NewConcept, error) {
 	_ = json.Unmarshal(ncBytes, &ncMap)
 
 	rels := []ontology.Relationship{}
-	for rel, relCfg := range ontology.GetConfig().Relationships {
+	for rel, relCfg := range ontologyRels {
 		if _, ok := ncMap[relCfg.ConceptField]; !ok {
 			continue
 		}

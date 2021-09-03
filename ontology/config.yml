@@ -1,4 +1,76 @@
-fieldToNeoProps:
+fields:
+  strapline:
+    neoProp: "strapline"
+    type: "string"
+  descriptionXML:
+    neoProp: "descriptionXML"
+    type: "string"
+  _imageUrl:
+    neoProp: "imageUrl"
+    type: "string"
+  emailAddress:
+    neoProp: "emailAddress"
+    type: "string"
+  facebookPage:
+    neoProp: "facebookPage"
+    type: "string"
+  twitterHandle:
+    neoProp: "twitterHandle"
+    type: "string"
+  scopeNote:
+    neoProp: "scopeNote"
+    type: "string"
+  shortLabel:
+    neoProp: "shortLabel"
+    type: "string"
+  properName:
+    neoProp: "properName"
+    type: "string"
+  shortName:
+    neoProp: "shortName"
+    type: "string"
+  countryCode:
+    neoProp: "countryCode"
+    type: "string"
+  countryOfRisk:
+    neoProp: "countryOfRisk"
+    type: "string"
+  countryOfIncorporation:
+    neoProp: "countryOfIncorporation"
+    type: "string"
+  countryOfOperations:
+    neoProp: "countryOfOperations"
+    type: "string"
+  postalCode:
+    neoProp: "postalCode"
+    type: "string"
+  leiCode:
+    neoProp: "leiCode"
+    type: "string"
+  iso31661:
+    neoProp: "iso31661"
+    type: "string"
+  salutation:
+    neoProp: "salutation"
+    type: "string"
+  industryIdentifier:
+    neoProp: "industryIdentifier"
+    type: "string"
+  aliases:
+    neoProp: "aliases"
+    type: "[]string"
+  formerNames:
+    neoProp: "formerNames"
+    type: "[]string"
+  tradeNames:
+    neoProp: "tradeNames"
+    type: "[]string"
+  yearFounded:
+    neoProp: "yearFounded"
+    type: "int"
+  birthYear:
+    neoProp: "birthYear"
+    type: "int"
 relationships:
 authorities:
   - TME

@@ -2082,9 +2082,12 @@ func TestValidateObject(t *testing.T) {
 		{
 			name: "valid concept",
 			aggConcept: ontology.AggregatedConcept{
-				PrefUUID:  basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Type:      "Brand",
+				PrefUUID:    basicConceptUUID,
+				PrefLabel:   "The Best Label",
+				Type:        "Brand",
+				Aliases:     []string{"alias1", "alias2"},
+				Strapline:   "strapline",
+				YearFounded: 2000,
 				SourceRepresentations: []ontology.Concept{
 					{
 						UUID:           basicConceptUUID,
@@ -2152,16 +2155,114 @@ func TestSetCanonicalProps(t *testing.T) {
 			},
 		},
 		{
-			name: "Concept with invalid values should return default props",
+			name: "Concept with empty values for properties should return default props",
 			concept: ontology.NewAggregatedConcept{
-				Aliases:     []string{},
-				FormerNames: []string{},
-				TradeNames:  []string{},
+				Properties: map[string]interface{}{
+					"strapline":              "",
+					"descriptionXML":         "",
+					"imageUrl":               "",
+					"emailAddress":           "",
+					"facebookPage":           "",
+					"twitterHandle":          "",
+					"scopeNote":              "",
+					"shortLabel":             "",
+					"properName":             "",
+					"shortName":              "",
+					"countryCode":            "",
+					"countryOfRisk":          "",
+					"countryOfIncorporation": "",
+					"countryOfOperations":    "",
+					"postalCode":             "",
+					"leiCode":                "",
+					"iso31661":               "",
+					"salutation":             "",
+					"industryIdentifier":     "",
+					"aliases":                []string{},
+					"formerNames":            []string{},
+					"tradeNames":             []string{},
+					"yearFounded":            0,
+					"birthYear":              0,
+				},
 			},
 			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
 			expected: map[string]interface{}{
 				"prefUUID":      "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
 				"aggregateHash": "",
+			},
+		},
+		{
+			name: "Concept with non-empty valid values should return valid props",
+			concept: ontology.NewAggregatedConcept{
+				PrefLabel:            "prefLabel value",
+				AggregatedHash:       "aggregateHash value",
+				InceptionDate:        "inceptionDate value",
+				TerminationDate:      "terminationDate value",
+				InceptionDateEpoch:   1,
+				TerminationDateEpoch: 2,
+				FigiCode:             "figiCode value",
+				IsDeprecated:         true,
+				Properties: map[string]interface{}{
+					"strapline":              "strapline value",
+					"descriptionXML":         "descriptionXML value",
+					"_imageUrl":              "imageUrl value",
+					"emailAddress":           "emailAddress value",
+					"facebookPage":           "facebookPage value",
+					"twitterHandle":          "twitterHandle value",
+					"scopeNote":              "scopeNote value",
+					"shortLabel":             "shortLabel value",
+					"properName":             "properName value",
+					"shortName":              "shortName value",
+					"countryCode":            "countryCode value",
+					"countryOfRisk":          "countryOfRisk value",
+					"countryOfIncorporation": "countryOfIncorporation value",
+					"countryOfOperations":    "countryOfOperations value",
+					"postalCode":             "postalCode value",
+					"leiCode":                "leiCode value",
+					"iso31661":               "iso31661 value",
+					"salutation":             "salutation value",
+					"industryIdentifier":     "industryIdentifier value",
+					"aliases":                []interface{}{"alias1", "alias2"},
+					"formerNames":            []interface{}{"former name 1", "former name 2"},
+					"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
+					"yearFounded":            float64(1),
+					"birthYear":              float64(2),
+				},
+			},
+			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+			expected: map[string]interface{}{
+				"prefUUID":               "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+				"prefLabel":              "prefLabel value",
+				"aggregateHash":          "aggregateHash value",
+				"inceptionDate":          "inceptionDate value",
+				"terminationDate":        "terminationDate value",
+				"inceptionDateEpoch":     int64(1),
+				"terminationDateEpoch":   int64(2),
+				"figiCode":               "figiCode value",
+				"isDeprecated":           true,
+				"strapline":              "strapline value",
+				"descriptionXML":         "descriptionXML value",
+				"imageUrl":               "imageUrl value",
+				"emailAddress":           "emailAddress value",
+				"facebookPage":           "facebookPage value",
+				"twitterHandle":          "twitterHandle value",
+				"scopeNote":              "scopeNote value",
+				"shortLabel":             "shortLabel value",
+				"properName":             "properName value",
+				"shortName":              "shortName value",
+				"countryCode":            "countryCode value",
+				"countryOfRisk":          "countryOfRisk value",
+				"countryOfIncorporation": "countryOfIncorporation value",
+				"countryOfOperations":    "countryOfOperations value",
+				"postalCode":             "postalCode value",
+				"leiCode":                "leiCode value",
+				"iso31661":               "iso31661 value",
+				"salutation":             "salutation value",
+				"industryIdentifier":     "industryIdentifier value",
+				"aliases":                []interface{}{"alias1", "alias2"},
+				"formerNames":            []interface{}{"former name 1", "former name 2"},
+				"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
+				"yearFounded":            float64(1),
+				"birthYear":              float64(2),
 			},
 		},
 	}
@@ -2170,7 +2271,9 @@ func TestSetCanonicalProps(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got := setCanonicalProps(test.concept, test.prefUUID)
 
-			// ignore "lastModifiedEpoch"
+			// check that "lastModifiedEpoch" is always set and ignore it
+			_, ok := got["lastModifiedEpoch"]
+			assert.True(t, ok, "expected lastModifiedEpoch to be set")
 			delete(got, "lastModifiedEpoch")
 
 			if !cmp.Equal(got, test.expected) {
@@ -2218,7 +2321,10 @@ func TestProcessMembershipRoles(t *testing.T) {
 
 func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
-		Properties:       map[string]interface{}{},
+		Properties: map[string]interface{}{
+			"salutation": "Mr",
+			"birthYear":  float64(2018),
+		},
 		PrefUUID:         "cbadd9a7-5da9-407a-a5ec-e379460991f2",
 		PrefLabel:        "Membership Pref Label",
 		Type:             "Membership",
@@ -2226,8 +2332,6 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 		PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
 		InceptionDate:    "2016-01-01",
 		TerminationDate:  "2017-02-02",
-		Salutation:       "Mr",
-		BirthYear:        2018,
 		SourceRepresentations: []ontology.NewConcept{
 			{
 				Relationships:    []ontology.Relationship{},
@@ -2240,8 +2344,6 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 				PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
 				InceptionDate:    "2016-01-01",
 				TerminationDate:  "2017-02-02",
-				Salutation:       "Mr",
-				BirthYear:        2018,
 				MembershipRoles: []ontology.MembershipRole{
 					{
 						RoleUUID:             "f807193d-337b-412f-b32c-afa14b385819",
