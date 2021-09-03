@@ -50,9 +50,6 @@ var relationships = map[string]ontology.RelationshipConfig{
 		ConceptField: "countryOfRiskUUID",
 		OneToOne:     true,
 	},
-	"SUPERSEDED_BY": {
-		ConceptField: "supersededByUUIDs",
-	},
 	"IMPLIED_BY": {
 		ConceptField: "impliedByUUIDs",
 	},
@@ -665,7 +662,6 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			}
 		}
 
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", false)...)
 	}
@@ -1031,21 +1027,20 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	var cleanSources []ontology.NewConcept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewConcept{
-			Relationships:     source.Relationships,
-			UUID:              source.UUID,
-			PrefLabel:         source.PrefLabel,
-			Type:              source.Type,
-			Authority:         source.Authority,
-			AuthorityValue:    source.AuthorityValue,
-			OrganisationUUID:  source.OrganisationUUID,
-			PersonUUID:        source.PersonUUID,
-			SupersededByUUIDs: source.SupersededByUUIDs,
-			ImpliedByUUIDs:    source.ImpliedByUUIDs,
-			HasFocusUUIDs:     source.HasFocusUUIDs,
-			MembershipRoles:   source.MembershipRoles,
-			IssuedBy:          source.IssuedBy,
-			FigiCode:          source.FigiCode,
-			IsDeprecated:      source.IsDeprecated,
+			Relationships:    source.Relationships,
+			UUID:             source.UUID,
+			PrefLabel:        source.PrefLabel,
+			Type:             source.Type,
+			Authority:        source.Authority,
+			AuthorityValue:   source.AuthorityValue,
+			OrganisationUUID: source.OrganisationUUID,
+			PersonUUID:       source.PersonUUID,
+			ImpliedByUUIDs:   source.ImpliedByUUIDs,
+			HasFocusUUIDs:    source.HasFocusUUIDs,
+			MembershipRoles:  source.MembershipRoles,
+			IssuedBy:         source.IssuedBy,
+			FigiCode:         source.FigiCode,
+			IsDeprecated:     source.IsDeprecated,
 			// Organisations
 			ParentOrganisation:           source.ParentOrganisation,
 			CountryOfOperationsUUID:      source.CountryOfOperationsUUID,

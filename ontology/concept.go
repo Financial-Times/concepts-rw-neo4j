@@ -186,7 +186,6 @@ type NewConcept struct {
 	Authority            string           `json:"authority,omitempty"`
 	AuthorityValue       string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
 	ImpliedByUUIDs       []string         `json:"impliedByUUIDs,omitempty"`
 	HasFocusUUIDs        []string         `json:"hasFocusUUIDs,omitempty"`
 	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
