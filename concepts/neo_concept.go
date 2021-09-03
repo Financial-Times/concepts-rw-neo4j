@@ -207,7 +207,6 @@ func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.Rel
 		CountryOfOperationsUUID:      nc.CountryOfOperationsUUID,
 		PersonUUID:                   nc.PersonUUID,
 		PrefLabel:                    nc.PrefLabel,
-		RelatedUUIDs:                 filterSlice(nc.RelatedUUIDs),
 		ImpliedByUUIDs:               filterSlice(nc.ImpliedByUUIDs),
 		HasFocusUUIDs:                filterSlice(nc.HasFocusUUIDs),
 		NAICSIndustryClassifications: cleanNAICS(nc.NAICSIndustryClassifications),
@@ -286,9 +285,6 @@ func sortSources(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept 
 	for j := range c.SourceRepresentations {
 		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
 			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
-		})
-		sort.SliceStable(c.SourceRepresentations[j].RelatedUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].RelatedUUIDs[k] < c.SourceRepresentations[j].RelatedUUIDs[l]
 		})
 		sort.SliceStable(c.SourceRepresentations[j].SupersededByUUIDs, func(k, l int) bool {
 			return c.SourceRepresentations[j].SupersededByUUIDs[k] < c.SourceRepresentations[j].SupersededByUUIDs[l]

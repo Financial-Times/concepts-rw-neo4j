@@ -50,9 +50,6 @@ var relationships = map[string]ontology.RelationshipConfig{
 		ConceptField: "countryOfRiskUUID",
 		OneToOne:     true,
 	},
-	"IS_RELATED_TO": {
-		ConceptField: "relatedUUIDs",
-	},
 	"SUPERSEDED_BY": {
 		ConceptField: "supersededByUUIDs",
 	},
@@ -668,7 +665,6 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 			}
 		}
 
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", false)...)
 		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", false)...)
@@ -1043,7 +1039,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			AuthorityValue:    source.AuthorityValue,
 			OrganisationUUID:  source.OrganisationUUID,
 			PersonUUID:        source.PersonUUID,
-			RelatedUUIDs:      source.RelatedUUIDs,
 			SupersededByUUIDs: source.SupersededByUUIDs,
 			ImpliedByUUIDs:    source.ImpliedByUUIDs,
 			HasFocusUUIDs:     source.HasFocusUUIDs,
