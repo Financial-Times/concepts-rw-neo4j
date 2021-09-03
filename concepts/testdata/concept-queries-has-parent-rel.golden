@@ -19,16 +19,6 @@ Paremeters: {
   "prefUUID": "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
 }
 ==============================================================================
-Statement: 
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
-		MERGE (thing)-[:HAS_PARENT]->(other)
-	,
-Paremeters: {
-  "id": "2ef39c2a-da9c-4263-8209-ebfd490d3101",
-  "uuid": "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
-}
-==============================================================================
 Statement: MERGE (n:Thing {uuid: {uuid}})
 											set n={allprops}
 											set n :Section:Classification:Concept:Thing,
@@ -46,6 +36,16 @@ Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
 						MERGE (t)-[:EQUIVALENT_TO]->(c),
 Paremeters: {
   "prefUUID": "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+  "uuid": "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:HAS_PARENT]->(other)
+	,
+Paremeters: {
+  "id": "2ef39c2a-da9c-4263-8209-ebfd490d3101",
   "uuid": "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
 }
 ==============================================================================

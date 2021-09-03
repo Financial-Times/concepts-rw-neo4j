@@ -50,9 +50,6 @@ var relationships = map[string]ontology.RelationshipConfig{
 		ConceptField: "countryOfRiskUUID",
 		OneToOne:     true,
 	},
-	"HAS_PARENT": {
-		ConceptField: "parentUUIDs",
-	},
 	"IS_RELATED_TO": {
 		ConceptField: "relatedUUIDs",
 	},
@@ -733,8 +730,6 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		},
 	}
 
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, concept.ParentUUIDs, "HAS_PARENT", true)...)
-
 	relIDs := filterSlice([]string{concept.OrganisationUUID})
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_ORGANISATION", true)...)
 
@@ -1050,7 +1045,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			Type:              source.Type,
 			Authority:         source.Authority,
 			AuthorityValue:    source.AuthorityValue,
-			ParentUUIDs:       source.ParentUUIDs,
 			OrganisationUUID:  source.OrganisationUUID,
 			PersonUUID:        source.PersonUUID,
 			RelatedUUIDs:      source.RelatedUUIDs,

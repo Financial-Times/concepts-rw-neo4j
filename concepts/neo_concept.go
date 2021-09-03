@@ -206,7 +206,6 @@ func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.Rel
 		CountryOfIncorporationUUID:   nc.CountryOfIncorporationUUID,
 		CountryOfRiskUUID:            nc.CountryOfRiskUUID,
 		CountryOfOperationsUUID:      nc.CountryOfOperationsUUID,
-		ParentUUIDs:                  filterSlice(nc.ParentUUIDs),
 		PersonUUID:                   nc.PersonUUID,
 		PrefLabel:                    nc.PrefLabel,
 		RelatedUUIDs:                 filterSlice(nc.RelatedUUIDs),

@@ -72,6 +72,9 @@ fields:
     neoProp: "birthYear"
     type: "int"
 relationships:
+  HAS_PARENT:
+    conceptField: "parentUUIDs"
+    neoCreate: true
 authorities:
   - TME
   - FACTSET
