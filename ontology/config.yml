@@ -81,6 +81,8 @@ relationships:
     conceptField: "relatedUUIDs"
   SUPERSEDED_BY:
     conceptField: "supersededByUUIDs"
+  IMPLIED_BY:
+    conceptField: "impliedByUUIDs"
 authorities:
   - TME
   - FACTSET
