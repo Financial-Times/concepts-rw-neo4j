@@ -26,10 +26,6 @@ const (
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
 var relationships = map[string]ontology.RelationshipConfig{
-	"HAS_MEMBER": {
-		ConceptField: "personUUID",
-		OneToOne:     true,
-	},
 	"SUB_ORGANISATION_OF": {
 		ConceptField: "parentOrganisation",
 		OneToOne:     true,
@@ -705,10 +701,7 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		},
 	}
 
-	relIDs := filterSlice([]string{concept.PersonUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_MEMBER", true)...)
-
-	relIDs = filterSlice([]string{concept.IssuedBy})
+	relIDs := filterSlice([]string{concept.IssuedBy})
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
 
 	relIDs = filterSlice([]string{concept.ParentOrganisation})
@@ -1017,7 +1010,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			Type:            source.Type,
 			Authority:       source.Authority,
 			AuthorityValue:  source.AuthorityValue,
-			PersonUUID:      source.PersonUUID,
 			MembershipRoles: source.MembershipRoles,
 			IssuedBy:        source.IssuedBy,
 			FigiCode:        source.FigiCode,

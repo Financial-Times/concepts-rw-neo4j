@@ -186,7 +186,6 @@ type NewConcept struct {
 	Authority            string           `json:"authority,omitempty"`
 	AuthorityValue       string           `json:"authorityValue,omitempty"`
 	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	PersonUUID           string           `json:"personUUID,omitempty"`
 	Hash                 string           `json:"hash,omitempty"`
 	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
 	InceptionDate        string           `json:"inceptionDate,omitempty"`

@@ -89,6 +89,10 @@ relationships:
     conceptField: "organisationUUID"
     oneToOne: true
     neoCreate: true
+  HAS_MEMBER:
+    conceptField: "personUUID"
+    oneToOne: true
+    neoCreate: true
 authorities:
   - TME
   - FACTSET

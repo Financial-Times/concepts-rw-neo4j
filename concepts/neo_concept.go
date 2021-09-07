@@ -203,7 +203,6 @@ func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.Rel
 		CountryOfIncorporationUUID:   nc.CountryOfIncorporationUUID,
 		CountryOfRiskUUID:            nc.CountryOfRiskUUID,
 		CountryOfOperationsUUID:      nc.CountryOfOperationsUUID,
-		PersonUUID:                   nc.PersonUUID,
 		PrefLabel:                    nc.PrefLabel,
 		NAICSIndustryClassifications: cleanNAICS(nc.NAICSIndustryClassifications),
 		Type:                         conceptType,

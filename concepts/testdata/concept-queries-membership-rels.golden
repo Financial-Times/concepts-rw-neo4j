@@ -11,16 +11,6 @@ Paremeters: {
   "prefUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 }
 ==============================================================================
-Statement: 
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
-		MERGE (thing)-[:HAS_MEMBER]->(other)
-	,
-Paremeters: {
-  "id": "69a8e241-2bfb-4aed-a441-8489d813c5f7",
-  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
-}
-==============================================================================
 Statement: MERGE (node:Thing{uuid: {nodeUUID}})
 							MERGE (role:Thing{uuid: {roleUUID}})
 								ON CREATE SET
@@ -68,5 +58,15 @@ Statement:
 	,
 Paremeters: {
   "id": "7ccf2673-2ec0-4b42-b69e-9a2460b945c6",
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:HAS_MEMBER]->(other)
+	,
+Paremeters: {
+  "id": "69a8e241-2bfb-4aed-a441-8489d813c5f7",
   "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 }
