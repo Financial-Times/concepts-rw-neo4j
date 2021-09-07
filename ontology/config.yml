@@ -105,6 +105,10 @@ relationships:
     conceptField: "countryOfOperationsUUID"
     oneToOne: true
     neoCreate: true
+  SUB_ORGANISATION_OF:
+    conceptField: "parentOrganisation"
+    oneToOne: true
+    neoCreate: true
 authorities:
   - TME
   - FACTSET

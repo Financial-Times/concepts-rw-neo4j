@@ -26,10 +26,6 @@ const (
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
 var relationships = map[string]ontology.RelationshipConfig{
-	"SUB_ORGANISATION_OF": {
-		ConceptField: "parentOrganisation",
-		OneToOne:     true,
-	},
 	"HAS_ROLE": {
 		ConceptField: "membershipRoles",
 		Properties: []string{
@@ -692,9 +688,6 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 	relIDs := filterSlice([]string{concept.IssuedBy})
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
 
-	relIDs = filterSlice([]string{concept.ParentOrganisation})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "SUB_ORGANISATION_OF", true)...)
-
 	for _, naics := range concept.NAICSIndustryClassifications {
 		if naics.UUID != "" {
 			writeNAICS := &neoism.CypherQuery{
@@ -994,7 +987,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			FigiCode:        source.FigiCode,
 			IsDeprecated:    source.IsDeprecated,
 			// Organisations
-			ParentOrganisation:           source.ParentOrganisation,
 			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
 		}
 		cleanSources = append(cleanSources, cleanConcept)

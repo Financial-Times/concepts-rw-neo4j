@@ -205,8 +205,6 @@ func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.Rel
 		Type:                         conceptType,
 		UUID:                         nc.UUID,
 		IsDeprecated:                 nc.IsDeprecated,
-		// Organisations
-		ParentOrganisation: nc.ParentOrganisation,
 	}, nil
 }
 

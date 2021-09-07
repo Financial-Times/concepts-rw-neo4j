@@ -195,7 +195,6 @@ type NewConcept struct {
 	FigiCode             string           `json:"figiCode,omitempty"`
 	IssuedBy             string           `json:"issuedBy,omitempty"`
 	// Organisations
-	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
 	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 	IsDeprecated                 bool                          `json:"isDeprecated,omitempty"`
 }
