@@ -2410,12 +2410,12 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 			{
 				Relationships: []ontology.Relationship{
 					{
-						UUID:  "7f40d291-b3cb-47c4-9bce-18413e9350cf",
-						Label: "HAS_ORGANISATION",
-					},
-					{
 						UUID:  "35946807-0205-4fc1-8516-bb1ae141659b",
 						Label: "HAS_MEMBER",
+					},
+					{
+						UUID:  "7f40d291-b3cb-47c4-9bce-18413e9350cf",
+						Label: "HAS_ORGANISATION",
 					},
 				},
 				UUID:            "cbadd9a7-5da9-407a-a5ec-e379460991f2",

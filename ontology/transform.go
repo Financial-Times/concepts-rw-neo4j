@@ -1,6 +1,9 @@
 package ontology
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sort"
+)
 
 func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept {
 	var newSources []NewConcept
@@ -121,6 +124,14 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 			}
 		}
 	}
+
+	sort.SliceStable(rels, func(i, j int) bool {
+		if rels[i].UUID != rels[j].UUID {
+			return rels[i].UUID < rels[j].UUID
+		}
+
+		return rels[i].Label < rels[j].Label
+	})
 
 	return NewConcept{
 		Relationships:                rels,

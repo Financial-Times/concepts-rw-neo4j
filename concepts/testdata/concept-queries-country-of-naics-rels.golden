@@ -80,7 +80,7 @@ Paremeters: {
 Statement: 
 		MERGE (thing:Thing {uuid: {uuid}})
 		MERGE (other:Thing {uuid: {id}})
-		MERGE (thing)-[:COUNTRY_OF_RISK]->(other)
+		MERGE (thing)-[:COUNTRY_OF_OPERATIONS]->(other)
 	,
 Paremeters: {
   "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
@@ -90,7 +90,7 @@ Paremeters: {
 Statement: 
 		MERGE (thing:Thing {uuid: {uuid}})
 		MERGE (other:Thing {uuid: {id}})
-		MERGE (thing)-[:COUNTRY_OF_OPERATIONS]->(other)
+		MERGE (thing)-[:COUNTRY_OF_RISK]->(other)
 	,
 Paremeters: {
   "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
