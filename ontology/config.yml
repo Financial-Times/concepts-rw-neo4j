@@ -93,6 +93,18 @@ relationships:
     conceptField: "personUUID"
     oneToOne: true
     neoCreate: true
+  COUNTRY_OF_RISK:
+    conceptField: "countryOfRiskUUID"
+    oneToOne: true
+    neoCreate: true
+  COUNTRY_OF_INCORPORATION:
+    conceptField: "countryOfIncorporationUUID"
+    oneToOne: true
+    neoCreate: true
+  COUNTRY_OF_OPERATIONS:
+    conceptField: "countryOfOperationsUUID"
+    oneToOne: true
+    neoCreate: true
 authorities:
   - TME
   - FACTSET

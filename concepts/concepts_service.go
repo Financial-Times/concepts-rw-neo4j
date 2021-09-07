@@ -30,18 +30,6 @@ var relationships = map[string]ontology.RelationshipConfig{
 		ConceptField: "parentOrganisation",
 		OneToOne:     true,
 	},
-	"COUNTRY_OF_OPERATIONS": {
-		ConceptField: "countryOfOperationsUUID",
-		OneToOne:     true,
-	},
-	"COUNTRY_OF_INCORPORATION": {
-		ConceptField: "countryOfIncorporationUUID",
-		OneToOne:     true,
-	},
-	"COUNTRY_OF_RISK": {
-		ConceptField: "countryOfRiskUUID",
-		OneToOne:     true,
-	},
 	"HAS_ROLE": {
 		ConceptField: "membershipRoles",
 		Properties: []string{
@@ -707,15 +695,6 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 	relIDs = filterSlice([]string{concept.ParentOrganisation})
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "SUB_ORGANISATION_OF", true)...)
 
-	relIDs = filterSlice([]string{concept.CountryOfRiskUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_RISK", true)...)
-
-	relIDs = filterSlice([]string{concept.CountryOfIncorporationUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_INCORPORATION", true)...)
-
-	relIDs = filterSlice([]string{concept.CountryOfOperationsUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_OPERATIONS", true)...)
-
 	for _, naics := range concept.NAICSIndustryClassifications {
 		if naics.UUID != "" {
 			writeNAICS := &neoism.CypherQuery{
@@ -1016,9 +995,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			IsDeprecated:    source.IsDeprecated,
 			// Organisations
 			ParentOrganisation:           source.ParentOrganisation,
-			CountryOfOperationsUUID:      source.CountryOfOperationsUUID,
-			CountryOfIncorporationUUID:   source.CountryOfIncorporationUUID,
-			CountryOfRiskUUID:            source.CountryOfRiskUUID,
 			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
 		}
 		cleanSources = append(cleanSources, cleanConcept)

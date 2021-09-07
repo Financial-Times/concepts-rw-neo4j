@@ -138,9 +138,6 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		TerminationDateEpoch:         old.TerminationDateEpoch,
 		FigiCode:                     old.FigiCode,
 		IssuedBy:                     old.IssuedBy,
-		CountryOfRiskUUID:            old.CountryOfRiskUUID,
-		CountryOfIncorporationUUID:   old.CountryOfIncorporationUUID,
-		CountryOfOperationsUUID:      old.CountryOfOperationsUUID,
 		ParentOrganisation:           old.ParentOrganisation,
 		NAICSIndustryClassifications: old.NAICSIndustryClassifications,
 		IsDeprecated:                 old.IsDeprecated,
@@ -218,9 +215,6 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
-	old.CountryOfRiskUUID = new.CountryOfRiskUUID
-	old.CountryOfIncorporationUUID = new.CountryOfIncorporationUUID
-	old.CountryOfOperationsUUID = new.CountryOfOperationsUUID
 	old.ParentOrganisation = new.ParentOrganisation
 	old.NAICSIndustryClassifications = new.NAICSIndustryClassifications
 	old.IsDeprecated = new.IsDeprecated

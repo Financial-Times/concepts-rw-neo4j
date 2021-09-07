@@ -29,36 +29,6 @@ Paremeters: {
   "prefUUID": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
 }
 ==============================================================================
-Statement: 
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
-		MERGE (thing)-[:COUNTRY_OF_RISK]->(other)
-	,
-Paremeters: {
-  "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
-  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
-}
-==============================================================================
-Statement: 
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
-		MERGE (thing)-[:COUNTRY_OF_INCORPORATION]->(other)
-	,
-Paremeters: {
-  "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
-  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
-}
-==============================================================================
-Statement: 
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
-		MERGE (thing)-[:COUNTRY_OF_OPERATIONS]->(other)
-	,
-Paremeters: {
-  "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
-  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
-}
-==============================================================================
 Statement: MERGE (org:Thing {uuid: {uuid}})
 								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
 								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC),
@@ -94,5 +64,35 @@ Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
 						MERGE (t)-[:EQUIVALENT_TO]->(c),
 Paremeters: {
   "prefUUID": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed",
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:COUNTRY_OF_INCORPORATION]->(other)
+	,
+Paremeters: {
+  "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:COUNTRY_OF_RISK]->(other)
+	,
+Paremeters: {
+  "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
+  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:COUNTRY_OF_OPERATIONS]->(other)
+	,
+Paremeters: {
+  "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
   "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
 }
