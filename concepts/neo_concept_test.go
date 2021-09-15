@@ -112,3 +112,88 @@ func TestFilterRelationships(t *testing.T) {
 		})
 	}
 }
+
+func TestToOntologyNewAggregateConcept(t *testing.T) {
+	tests := []struct {
+		name        string
+		neoConcept  neoAggregatedConcept
+		ontologyCfg ontology.Config
+		expected    ontology.NewAggregatedConcept
+	}{
+		{
+			name: "string props",
+			neoConcept: neoAggregatedConcept{
+				Types:        []string{"Brand"},
+				EmailAddress: "test@example.com",
+				ImageURL:     "image url",
+			},
+			ontologyCfg: ontology.Config{
+				Fields: map[string]ontology.FieldConfig{
+					"emailAddress": {NeoProp: "emailAddress", FieldType: "string"},
+					"_imageUrl":    {NeoProp: "imageUrl", FieldType: "string"},
+				},
+			},
+			expected: ontology.NewAggregatedConcept{
+				Type: "Brand",
+				Properties: map[string]interface{}{
+					"emailAddress": "test@example.com",
+					"_imageUrl":    "image url",
+				},
+			},
+		},
+		{
+			name: "slice of strings props",
+			neoConcept: neoAggregatedConcept{
+				Types:       []string{"Brand"},
+				Aliases:     []string{"alias1", "alias2"},
+				TradeNames:  []string{"trade name 1", "trade name 2"},
+				FormerNames: []string{"former name 1", "former name 2"},
+			},
+			ontologyCfg: ontology.Config{
+				Fields: map[string]ontology.FieldConfig{
+					"aliases":     {NeoProp: "aliases", FieldType: "[]string"},
+					"formerNames": {NeoProp: "formerNames", FieldType: "[]string"},
+					"tradeNames":  {NeoProp: "tradeNames", FieldType: "[]string"},
+				},
+			},
+			expected: ontology.NewAggregatedConcept{
+				Type: "Brand",
+				Properties: map[string]interface{}{
+					"aliases":     []interface{}{"alias1", "alias2"},
+					"formerNames": []interface{}{"former name 1", "former name 2"},
+					"tradeNames":  []interface{}{"trade name 1", "trade name 2"},
+				},
+			},
+		},
+		{
+			name: "int props",
+			neoConcept: neoAggregatedConcept{
+				Types:       []string{"Brand"},
+				YearFounded: 1,
+				BirthYear:   2,
+			},
+			ontologyCfg: ontology.Config{
+				Fields: map[string]ontology.FieldConfig{
+					"yearFounded": {NeoProp: "yearFounded", FieldType: "int"},
+					"birthYear":   {NeoProp: "birthYear", FieldType: "int"},
+				},
+			},
+			expected: ontology.NewAggregatedConcept{
+				Type: "Brand",
+				Properties: map[string]interface{}{
+					"yearFounded": float64(1),
+					"birthYear":   float64(2),
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, _, _ := test.neoConcept.ToOntologyNewAggregateConcept(test.ontologyCfg)
+			if !cmp.Equal(got, test.expected) {
+				t.Error(cmp.Diff(got, test.expected))
+			}
+		})
+	}
+}

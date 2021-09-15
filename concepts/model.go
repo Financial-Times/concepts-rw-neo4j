@@ -69,17 +69,3 @@ var conceptLabels = [...]string{
 	"IndustryClassification",
 	"NAICSIndustryClassification",
 }
-
-var authorities = []string{
-	"TME",
-	"FACTSET",
-	"UPP",
-	"LEI",
-	"Smartlogic",
-	"ManagedLocation",
-	"ISO-3166-1",
-	"Geonames",
-	"Wikidata",
-	"DBPedia",
-	"NAICS",
-}

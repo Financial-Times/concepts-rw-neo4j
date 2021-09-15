@@ -305,7 +305,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Throws validation error for invalid concept",
 			aggregatedConcept: ontology.AggregatedConcept{PrefUUID: basicConceptUUID},
-			errStr:            "Invalid request, no prefLabel has been supplied",
+			errStr:            "invalid request, no prefLabel has been supplied",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
@@ -863,7 +863,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Unknown Authority Should Fail",
 			aggregatedConcept: getAggregatedConcept(t, "unknown-authority.json"),
-			errStr:            "Invalid Request",
+			errStr:            "unknown authority",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
 			},
@@ -1001,11 +1001,8 @@ func TestWriteService(t *testing.T) {
 					t.Errorf("Test %s failed: Updated uuid list differs from expected:\n%s", test.testName, cmp.Diff(test.updatedConcepts, updatedConcepts, cmpOpts))
 				}
 			} else {
-				if err != nil {
-					assert.Error(t, err, "Error was expected")
-					assert.Contains(t, err.Error(), test.errStr, "Error message is not correct")
-				}
-				// TODO: Check these errors better
+				assert.Error(t, err, "Error was expected")
+				assert.Contains(t, err.Error(), test.errStr, "Error message is not correct")
 			}
 		})
 	}
@@ -1968,149 +1965,154 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	defer deleteConcordedNodes(t, "1", "2")
 }
 
-func TestObjectFieldValidationCorrectlyWorks(t *testing.T) {
-	defer cleanDB(t)
-
-	type testStruct struct {
-		testName      string
+func TestValidateObject(t *testing.T) {
+	tests := []struct {
+		name          string
 		aggConcept    ontology.AggregatedConcept
 		returnedError string
-	}
-
-	aggregateConceptNoPrefLabel := ontology.AggregatedConcept{
-		PrefUUID: basicConceptUUID,
-	}
-	aggregateConceptNoType := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-	}
-	aggregateConceptNoSourceReps := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-	}
-	sourceRepNoPrefLabel := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:           basicConceptUUID,
-				Type:           "Brand",
-				AuthorityValue: "123456-UPP",
-				Authority:      "UPP",
+	}{
+		{
+			name: "aggregate concept without prefLabel should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID: basicConceptUUID,
+				Type:     "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						AuthorityValue: "123456-UPP",
+					},
+				},
 			},
+			returnedError: "invalid request, no prefLabel has been supplied",
 		},
-	}
-	sourceRepNoType := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:      basicConceptUUID,
+		{
+			name: "aggregate concept without type should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
 				PrefLabel: "The Best Label",
-				Authority: "UPP",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						AuthorityValue: "123456-UPP",
+					},
+				},
 			},
+			returnedError: "invalid request, no type has been supplied",
 		},
-	}
-	sourceRepNoAuthorityValue := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:      basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Authority: "UPP",
-				Type:      "Brand",
-			},
-		},
-	}
-	sourceRepNoAuthority := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:      basicConceptUUID,
+		{
+			name: "aggregate concept without source representations should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
 				PrefLabel: "The Best Label",
 				Type:      "Brand",
 			},
+			returnedError: "invalid request, no sourceRepresentation has been supplied",
 		},
-	}
-	returnNoError := ontology.AggregatedConcept{
-		PrefUUID:  basicConceptUUID,
-		PrefLabel: "The Best Label",
-		Type:      "Brand",
-		SourceRepresentations: []ontology.Concept{
-			{
-				UUID:           basicConceptUUID,
-				PrefLabel:      "The Best Label",
-				Type:           "Brand",
-				AuthorityValue: "123456-UPP",
+		{
+			name: "source representation without prefLabel should be valid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						Type:           "Brand",
+						AuthorityValue: "123456-UPP",
+						Authority:      "UPP",
+					},
+				},
+			},
+		},
+		{
+			name: "source representation without type should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Authority:      "UPP",
+						AuthorityValue: "123456-UPP",
+					},
+				},
+			},
+			returnedError: "invalid request, no sourceRepresentation.type has been supplied",
+		},
+		{
+			name: "source representation without authorityValue should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:      basicConceptUUID,
+						PrefLabel: "The Best Label",
+						Type:      "Brand",
+						Authority: "UPP",
+					},
+				},
+			},
+			returnedError: "invalid request, no sourceRepresentation.authorityValue has been supplied",
+		},
+		{
+			name: "source representation without authority should be invalid",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						AuthorityValue: "123456-UPP",
+					},
+				},
+			},
+			returnedError: "invalid request, no sourceRepresentation.authority has been supplied",
+		},
+		{
+			name: "valid concept",
+			aggConcept: ontology.AggregatedConcept{
+				PrefUUID:    basicConceptUUID,
+				PrefLabel:   "The Best Label",
+				Type:        "Brand",
+				Aliases:     []string{"alias1", "alias2"},
+				Strapline:   "strapline",
+				YearFounded: 2000,
+				SourceRepresentations: []ontology.Concept{
+					{
+						UUID:           basicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						Authority:      "UPP",
+						AuthorityValue: "123456-UPP",
+					},
+				},
 			},
 		},
 	}
-	testAggregateConceptNoPrefLabel := testStruct{
-		testName:      "testAggregateConceptNoPrefLabel",
-		aggConcept:    aggregateConceptNoPrefLabel,
-		returnedError: "Invalid request, no prefLabel has been supplied",
-	}
-	testAggregateConceptNoType := testStruct{
-		testName:      "testAggregateConceptNoType",
-		aggConcept:    aggregateConceptNoType,
-		returnedError: "Invalid request, no type has been supplied",
-	}
-	testAggregateConceptNoSourceReps := testStruct{
-		testName:      "testAggregateConceptNoSourceReps",
-		aggConcept:    aggregateConceptNoSourceReps,
-		returnedError: "Invalid request, no sourceRepresentation has been supplied",
-	}
-	testSourceRepNoPrefLabel := testStruct{
-		testName:   "testSourceRepNoPrefLabel",
-		aggConcept: sourceRepNoPrefLabel,
-	}
-	testSourceRepNoType := testStruct{
-		testName:      "testSourceRepNoType",
-		aggConcept:    sourceRepNoType,
-		returnedError: "Invalid request, no sourceRepresentation.type has been supplied",
-	}
-	testSourceRepNoAuthorityValue := testStruct{
-		testName:      "testSourceRepNoAuthorityValue",
-		aggConcept:    sourceRepNoAuthorityValue,
-		returnedError: "Invalid request, no sourceRepresentation.authorityValue has been supplied",
-	}
-	testSourceRepNoAuthority := testStruct{
-		testName:      "testSourceRepNoAuthority",
-		aggConcept:    sourceRepNoAuthority,
-		returnedError: "Invalid request, no sourceRepresentation.authority has been supplied",
-	}
-	returnNoErrorTest := testStruct{
-		testName:      "returnNoErrorTest",
-		aggConcept:    returnNoError,
-		returnedError: "",
-	}
 
-	scenarios := []testStruct{
-		testAggregateConceptNoPrefLabel,
-		testAggregateConceptNoType,
-		testAggregateConceptNoSourceReps,
-		testSourceRepNoPrefLabel,
-		testSourceRepNoType,
-		testSourceRepNoAuthorityValue,
-		testSourceRepNoAuthority,
-		returnNoErrorTest,
-	}
-
-	for _, scenario := range scenarios {
-		newAggConcept := ontology.TransformToNewAggregateConcept(scenario.aggConcept)
-		err := validateObject(newAggConcept, "transaction_id")
-		if err != nil {
-			assert.Contains(t, err.Error(), scenario.returnedError, scenario.testName)
-		} else {
-			assert.NoError(t, err, scenario.testName)
-		}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			newAggConcept := ontology.TransformToNewAggregateConcept(test.aggConcept)
+			err := validateObject(newAggConcept, "transaction_id")
+			if err != nil {
+				assert.NotEmpty(t, test.returnedError, "test.returnedError should not be empty when there is an error")
+				assert.Contains(t, err.Error(), test.returnedError, test.name)
+			} else {
+				assert.Empty(t, test.returnedError, "test.returnedError should be empty when there is no error")
+				assert.NoError(t, err, test.name)
+			}
+		})
 	}
 }
 
@@ -2153,16 +2155,114 @@ func TestSetCanonicalProps(t *testing.T) {
 			},
 		},
 		{
-			name: "Concept with invalid values should return default props",
+			name: "Concept with empty values for properties should return default props",
 			concept: ontology.NewAggregatedConcept{
-				Aliases:     []string{},
-				FormerNames: []string{},
-				TradeNames:  []string{},
+				Properties: map[string]interface{}{
+					"strapline":              "",
+					"descriptionXML":         "",
+					"imageUrl":               "",
+					"emailAddress":           "",
+					"facebookPage":           "",
+					"twitterHandle":          "",
+					"scopeNote":              "",
+					"shortLabel":             "",
+					"properName":             "",
+					"shortName":              "",
+					"countryCode":            "",
+					"countryOfRisk":          "",
+					"countryOfIncorporation": "",
+					"countryOfOperations":    "",
+					"postalCode":             "",
+					"leiCode":                "",
+					"iso31661":               "",
+					"salutation":             "",
+					"industryIdentifier":     "",
+					"aliases":                []string{},
+					"formerNames":            []string{},
+					"tradeNames":             []string{},
+					"yearFounded":            0,
+					"birthYear":              0,
+				},
 			},
 			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
 			expected: map[string]interface{}{
 				"prefUUID":      "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
 				"aggregateHash": "",
+			},
+		},
+		{
+			name: "Concept with non-empty valid values should return valid props",
+			concept: ontology.NewAggregatedConcept{
+				PrefLabel:            "prefLabel value",
+				AggregatedHash:       "aggregateHash value",
+				InceptionDate:        "inceptionDate value",
+				TerminationDate:      "terminationDate value",
+				InceptionDateEpoch:   1,
+				TerminationDateEpoch: 2,
+				FigiCode:             "figiCode value",
+				IsDeprecated:         true,
+				Properties: map[string]interface{}{
+					"strapline":              "strapline value",
+					"descriptionXML":         "descriptionXML value",
+					"_imageUrl":              "imageUrl value",
+					"emailAddress":           "emailAddress value",
+					"facebookPage":           "facebookPage value",
+					"twitterHandle":          "twitterHandle value",
+					"scopeNote":              "scopeNote value",
+					"shortLabel":             "shortLabel value",
+					"properName":             "properName value",
+					"shortName":              "shortName value",
+					"countryCode":            "countryCode value",
+					"countryOfRisk":          "countryOfRisk value",
+					"countryOfIncorporation": "countryOfIncorporation value",
+					"countryOfOperations":    "countryOfOperations value",
+					"postalCode":             "postalCode value",
+					"leiCode":                "leiCode value",
+					"iso31661":               "iso31661 value",
+					"salutation":             "salutation value",
+					"industryIdentifier":     "industryIdentifier value",
+					"aliases":                []interface{}{"alias1", "alias2"},
+					"formerNames":            []interface{}{"former name 1", "former name 2"},
+					"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
+					"yearFounded":            float64(1),
+					"birthYear":              float64(2),
+				},
+			},
+			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+			expected: map[string]interface{}{
+				"prefUUID":               "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+				"prefLabel":              "prefLabel value",
+				"aggregateHash":          "aggregateHash value",
+				"inceptionDate":          "inceptionDate value",
+				"terminationDate":        "terminationDate value",
+				"inceptionDateEpoch":     int64(1),
+				"terminationDateEpoch":   int64(2),
+				"figiCode":               "figiCode value",
+				"isDeprecated":           true,
+				"strapline":              "strapline value",
+				"descriptionXML":         "descriptionXML value",
+				"imageUrl":               "imageUrl value",
+				"emailAddress":           "emailAddress value",
+				"facebookPage":           "facebookPage value",
+				"twitterHandle":          "twitterHandle value",
+				"scopeNote":              "scopeNote value",
+				"shortLabel":             "shortLabel value",
+				"properName":             "properName value",
+				"shortName":              "shortName value",
+				"countryCode":            "countryCode value",
+				"countryOfRisk":          "countryOfRisk value",
+				"countryOfIncorporation": "countryOfIncorporation value",
+				"countryOfOperations":    "countryOfOperations value",
+				"postalCode":             "postalCode value",
+				"leiCode":                "leiCode value",
+				"iso31661":               "iso31661 value",
+				"salutation":             "salutation value",
+				"industryIdentifier":     "industryIdentifier value",
+				"aliases":                []interface{}{"alias1", "alias2"},
+				"formerNames":            []interface{}{"former name 1", "former name 2"},
+				"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
+				"yearFounded":            float64(1),
+				"birthYear":              float64(2),
 			},
 		},
 	}
@@ -2171,7 +2271,9 @@ func TestSetCanonicalProps(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got := setCanonicalProps(test.concept, test.prefUUID)
 
-			// ignore "lastModifiedEpoch"
+			// check that "lastModifiedEpoch" is always set and ignore it
+			_, ok := got["lastModifiedEpoch"]
+			assert.True(t, ok, "expected lastModifiedEpoch to be set")
 			delete(got, "lastModifiedEpoch")
 
 			if !cmp.Equal(got, test.expected) {
@@ -2219,7 +2321,10 @@ func TestProcessMembershipRoles(t *testing.T) {
 
 func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
-		Properties:       map[string]interface{}{},
+		Properties: map[string]interface{}{
+			"salutation": "Mr",
+			"birthYear":  float64(2018),
+		},
 		PrefUUID:         "cbadd9a7-5da9-407a-a5ec-e379460991f2",
 		PrefLabel:        "Membership Pref Label",
 		Type:             "Membership",
@@ -2227,8 +2332,6 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 		PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
 		InceptionDate:    "2016-01-01",
 		TerminationDate:  "2017-02-02",
-		Salutation:       "Mr",
-		BirthYear:        2018,
 		SourceRepresentations: []ontology.NewConcept{
 			{
 				Relationships:    []ontology.Relationship{},
@@ -2241,8 +2344,6 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 				PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
 				InceptionDate:    "2016-01-01",
 				TerminationDate:  "2017-02-02",
-				Salutation:       "Mr",
-				BirthYear:        2018,
 				MembershipRoles: []ontology.MembershipRole{
 					{
 						RoleUUID:             "f807193d-337b-412f-b32c-afa14b385819",

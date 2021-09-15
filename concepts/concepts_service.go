@@ -173,7 +173,7 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 	}
 
 	neoAggregateConcept := results[0]
-	newAggregatedConcept, logMsg, err := neoAggregateConcept.ToOntologyNewAggregateConcept()
+	newAggregatedConcept, logMsg, err := neoAggregateConcept.ToOntologyNewAggregateConcept(ontology.GetConfig())
 	if err != nil {
 		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error(logMsg)
 		return ontology.NewAggregatedConcept{}, false, err
@@ -401,34 +401,44 @@ func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) er
 	if aggConcept.PrefLabel == "" {
 		return requestError{formatError("prefLabel", aggConcept.PrefUUID, transID)}
 	}
+
 	if _, ok := constraintMap[aggConcept.Type]; !ok {
 		return requestError{formatError("type", aggConcept.PrefUUID, transID)}
 	}
+
 	if aggConcept.SourceRepresentations == nil {
 		return requestError{formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
 	}
-	for _, concept := range aggConcept.SourceRepresentations {
-		if concept.Authority == "" {
-			return requestError{formatError("sourceRepresentation.authority", concept.UUID, transID)}
+
+	if err := ontology.GetConfig().ValidateProperties(aggConcept.Properties); err != nil {
+		return requestError{err.Error()}
+	}
+
+	for _, sourceConcept := range aggConcept.SourceRepresentations {
+		if err := sourceConcept.Validate(); err != nil {
+			if errors.Is(err, ontology.ErrUnknownAuthority) {
+				logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", sourceConcept.Authority)
+			} else {
+				logger.WithError(err).WithTransactionID(transID).WithUUID(sourceConcept.UUID).Error("Validation of payload failed")
+			}
+
+			return requestError{err.Error()}
 		}
-		if !stringInArr(concept.Authority, authorities) {
-			logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", concept.Authority)
+
+		if sourceConcept.Type == "" {
+			return requestError{formatError("sourceRepresentation.type", sourceConcept.UUID, transID)}
 		}
-		if concept.Type == "" {
-			return requestError{formatError("sourceRepresentation.type", concept.UUID, transID)}
-		}
-		if concept.AuthorityValue == "" {
-			return requestError{formatError("sourceRepresentation.authorityValue", concept.UUID, transID)}
-		}
-		if _, ok := constraintMap[concept.Type]; !ok {
+
+		if _, ok := constraintMap[sourceConcept.Type]; !ok {
 			return requestError{formatError("type", aggConcept.PrefUUID, transID)}
 		}
 	}
+
 	return nil
 }
 
 func formatError(field string, uuid string, transID string) string {
-	err := errors.New("Invalid request, no " + field + " has been supplied")
+	err := errors.New("invalid request, no " + field + " has been supplied")
 	logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Validation of payload failed")
 	return err.Error()
 }
@@ -542,7 +552,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 		} else {
 			if updatedSourceID == entityEquivalence.PrefUUID {
 				if updatedSourceID != newAggregatedConcept.PrefUUID {
-					authority := getCanonicalAuthority(newAggregatedConcept)
+					authority := newAggregatedConcept.GetCanonicalAuthority()
 					if entityEquivalence.Authority != authority && stringInArr(entityEquivalence.Authority, concordancesSources) {
 						logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transfered to the new concordance", updatedSourceID)
 						// just delete the lone prefUUID node because the other concordances to
@@ -938,9 +948,14 @@ func setProps(source ontology.NewConcept, uuid string) map[string]interface{} {
 func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 
-	for field, prop := range ontology.GetConfig().FieldToNeoProps {
+	ontologyCfg := ontology.GetConfig()
+	for field, propCfg := range ontologyCfg.Fields {
 		if val, ok := canonical.GetPropertyValue(field); ok {
-			nodeProps[prop] = val
+			if !ontologyCfg.IsPropValueValid(field, val) {
+				continue
+			}
+
+			nodeProps[propCfg.NeoProp] = val
 		}
 	}
 
@@ -961,69 +976,6 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	nodeProps["prefUUID"] = prefUUID
 	nodeProps["aggregateHash"] = canonical.AggregatedHash
 
-	if len(canonical.Aliases) > 0 {
-		nodeProps["aliases"] = canonical.Aliases
-	}
-	if canonical.EmailAddress != "" {
-		nodeProps["emailAddress"] = canonical.EmailAddress
-	}
-	if canonical.FacebookPage != "" {
-		nodeProps["facebookPage"] = canonical.FacebookPage
-	}
-	if canonical.TwitterHandle != "" {
-		nodeProps["twitterHandle"] = canonical.TwitterHandle
-	}
-	if canonical.ScopeNote != "" {
-		nodeProps["scopeNote"] = canonical.ScopeNote
-	}
-	if canonical.ShortLabel != "" {
-		nodeProps["shortLabel"] = canonical.ShortLabel
-	}
-	if canonical.DescriptionXML != "" {
-		nodeProps["descriptionXML"] = canonical.DescriptionXML
-	}
-	if canonical.ImageURL != "" {
-		nodeProps["imageUrl"] = canonical.ImageURL
-	}
-	if canonical.Strapline != "" {
-		nodeProps["strapline"] = canonical.Strapline
-	}
-	if canonical.FigiCode != "" {
-		nodeProps["figiCode"] = canonical.FigiCode
-	}
-	if canonical.ProperName != "" {
-		nodeProps["properName"] = canonical.ProperName
-	}
-	if canonical.ShortName != "" {
-		nodeProps["shortName"] = canonical.ShortName
-	}
-	if len(canonical.FormerNames) > 0 {
-		nodeProps["formerNames"] = canonical.FormerNames
-	}
-	if len(canonical.TradeNames) > 0 {
-		nodeProps["tradeNames"] = canonical.TradeNames
-	}
-	if canonical.CountryCode != "" {
-		nodeProps["countryCode"] = canonical.CountryCode
-	}
-	if canonical.CountryOfIncorporation != "" {
-		nodeProps["countryOfIncorporation"] = canonical.CountryOfIncorporation
-	}
-	if canonical.CountryOfRisk != "" {
-		nodeProps["countryOfRisk"] = canonical.CountryOfRisk
-	}
-	if canonical.CountryOfOperations != "" {
-		nodeProps["countryOfOperations"] = canonical.CountryOfOperations
-	}
-	if canonical.PostalCode != "" {
-		nodeProps["postalCode"] = canonical.PostalCode
-	}
-	if canonical.YearFounded > 0 {
-		nodeProps["yearFounded"] = canonical.YearFounded
-	}
-	if canonical.LeiCode != "" {
-		nodeProps["leiCode"] = canonical.LeiCode
-	}
 	if canonical.InceptionDate != "" {
 		nodeProps["inceptionDate"] = canonical.InceptionDate
 	}
@@ -1035,18 +987,6 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	}
 	if canonical.TerminationDateEpoch > 0 {
 		nodeProps["terminationDateEpoch"] = canonical.TerminationDateEpoch
-	}
-	if canonical.Salutation != "" {
-		nodeProps["salutation"] = canonical.Salutation
-	}
-	if canonical.BirthYear > 0 {
-		nodeProps["birthYear"] = canonical.BirthYear
-	}
-	if canonical.ISO31661 != "" {
-		nodeProps["iso31661"] = canonical.ISO31661
-	}
-	if canonical.IndustryIdentifier != "" {
-		nodeProps["industryIdentifier"] = canonical.IndustryIdentifier
 	}
 
 	return nodeProps
@@ -1135,15 +1075,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	return c
 }
 
-func getCanonicalAuthority(aggregate ontology.NewAggregatedConcept) string {
-	for _, source := range aggregate.SourceRepresentations {
-		if source.UUID == aggregate.PrefUUID {
-			return source.Authority
-		}
-	}
-	return ""
-}
-
 func stringInArr(searchFor string, values []string) bool {
 	for _, val := range values {
 		if searchFor == val {
@@ -1155,44 +1086,14 @@ func stringInArr(searchFor string, values []string) bool {
 
 func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
-		Aliases:              source.Aliases,
-		DescriptionXML:       source.DescriptionXML,
-		EmailAddress:         source.EmailAddress,
-		FacebookPage:         source.FacebookPage,
-		FigiCode:             source.FigiCode,
 		AggregatedHash:       source.Hash,
-		ImageURL:             source.ImageURL,
 		InceptionDate:        source.InceptionDate,
 		InceptionDateEpoch:   source.InceptionDateEpoch,
 		IssuedBy:             source.IssuedBy,
 		PrefLabel:            source.PrefLabel,
-		ScopeNote:            source.ScopeNote,
-		ShortLabel:           source.ShortLabel,
-		Strapline:            source.Strapline,
 		TerminationDate:      source.TerminationDate,
 		TerminationDateEpoch: source.TerminationDateEpoch,
-		TwitterHandle:        source.TwitterHandle,
 		Type:                 source.Type,
-		//TODO deprecated event?
-		IsDeprecated: source.IsDeprecated,
-		// Organisations
-		ProperName:             source.ProperName,
-		ShortName:              source.ShortName,
-		TradeNames:             source.TradeNames,
-		FormerNames:            source.FormerNames,
-		CountryCode:            source.CountryCode,
-		CountryOfIncorporation: source.CountryOfIncorporation,
-		CountryOfRisk:          source.CountryOfRisk,
-		CountryOfOperations:    source.CountryOfOperations,
-		PostalCode:             source.PostalCode,
-		YearFounded:            source.YearFounded,
-		LeiCode:                source.LeiCode,
-		// Person
-		Salutation: source.Salutation,
-		BirthYear:  source.BirthYear,
-		// Location
-		ISO31661: source.ISO31661,
-		// Industry Classification
-		IndustryIdentifier: source.IndustryIdentifier,
+		IsDeprecated:         source.IsDeprecated,
 	}
 }
