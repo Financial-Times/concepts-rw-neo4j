@@ -1,0 +1,72 @@
+Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
+								set n={allprops}
+								set n :Membership:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "aggregateHash": "",
+    "inceptionDate": "2011-06-27",
+    "prefLabel": "Membership Pref Label",
+    "prefUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+  },
+  "prefUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: MERGE (node:Thing{uuid: {nodeUUID}})
+							MERGE (role:Thing{uuid: {roleUUID}})
+								ON CREATE SET
+									role.uuid = {roleUUID}
+							MERGE (node)-[rel:HAS_ROLE]->(role)
+								ON CREATE SET
+									rel.inceptionDate = {inceptionDate},
+									rel.inceptionDateEpoch = {inceptionDateEpoch},
+									rel.terminationDate = {terminationDate},
+									rel.terminationDateEpoch = {terminationDateEpoch}
+							,
+Paremeters: {
+  "inceptionDate": "2011-06-27",
+  "inceptionDateEpoch": null,
+  "nodeUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2",
+  "roleUUID": "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+  "terminationDate": null,
+  "terminationDateEpoch": null
+}
+==============================================================================
+Statement: MERGE (n:Thing {uuid: {uuid}})
+											set n={allprops}
+											set n :Membership:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "authority": "Smartlogic",
+    "authorityValue": "746464",
+    "prefLabel": "Membership Pref Label",
+    "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+  },
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+						MERGE (t)-[:EQUIVALENT_TO]->(c),
+Paremeters: {
+  "prefUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2",
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:HAS_MEMBER]->(other)
+	,
+Paremeters: {
+  "id": "69a8e241-2bfb-4aed-a441-8489d813c5f7",
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:HAS_ORGANISATION]->(other)
+	,
+Paremeters: {
+  "id": "7ccf2673-2ec0-4b42-b69e-9a2460b945c6",
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
