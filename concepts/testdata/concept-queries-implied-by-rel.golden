@@ -1,0 +1,51 @@
+Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
+								set n={allprops}
+								set n :Brand:Classification:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "aggregateHash": "",
+    "prefLabel": "Pref Label",
+    "prefUUID": "cce1bc63-3717-4ae6-9399-88dab5966815"
+  },
+  "prefUUID": "cce1bc63-3717-4ae6-9399-88dab5966815"
+}
+==============================================================================
+Statement: MERGE (n:Thing {uuid: {uuid}})
+											set n={allprops}
+											set n :Brand:Classification:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "authority": "Smartlogic",
+    "authorityValue": "1234",
+    "prefLabel": "Pref Label",
+    "uuid": "cce1bc63-3717-4ae6-9399-88dab5966815"
+  },
+  "uuid": "cce1bc63-3717-4ae6-9399-88dab5966815"
+}
+==============================================================================
+Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+						MERGE (t)-[:EQUIVALENT_TO]->(c),
+Paremeters: {
+  "prefUUID": "cce1bc63-3717-4ae6-9399-88dab5966815",
+  "uuid": "cce1bc63-3717-4ae6-9399-88dab5966815"
+}
+==============================================================================
+Statement: 
+		MATCH (concept:Concept {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (concept)-[:IMPLIED_BY]->(other)	
+	,
+Paremeters: {
+  "id": "740c604b-8d97-443e-be70-33de6f1d6e67",
+  "uuid": "cce1bc63-3717-4ae6-9399-88dab5966815"
+}
+==============================================================================
+Statement: 
+		MATCH (concept:Concept {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (concept)-[:IMPLIED_BY]->(other)	
+	,
+Paremeters: {
+  "id": "b5d7c6b5-db7d-4bce-9d6a-f62195571f92",
+  "uuid": "cce1bc63-3717-4ae6-9399-88dab5966815"
+}

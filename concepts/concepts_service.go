@@ -26,48 +26,6 @@ const (
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
 var relationships = map[string]ontology.RelationshipConfig{
-	"HAS_MEMBER": {
-		ConceptField: "personUUID",
-		OneToOne:     true,
-	},
-	"HAS_ORGANISATION": {
-		ConceptField: "organisationUUID",
-		OneToOne:     true,
-	},
-	"SUB_ORGANISATION_OF": {
-		ConceptField: "parentOrganisation",
-		OneToOne:     true,
-	},
-	"COUNTRY_OF_OPERATIONS": {
-		ConceptField: "countryOfOperationsUUID",
-		OneToOne:     true,
-	},
-	"COUNTRY_OF_INCORPORATION": {
-		ConceptField: "countryOfIncorporationUUID",
-		OneToOne:     true,
-	},
-	"COUNTRY_OF_RISK": {
-		ConceptField: "countryOfRiskUUID",
-		OneToOne:     true,
-	},
-	"HAS_PARENT": {
-		ConceptField: "parentUUIDs",
-	},
-	"IS_RELATED_TO": {
-		ConceptField: "relatedUUIDs",
-	},
-	"SUPERSEDED_BY": {
-		ConceptField: "supersededByUUIDs",
-	},
-	"HAS_BROADER": {
-		ConceptField: "broaderUUIDs",
-	},
-	"IMPLIED_BY": {
-		ConceptField: "impliedByUUIDs",
-	},
-	"HAS_FOCUS": {
-		ConceptField: "hasFocusUUIDs",
-	},
 	"HAS_ROLE": {
 		ConceptField: "membershipRoles",
 		Properties: []string{
@@ -673,12 +631,6 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel)...)
 			}
 		}
-
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.RelatedUUIDs, "IS_RELATED_TO", false)...)
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.BroaderUUIDs, "HAS_BROADER", false)...)
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.SupersededByUUIDs, "SUPERSEDED_BY", false)...)
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.ImpliedByUUIDs, "IMPLIED_BY", false)...)
-		queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, sourceConcept.HasFocusUUIDs, "HAS_FOCUS", false)...)
 	}
 
 	return queryBatch
@@ -733,28 +685,8 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		},
 	}
 
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, concept.ParentUUIDs, "HAS_PARENT", true)...)
-
-	relIDs := filterSlice([]string{concept.OrganisationUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_ORGANISATION", true)...)
-
-	relIDs = filterSlice([]string{concept.PersonUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "HAS_MEMBER", true)...)
-
-	relIDs = filterSlice([]string{concept.IssuedBy})
+	relIDs := filterSlice([]string{concept.IssuedBy})
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
-
-	relIDs = filterSlice([]string{concept.ParentOrganisation})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "SUB_ORGANISATION_OF", true)...)
-
-	relIDs = filterSlice([]string{concept.CountryOfRiskUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_RISK", true)...)
-
-	relIDs = filterSlice([]string{concept.CountryOfIncorporationUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_INCORPORATION", true)...)
-
-	relIDs = filterSlice([]string{concept.CountryOfOperationsUUID})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "COUNTRY_OF_OPERATIONS", true)...)
 
 	for _, naics := range concept.NAICSIndustryClassifications {
 		if naics.UUID != "" {
@@ -1044,29 +976,17 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	var cleanSources []ontology.NewConcept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewConcept{
-			Relationships:     source.Relationships,
-			UUID:              source.UUID,
-			PrefLabel:         source.PrefLabel,
-			Type:              source.Type,
-			Authority:         source.Authority,
-			AuthorityValue:    source.AuthorityValue,
-			ParentUUIDs:       source.ParentUUIDs,
-			OrganisationUUID:  source.OrganisationUUID,
-			PersonUUID:        source.PersonUUID,
-			RelatedUUIDs:      source.RelatedUUIDs,
-			BroaderUUIDs:      source.BroaderUUIDs,
-			SupersededByUUIDs: source.SupersededByUUIDs,
-			ImpliedByUUIDs:    source.ImpliedByUUIDs,
-			HasFocusUUIDs:     source.HasFocusUUIDs,
-			MembershipRoles:   source.MembershipRoles,
-			IssuedBy:          source.IssuedBy,
-			FigiCode:          source.FigiCode,
-			IsDeprecated:      source.IsDeprecated,
+			Relationships:   source.Relationships,
+			UUID:            source.UUID,
+			PrefLabel:       source.PrefLabel,
+			Type:            source.Type,
+			Authority:       source.Authority,
+			AuthorityValue:  source.AuthorityValue,
+			MembershipRoles: source.MembershipRoles,
+			IssuedBy:        source.IssuedBy,
+			FigiCode:        source.FigiCode,
+			IsDeprecated:    source.IsDeprecated,
 			// Organisations
-			ParentOrganisation:           source.ParentOrganisation,
-			CountryOfOperationsUUID:      source.CountryOfOperationsUUID,
-			CountryOfIncorporationUUID:   source.CountryOfIncorporationUUID,
-			CountryOfRiskUUID:            source.CountryOfRiskUUID,
 			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
 		}
 		cleanSources = append(cleanSources, cleanConcept)

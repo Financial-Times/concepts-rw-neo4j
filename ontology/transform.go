@@ -1,6 +1,9 @@
 package ontology
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sort"
+)
 
 func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept {
 	var newSources []NewConcept
@@ -122,6 +125,14 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		}
 	}
 
+	sort.SliceStable(rels, func(i, j int) bool {
+		if rels[i].UUID != rels[j].UUID {
+			return rels[i].UUID < rels[j].UUID
+		}
+
+		return rels[i].Label < rels[j].Label
+	})
+
 	return NewConcept{
 		Relationships:                rels,
 		UUID:                         old.UUID,
@@ -130,14 +141,6 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		Authority:                    old.Authority,
 		AuthorityValue:               old.AuthorityValue,
 		LastModifiedEpoch:            old.LastModifiedEpoch,
-		ParentUUIDs:                  old.ParentUUIDs,
-		BroaderUUIDs:                 old.BroaderUUIDs,
-		RelatedUUIDs:                 old.RelatedUUIDs,
-		SupersededByUUIDs:            old.SupersededByUUIDs,
-		ImpliedByUUIDs:               old.ImpliedByUUIDs,
-		HasFocusUUIDs:                old.HasFocusUUIDs,
-		OrganisationUUID:             old.OrganisationUUID,
-		PersonUUID:                   old.PersonUUID,
 		Hash:                         old.Hash,
 		MembershipRoles:              old.MembershipRoles,
 		InceptionDate:                old.InceptionDate,
@@ -146,10 +149,6 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		TerminationDateEpoch:         old.TerminationDateEpoch,
 		FigiCode:                     old.FigiCode,
 		IssuedBy:                     old.IssuedBy,
-		CountryOfRiskUUID:            old.CountryOfRiskUUID,
-		CountryOfIncorporationUUID:   old.CountryOfIncorporationUUID,
-		CountryOfOperationsUUID:      old.CountryOfOperationsUUID,
-		ParentOrganisation:           old.ParentOrganisation,
 		NAICSIndustryClassifications: old.NAICSIndustryClassifications,
 		IsDeprecated:                 old.IsDeprecated,
 	}
@@ -218,14 +217,6 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.Authority = new.Authority
 	old.AuthorityValue = new.AuthorityValue
 	old.LastModifiedEpoch = new.LastModifiedEpoch
-	old.ParentUUIDs = new.ParentUUIDs
-	old.BroaderUUIDs = new.BroaderUUIDs
-	old.RelatedUUIDs = new.RelatedUUIDs
-	old.SupersededByUUIDs = new.SupersededByUUIDs
-	old.ImpliedByUUIDs = new.ImpliedByUUIDs
-	old.HasFocusUUIDs = new.HasFocusUUIDs
-	old.OrganisationUUID = new.OrganisationUUID
-	old.PersonUUID = new.PersonUUID
 	old.Hash = new.Hash
 	old.MembershipRoles = new.MembershipRoles
 	old.InceptionDate = new.InceptionDate
@@ -234,10 +225,6 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
-	old.CountryOfRiskUUID = new.CountryOfRiskUUID
-	old.CountryOfIncorporationUUID = new.CountryOfIncorporationUUID
-	old.CountryOfOperationsUUID = new.CountryOfOperationsUUID
-	old.ParentOrganisation = new.ParentOrganisation
 	old.NAICSIndustryClassifications = new.NAICSIndustryClassifications
 	old.IsDeprecated = new.IsDeprecated
 

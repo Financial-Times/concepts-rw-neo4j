@@ -72,6 +72,43 @@ fields:
     neoProp: "birthYear"
     type: "int"
 relationships:
+  HAS_PARENT:
+    conceptField: "parentUUIDs"
+    neoCreate: true
+  HAS_BROADER:
+    conceptField: "broaderUUIDs"
+  IS_RELATED_TO:
+    conceptField: "relatedUUIDs"
+  SUPERSEDED_BY:
+    conceptField: "supersededByUUIDs"
+  IMPLIED_BY:
+    conceptField: "impliedByUUIDs"
+  HAS_FOCUS:
+    conceptField: "hasFocusUUIDs"
+  HAS_ORGANISATION:
+    conceptField: "organisationUUID"
+    oneToOne: true
+    neoCreate: true
+  HAS_MEMBER:
+    conceptField: "personUUID"
+    oneToOne: true
+    neoCreate: true
+  COUNTRY_OF_RISK:
+    conceptField: "countryOfRiskUUID"
+    oneToOne: true
+    neoCreate: true
+  COUNTRY_OF_INCORPORATION:
+    conceptField: "countryOfIncorporationUUID"
+    oneToOne: true
+    neoCreate: true
+  COUNTRY_OF_OPERATIONS:
+    conceptField: "countryOfOperationsUUID"
+    oneToOne: true
+    neoCreate: true
+  SUB_ORGANISATION_OF:
+    conceptField: "parentOrganisation"
+    oneToOne: true
+    neoCreate: true
 authorities:
   - TME
   - FACTSET

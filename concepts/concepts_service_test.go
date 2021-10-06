@@ -2283,28 +2283,102 @@ func TestSetCanonicalProps(t *testing.T) {
 	}
 }
 
-func TestCreateNodeQueries(t *testing.T) {
+func TestPopulateConceptQueries(t *testing.T) {
 	tests := []struct {
-		name               string
-		concept            ontology.NewConcept
-		expectedQueryCount int
+		name           string
+		concept        ontology.NewAggregatedConcept
+		goldenFileName string
 	}{
 		{
-			name:               "Concept with default values and should produce single Cypher query",
-			concept:            ontology.NewConcept{},
-			expectedQueryCount: 1,
+			name:           "Aggregate concept with default values",
+			concept:        ontology.NewAggregatedConcept{},
+			goldenFileName: "testdata/concept-queries-default.golden",
+		},
+		{
+			name: "Aggregate concept with default values and single default source",
+			concept: ontology.NewAggregatedConcept{
+				SourceRepresentations: []ontology.NewConcept{
+					{},
+				},
+			},
+			goldenFileName: "testdata/concept-queries-default-source.golden",
+		},
+		{
+			name:           "Aggregate concept with HAS_PARENT relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "full-concorded-aggregated-concept.json")),
+			goldenFileName: "testdata/concept-queries-has-parent-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with HAS_BROADER relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-has-broader.json")),
+			goldenFileName: "testdata/concept-queries-has-broader-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with IS_RELATED_TO relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-related-to.json")),
+			goldenFileName: "testdata/concept-queries-is-related-to-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with SUPERSEDED_BY relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-superseded-by.json")),
+			goldenFileName: "testdata/concept-queries-superseded-by-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with IMPLIED_BY relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "brand-with-multiple-implied-by.json")),
+			goldenFileName: "testdata/concept-queries-implied-by-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with HAS_FOCUS relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-has-focus.json")),
+			goldenFileName: "testdata/concept-queries-has-focus-rel.golden",
+		},
+		{
+			name:           "Aggregate concept with HAS_MEMBER, HAS_ORGANISATION & HAS_ROLE relationships",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "updated-membership.json")),
+			goldenFileName: "testdata/concept-queries-membership-rels.golden",
+		},
+		{
+			name:           "Aggregate concept with COUNTRY_OF & NAICS relationships",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "organisation-with-naics.json")),
+			goldenFileName: "testdata/concept-queries-country-of-naics-rels.golden",
+		},
+		{
+			name:           "Aggregate concept with SUB_ORGANISATION_OF relationship",
+			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "organisation.json")),
+			goldenFileName: "testdata/concept-queries-sub-organisation-of-rel.golden",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := createNodeQueries(test.concept, "")
+			var queryBatch []*neoism.CypherQuery
+			queries := populateConceptQueries(queryBatch, test.concept)
+			got := cypherBatchToString(queries)
 
-			if len(got) != test.expectedQueryCount {
-				t.Errorf("Number of Cypher queries differs from expected: got %d, want:%d", len(got), test.expectedQueryCount)
+			expectedStatement := getFromGoldenFile(t, test.goldenFileName, got, *update)
+			if !cmp.Equal(expectedStatement, got) {
+				t.Errorf("Got unexpected Cypher query batch:\n%s", cmp.Diff(expectedStatement, got))
 			}
 		})
 	}
+}
+
+func cypherBatchToString(queryBatch []*neoism.CypherQuery) string {
+	var queries []string
+	for _, query := range queryBatch {
+		// ignore lastModifiedEpoch from allprops
+		if _, ok := query.Parameters["allprops"]; ok {
+			props := query.Parameters["allprops"].(map[string]interface{})
+			delete(props, "lastModifiedEpoch")
+			query.Parameters["allprops"] = props
+		}
+
+		params, _ := json.MarshalIndent(query.Parameters, "", "  ")
+		queries = append(queries, fmt.Sprintf("Statement: %v,\nParemeters: %v", query.Statement, string(params)))
+	}
+
+	return strings.Join(queries, "\n==============================================================================\n")
 }
 
 func TestProcessMembershipRoles(t *testing.T) {
@@ -2334,16 +2408,23 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 		TerminationDate:  "2017-02-02",
 		SourceRepresentations: []ontology.NewConcept{
 			{
-				Relationships:    []ontology.Relationship{},
-				UUID:             "cbadd9a7-5da9-407a-a5ec-e379460991f2",
-				PrefLabel:        "Membership Pref Label",
-				Type:             "Membership",
-				Authority:        "Smartlogic",
-				AuthorityValue:   "746464",
-				OrganisationUUID: "7f40d291-b3cb-47c4-9bce-18413e9350cf",
-				PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
-				InceptionDate:    "2016-01-01",
-				TerminationDate:  "2017-02-02",
+				Relationships: []ontology.Relationship{
+					{
+						UUID:  "35946807-0205-4fc1-8516-bb1ae141659b",
+						Label: "HAS_MEMBER",
+					},
+					{
+						UUID:  "7f40d291-b3cb-47c4-9bce-18413e9350cf",
+						Label: "HAS_ORGANISATION",
+					},
+				},
+				UUID:            "cbadd9a7-5da9-407a-a5ec-e379460991f2",
+				PrefLabel:       "Membership Pref Label",
+				Type:            "Membership",
+				Authority:       "Smartlogic",
+				AuthorityValue:  "746464",
+				InceptionDate:   "2016-01-01",
+				TerminationDate: "2017-02-02",
 				MembershipRoles: []ontology.MembershipRole{
 					{
 						RoleUUID:             "f807193d-337b-412f-b32c-afa14b385819",

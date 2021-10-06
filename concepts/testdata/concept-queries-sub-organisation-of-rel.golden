@@ -1,0 +1,63 @@
+Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
+								set n={allprops}
+								set n :PublicCompany:Company:Organisation:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "aggregateHash": "",
+    "aliases": [
+      "Strix Group Plc",
+      "STRIX GROUP PLC",
+      "Strix Group",
+      "Castletown Thermostats",
+      "Steam Plc"
+    ],
+    "countryCode": "GB",
+    "countryOfIncorporation": "IM",
+    "emailAddress": "info@strix.com",
+    "formerNames": [
+      "Castletown Thermostats",
+      "Steam Plc"
+    ],
+    "leiCode": "213800KZEW5W6BZMNT62",
+    "postalCode": "IM9 2RG",
+    "prefLabel": "Strix Group Plc",
+    "prefUUID": "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+    "properName": "Strix Group Plc",
+    "shortName": "Strix Group",
+    "tradeNames": [
+      "STRIX GROUPPLC"
+    ],
+    "yearFounded": 1951
+  },
+  "prefUUID": "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
+}
+==============================================================================
+Statement: MERGE (n:Thing {uuid: {uuid}})
+											set n={allprops}
+											set n :PublicCompany:Company:Organisation:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "authority": "FACTSET",
+    "authorityValue": "B000BB-S",
+    "prefLabel": "Strix Group Plc",
+    "uuid": "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
+  },
+  "uuid": "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
+}
+==============================================================================
+Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+						MERGE (t)-[:EQUIVALENT_TO]->(c),
+Paremeters: {
+  "prefUUID": "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+  "uuid": "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: {uuid}})
+		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing)-[:SUB_ORGANISATION_OF]->(other)
+	,
+Paremeters: {
+  "id": "c001ee9c-94c5-11e8-8f42-da24cd01f044",
+  "uuid": "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
+}
