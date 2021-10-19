@@ -1714,6 +1714,28 @@ func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
 	}
 }
 
+func TestReadReturnsErrorOnMultipleResults(t *testing.T) {
+	// note the test data that this is explicitly broken setup, where multiple source concepts have HAS_ORGANISATION relationship
+	// this is unsupported behaviour and will produce multiple results when reading from neo4j
+	const mainConceptUUID = "13465cc7-204f-48b9-a8d6-b901d5d86c48"
+	concepts, canonicalUUIDs, sourceUUIDs := readTestSetup(t, "testdata/bug/concorded-multiple-has-organisation.json")
+	for _, concept := range concepts {
+		_, err := conceptsDriver.Write(concept, "tid_init")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func() {
+		deleteSourceNodes(t, sourceUUIDs...)
+		deleteConcordedNodes(t, canonicalUUIDs...)
+	}()
+
+	_, _, err := conceptsDriver.Read(mainConceptUUID, "tid_test")
+	if !errors.Is(err, ErrUnexpectedReadResult) {
+		t.Fatalf("expected read result error, but got '%v'", err)
+	}
+}
+
 func TestInvalidTypesThrowError(t *testing.T) {
 	invalidPrefConceptType := `MERGE (t:Thing{prefUUID:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}) SET t={prefUUID:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea", prefLabel:"The Best Label"} SET t:Concept:Brand:Unknown MERGE (s:Thing{uuid:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}) SET s={uuid:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"} SET t:Concept:Brand MERGE (t)<-[:EQUIVALENT_TO]-(s)`
 	invalidSourceConceptType := `MERGE (t:Thing{prefUUID:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"}) SET t={prefUUID:"4c41f314-4548-4fb6-ac48-4618fcbfa84c", prefLabel:"The Best Label"} SET t:Concept:Brand MERGE (s:Thing{uuid:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"}) SET s={uuid:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"} SET t:Concept:Brand:Unknown MERGE (t)<-[:EQUIVALENT_TO]-(s)`
