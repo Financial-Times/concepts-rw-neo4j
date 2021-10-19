@@ -39,7 +39,7 @@ func getReadStatement() string {
 				issuedBy: issuer.uuid,
 				%s
 			} as sources,
-			collect({
+			collect(DISTINCT {
 				inceptionDate: hasRoleRel.inceptionDate,
 				inceptionDateEpoch: hasRoleRel.inceptionDateEpoch,
 				membershipRoleUUID: hasRoleNode.uuid,
@@ -59,8 +59,8 @@ func getReadStatement() string {
 			issuer.uuid as issuedBy,
 			hasOrganisationNode.uuid as organisationUUID,
 			hasMemberNode.uuid as personUUID,
-			membershipRoles,
-			collect(sources) as sourceRepresentations,
+			reduce(roles = [], role IN collect(DISTINCT membershipRoles) | roles + role) as membershipRoles,
+			collect(DISTINCT sources) as sourceRepresentations,
 			%s`
 
 	return fmt.Sprintf(statementTemplate,
