@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package concepts
@@ -22,9 +23,10 @@ import (
 	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
+
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
 
 //all uuids to be cleaned from DB
@@ -1659,6 +1661,81 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 	readConceptAndCompare(t, getAggregatedConcept(t, "transfer-multiple-source-concordance.json"), "TestMultipleConcordancesAreHandled")
 }
 
+// Test case is a concept with multiple sources, one of which has multiple Industry classifications.
+// From bug, https://financialtimes.atlassian.net/browse/UPPSF-2773 on Write (property update)
+// the concept in question was returning unexpected CONCORDANCE_ADDED/CONCORDANCE_REMOVED where only CONCEPT_UPDATED was expected.
+func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
+	const mainConceptUUID = "13465cc7-204f-48b9-a8d6-b901d5d86c48"
+	var aggregate ontology.AggregatedConcept
+	concepts, canonicalUUIDs, sourceUUIDs := readTestSetup(t, "testdata/bug/13465cc7-204f-48b9-a8d6-b901d5d86c48.json")
+	for _, concept := range concepts {
+		_, err := conceptsDriver.Write(concept, "tid_init")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if concept.PrefUUID == mainConceptUUID {
+			aggregate = concept
+		}
+	}
+	defer func() {
+		deleteSourceNodes(t, sourceUUIDs...)
+		deleteConcordedNodes(t, canonicalUUIDs...)
+	}()
+
+	expectedEvents := ConceptChanges{
+		ChangedRecords: []Event{
+			{
+				ConceptType:   "Organisation",
+				ConceptUUID:   "13465cc7-204f-48b9-a8d6-b901d5d86c48",
+				TransactionID: "tid_second",
+				EventDetails:  ConceptEvent{Type: UpdatedEvent},
+			},
+		},
+		UpdatedIds: []string{
+			"0eb54dff-fbe3-330e-b755-7435c4aad411",
+			"374fdcea-062f-3281-81ca-7851323bcf98",
+			"6259ebad-ed4c-3b13-ae66-9117fa591328",
+			"13465cc7-204f-48b9-a8d6-b901d5d86c48",
+		},
+	}
+
+	// force concept update
+	aggregate.DescriptionXML += "testing"
+	data, err := conceptsDriver.Write(aggregate, "tid_second")
+	if err != nil {
+		t.Fatal(err)
+	}
+	events, ok := data.(ConceptChanges)
+	if !ok {
+		t.Fatal("concept write did not return 'ConceptChanges'")
+	}
+	if !cmp.Equal(expectedEvents, events, cmpopts.IgnoreFields(Event{}, "AggregateHash")) {
+		t.Error(cmp.Diff(expectedEvents, events, cmpopts.IgnoreFields(Event{}, "AggregateHash")))
+	}
+}
+
+func TestReadReturnsErrorOnMultipleResults(t *testing.T) {
+	// note the test data that this is explicitly broken setup, where multiple source concepts have HAS_ORGANISATION relationship
+	// this is unsupported behaviour and will produce multiple results when reading from neo4j
+	const mainConceptUUID = "13465cc7-204f-48b9-a8d6-b901d5d86c48"
+	concepts, canonicalUUIDs, sourceUUIDs := readTestSetup(t, "testdata/bug/concorded-multiple-has-organisation.json")
+	for _, concept := range concepts {
+		_, err := conceptsDriver.Write(concept, "tid_init")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func() {
+		deleteSourceNodes(t, sourceUUIDs...)
+		deleteConcordedNodes(t, canonicalUUIDs...)
+	}()
+
+	_, _, err := conceptsDriver.Read(mainConceptUUID, "tid_test")
+	if !errors.Is(err, ErrUnexpectedReadResult) {
+		t.Fatalf("expected read result error, but got '%v'", err)
+	}
+}
+
 func TestInvalidTypesThrowError(t *testing.T) {
 	invalidPrefConceptType := `MERGE (t:Thing{prefUUID:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}) SET t={prefUUID:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea", prefLabel:"The Best Label"} SET t:Concept:Brand:Unknown MERGE (s:Thing{uuid:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"}) SET s={uuid:"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"} SET t:Concept:Brand MERGE (t)<-[:EQUIVALENT_TO]-(s)`
 	invalidSourceConceptType := `MERGE (t:Thing{prefUUID:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"}) SET t={prefUUID:"4c41f314-4548-4fb6-ac48-4618fcbfa84c", prefLabel:"The Best Label"} SET t:Concept:Brand MERGE (s:Thing{uuid:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"}) SET s={uuid:"4c41f314-4548-4fb6-ac48-4618fcbfa84c"} SET t:Concept:Brand:Unknown MERGE (t)<-[:EQUIVALENT_TO]-(s)`
@@ -2463,6 +2540,64 @@ func readConceptAndCompare(t *testing.T, payload ontology.AggregatedConcept, tes
 
 	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Unexpected Error occurred", testName))
 	assert.True(t, found, fmt.Sprintf("Test %s failed: Concept has not been found", testName))
+}
+
+func readTestSetup(t *testing.T, filename string) ([]ontology.AggregatedConcept, []string, []string) {
+	t.Helper()
+	f, err := os.Open(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	result := []ontology.AggregatedConcept{}
+	err = json.NewDecoder(f).Decode(&result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var canonicalUUIDs []string
+	var sourceUUIDs []string
+	for _, concept := range result {
+		canonicalUUIDs = append(canonicalUUIDs, concept.PrefUUID)
+		sourceUUIDs = append(sourceUUIDs, collectRelatedUUIDs(concept)...)
+	}
+	return result, canonicalUUIDs, sourceUUIDs
+}
+
+func collectRelatedUUIDs(concept ontology.AggregatedConcept) []string {
+	var result []string
+	for _, src := range concept.SourceRepresentations {
+		result = append(result, src.UUID)
+		result = append(result, src.ParentUUIDs...)
+		result = append(result, src.BroaderUUIDs...)
+		result = append(result, src.RelatedUUIDs...)
+		result = append(result, src.SupersededByUUIDs...)
+		result = append(result, src.ImpliedByUUIDs...)
+		result = append(result, src.HasFocusUUIDs...)
+		result = append(result, src.OrganisationUUID)
+		result = append(result, src.PersonUUID)
+		for _, memb := range src.MembershipRoles {
+			result = append(result, memb.RoleUUID)
+		}
+		result = append(result, src.IssuedBy)
+		result = append(result, src.CountryOfRiskUUID)
+		result = append(result, src.CountryOfIncorporationUUID)
+		result = append(result, src.CountryOfOperationsUUID)
+		result = append(result, src.ParentOrganisation)
+		for _, naics := range src.NAICSIndustryClassifications {
+			result = append(result, naics.UUID)
+		}
+	}
+	set := map[string]bool{}
+	for _, uuid := range result {
+		if uuid != "" {
+			set[uuid] = true
+		}
+	}
+	result = []string{}
+	for uuid := range set {
+		result = append(result, uuid)
+	}
+	return result
 }
 
 func newURL() string {

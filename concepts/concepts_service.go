@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
 	"github.com/mitchellh/hashstructure"
+
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
 
 const (
@@ -22,6 +23,8 @@ const (
 	AddedEvent   = "CONCORDANCE_ADDED"
 	RemovedEvent = "CONCORDANCE_REMOVED"
 )
+
+var ErrUnexpectedReadResult = errors.New("unexpected read result count")
 
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
@@ -128,6 +131,10 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 	if len(results) == 0 {
 		logger.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
 		return ontology.NewAggregatedConcept{}, false, nil
+	}
+	if len(results) > 1 {
+		logger.WithTransactionID(transID).WithUUID(uuid).Errorf("read concept returned '%d' rows, where one is expected", len(results))
+		return ontology.NewAggregatedConcept{}, false, ErrUnexpectedReadResult
 	}
 
 	neoAggregateConcept := results[0]

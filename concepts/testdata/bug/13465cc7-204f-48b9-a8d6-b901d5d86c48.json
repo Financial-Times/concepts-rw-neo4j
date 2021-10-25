@@ -1,0 +1,215 @@
+[
+  {
+    "prefUUID": "13465cc7-204f-48b9-a8d6-b901d5d86c48",
+    "prefLabel": "Matalan Retail Ltd",
+    "type": "Organisation",
+    "aliases": [
+      "Matalan Retail Ltd.",
+      "Matalan",
+      "Matalan Retail",
+      "Matalan Retail Limited",
+      "Matalan (Cash & Carry) Ltd.",
+      "Matalan (Salford) Ltd.",
+      "Matalan Discount Club (Cash & Carry) Ltd.",
+      "Matalan Limited",
+      "Matalan Retail Ltd"
+    ],
+    "emailAddress": "cs@matalanonline.co.uk",
+    "scopeNote": "British fashion and homeware retailer",
+    "countryOfIncorporation": "GB",
+    "countryOfOperations": "GB",
+    "formerNames": [
+      "Matalan (Cash & Carry) Ltd.",
+      "Matalan (Salford) Ltd.",
+      "Matalan Discount Club (Cash & Carry) Ltd."
+    ],
+    "tradeNames": [
+      "Matalan"
+    ],
+    "leiCode": "213800MULPNRGMT7U529",
+    "postalCode": "L33 7SZ",
+    "properName": "Matalan Retail Ltd.",
+    "shortName": "Matalan Retail",
+    "yearFounded": 1985,
+    "naicsIndustryClassifications": [
+      {
+        "uuid": "6ff5d091-26a1-45df-8367-08ccc6541686",
+        "rank": 1
+      },
+      {
+        "uuid": "2c29231c-7632-44ba-b23c-ead83e026d04",
+        "rank": 2
+      },
+      {
+        "uuid": "6773eb88-e129-4610-a221-6e94c585b1d6",
+        "rank": 3
+      }
+    ],
+    "sourceRepresentations": [
+      {
+        "uuid": "0eb54dff-fbe3-330e-b755-7435c4aad411",
+        "type": "Organisation",
+        "prefLabel": "Matalan Retail Ltd",
+        "authority": "TME",
+        "authorityValue": "TnN0ZWluX09OX0FGVE1fT05fMjA3MDk4-T04=",
+        "aliases": [
+          "Matalan",
+          "Matalan Limited",
+          "Matalan Retail",
+          "Matalan Retail Limited",
+          "Matalan Retail Ltd"
+        ]
+      },
+      {
+        "uuid": "374fdcea-062f-3281-81ca-7851323bcf98",
+        "type": "Organisation",
+        "prefLabel": "Matalan Retail Ltd.",
+        "authority": "FACTSET",
+        "authorityValue": "06VQ7V-E",
+        "aliases": [
+          "Matalan",
+          "Matalan (Cash & Carry) Ltd.",
+          "Matalan (Salford) Ltd.",
+          "Matalan Discount Club (Cash & Carry) Ltd.",
+          "Matalan Retail",
+          "Matalan Retail Ltd."
+        ],
+        "emailAddress": "cs@matalanonline.co.uk",
+        "countryOfIncorporation": "GB",
+        "countryOfOperations": "GB",
+        "countryOfIncorporationUUID": "6b683eff-56c3-43d9-acfc-7511d974fc01",
+        "countryOfOperationsUUID": "6b683eff-56c3-43d9-acfc-7511d974fc01",
+        "formerNames": [
+          "Matalan (Cash & Carry) Ltd.",
+          "Matalan (Salford) Ltd.",
+          "Matalan Discount Club (Cash & Carry) Ltd."
+        ],
+        "tradeNames": [
+          "Matalan"
+        ],
+        "leiCode": "213800MULPNRGMT7U529",
+        "parentOrganisation": "f3f15630-be31-3a00-ab2f-28648aa324bd",
+        "postalCode": "L33 7SZ",
+        "properName": "Matalan Retail Ltd.",
+        "shortName": "Matalan Retail",
+        "yearFounded": 1985,
+        "naicsIndustryClassifications": [
+          {
+            "uuid": "6ff5d091-26a1-45df-8367-08ccc6541686",
+            "rank": 1
+          },
+          {
+            "uuid": "2c29231c-7632-44ba-b23c-ead83e026d04",
+            "rank": 2
+          },
+          {
+            "uuid": "6773eb88-e129-4610-a221-6e94c585b1d6",
+            "rank": 3
+          }
+        ]
+      },
+      {
+        "uuid": "6259ebad-ed4c-3b13-ae66-9117fa591328",
+        "type": "Organisation",
+        "prefLabel": "Matalan",
+        "authority": "Wikidata",
+        "authorityValue": "http://www.wikidata.org/entity/Q12061509",
+        "scopeNote": "British fashion and homeware retailer"
+      },
+      {
+        "uuid": "13465cc7-204f-48b9-a8d6-b901d5d86c48",
+        "type": "Organisation",
+        "prefLabel": "Matalan Retail Ltd",
+        "authority": "Smartlogic",
+        "authorityValue": "13465cc7-204f-48b9-a8d6-b901d5d86c48",
+        "aliases": [
+          "Matalan Retail Ltd"
+        ]
+      }
+    ]
+  },
+  {
+    "prefUUID": "2c29231c-7632-44ba-b23c-ead83e026d04",
+    "prefLabel": "Men's Clothing Stores",
+    "type": "NAICSIndustryClassification",
+    "aliases": [
+      "Men's Clothing Stores"
+    ],
+    "broaderUUIDs": [
+      "8a4e4c36-9f25-42e9-8f1d-48a67cd19d59"
+    ],
+    "industryIdentifier": "448110",
+    "sourceRepresentations": [
+      {
+        "uuid": "2c29231c-7632-44ba-b23c-ead83e026d04",
+        "type": "NAICSIndustryClassification",
+        "prefLabel": "Men's Clothing Stores",
+        "authority": "Smartlogic",
+        "authorityValue": "2c29231c-7632-44ba-b23c-ead83e026d04",
+        "aliases": [
+          "Men's Clothing Stores"
+        ],
+        "broaderUUIDs": [
+          "8a4e4c36-9f25-42e9-8f1d-48a67cd19d59"
+        ],
+        "industryIdentifier": "448110"
+      }
+    ]
+  },
+  {
+    "prefUUID": "6ff5d091-26a1-45df-8367-08ccc6541686",
+    "prefLabel": "Clothing Accessories Stores",
+    "type": "NAICSIndustryClassification",
+    "aliases": [
+      "Clothing Accessories Stores"
+    ],
+    "broaderUUIDs": [
+      "ec172004-4002-40df-a92f-e381193693d5"
+    ],
+    "industryIdentifier": "448150",
+    "sourceRepresentations": [
+      {
+        "uuid": "6ff5d091-26a1-45df-8367-08ccc6541686",
+        "type": "NAICSIndustryClassification",
+        "prefLabel": "Clothing Accessories Stores",
+        "authority": "Smartlogic",
+        "authorityValue": "6ff5d091-26a1-45df-8367-08ccc6541686",
+        "aliases": [
+          "Clothing Accessories Stores"
+        ],
+        "broaderUUIDs": [
+          "ec172004-4002-40df-a92f-e381193693d5"
+        ],
+        "industryIdentifier": "448150"
+      }
+    ]
+  },
+  {
+    "prefUUID": "6773eb88-e129-4610-a221-6e94c585b1d6",
+    "prefLabel": "Women's Clothing Stores",
+    "type": "NAICSIndustryClassification",
+    "aliases": [
+      "Women's Clothing Stores"
+    ],
+    "broaderUUIDs": [
+      "94055ecc-7264-4306-a204-c2fb395bfd5c"
+    ],
+    "industryIdentifier": "448120",
+    "sourceRepresentations": [
+      {
+        "uuid": "6773eb88-e129-4610-a221-6e94c585b1d6",
+        "type": "NAICSIndustryClassification",
+        "prefLabel": "Women's Clothing Stores",
+        "authority": "Smartlogic",
+        "authorityValue": "6773eb88-e129-4610-a221-6e94c585b1d6",
+        "aliases": [
+          "Women's Clothing Stores"
+        ],
+        "broaderUUIDs": [
+          "94055ecc-7264-4306-a204-c2fb395bfd5c"
+        ],
+        "industryIdentifier": "448120"
+      }
+    ]
+  }
+]

@@ -69,7 +69,7 @@ personUUID: hasMemberNode.uuid,
 relatedUUIDs: collect(DISTINCT isRelatedToNode.uuid),
 supersededByUUIDs: collect(DISTINCT supersededByNode.uuid)
 			} as sources,
-			collect({
+			collect(DISTINCT {
 				inceptionDate: hasRoleRel.inceptionDate,
 				inceptionDateEpoch: hasRoleRel.inceptionDateEpoch,
 				membershipRoleUUID: hasRoleNode.uuid,
@@ -89,8 +89,8 @@ supersededByUUIDs: collect(DISTINCT supersededByNode.uuid)
 			issuer.uuid as issuedBy,
 			hasOrganisationNode.uuid as organisationUUID,
 			hasMemberNode.uuid as personUUID,
-			membershipRoles,
-			collect(sources) as sourceRepresentations,
+			reduce(roles = [], role IN collect(DISTINCT membershipRoles) | roles + role) as membershipRoles,
+			collect(DISTINCT sources) as sourceRepresentations,
 			canonical.aliases as aliases,
 canonical.birthYear as birthYear,
 canonical.countryCode as countryCode,
