@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
-	logger "github.com/Financial-Times/go-logger"
+	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/gorilla/mux"
 	cli "github.com/jawher/mow.cli"
@@ -71,14 +71,14 @@ func main() {
 		EnvVar: "LOG_LEVEL",
 	})
 
-	logger.InitLogger(*appName, *logLevel)
+	log := logger.NewUPPLogger(*appSystemCode, *logLevel)
 	app.Action = func() {
 		conf := neoutils.DefaultConnectionConfig()
 		conf.BatchSize = *batchSize
 		db, err := neoutils.Connect(*neoURL, conf)
 
 		if err != nil {
-			logger.Errorf("Could not connect to neo4j, error=[%s]\n", err)
+			log.Errorf("Could not connect to neo4j, error=[%s]\n", err)
 		}
 
 		appConf := ServerConf{
@@ -88,21 +88,21 @@ func main() {
 			RequestLoggingOn: *requestLoggingOn,
 		}
 
-		conceptsService := concepts.NewConceptService(db)
+		conceptsService := concepts.NewConceptService(db, log)
 		conceptsService.Initialise()
 
 		handler := concepts.ConceptsHandler{ConceptsService: &conceptsService}
-		runServerWithParams(handler, appConf)
+		runServerWithParams(handler, appConf, log)
 	}
-	logger.Infof("Application started with args %s", os.Args)
+	log.WithField("args", os.Args).Info("Application started")
 	app.Run(os.Args)
 }
 
-func runServerWithParams(handler concepts.ConceptsHandler, appConf ServerConf) {
-	logger.Info("Registering handlers")
+func runServerWithParams(handler concepts.ConceptsHandler, appConf ServerConf, log *logger.UPPLogger) {
+	log.Info("Registering handlers")
 	router := mux.NewRouter()
 	handler.RegisterHandlers(router)
-	serveMux := handler.RegisterAdminHandlers(router, appConf.AppSystemCode, appConf.AppName, appDescription, appConf.RequestLoggingOn)
+	serveMux := handler.RegisterAdminHandlers(router, log, appConf.AppSystemCode, appConf.AppName, appDescription, appConf.RequestLoggingOn)
 
 	server := &http.Server{
 		Addr:    ":" + strconv.Itoa(appConf.Port),
@@ -110,20 +110,20 @@ func runServerWithParams(handler concepts.ConceptsHandler, appConf ServerConf) {
 	}
 
 	go func() {
-		logger.Infof("Starting HTTP server listening on %d", appConf.Port)
+		log.Infof("Starting HTTP server listening on %d", appConf.Port)
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			logger.Fatalf("Unable to start HTTP server: %v", err)
+			log.WithError(err).Fatal("Unable to start HTTP server")
 		}
 	}()
 
 	waitForSignal()
-	logger.Info("Received termination signal: shutting down HTTP server")
+	log.Info("Received termination signal: shutting down HTTP server")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		logger.Fatalf("Failed to gracefully shutdown the server: %v", err)
+		log.WithError(err).Fatalf("Failed to gracefully shutdown the server")
 	}
 }
 

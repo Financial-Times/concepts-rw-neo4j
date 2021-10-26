@@ -23,7 +23,7 @@ import (
 	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
 
-	logger "github.com/Financial-Times/go-logger"
+	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
@@ -278,7 +278,7 @@ func getLocationWithISO31661AndConcordance() ontology.AggregatedConcept {
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
-	logger.InitLogger("test-concepts-rw-neo4j", "panic")
+	log := logger.NewUPPLogger("test-concepts-rw-neo4j", "panic")
 
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
@@ -286,7 +286,7 @@ func init() {
 	if db == nil {
 		panic("Cannot connect to Neo4J")
 	}
-	conceptsDriver = NewConceptService(db)
+	conceptsDriver = NewConceptService(db, log)
 	conceptsDriver.Initialise()
 
 	duration := 5 * time.Second
@@ -2181,7 +2181,7 @@ func TestValidateObject(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			newAggConcept := ontology.TransformToNewAggregateConcept(test.aggConcept)
-			err := validateObject(newAggConcept, "transaction_id")
+			err := conceptsDriver.validateObject(newAggConcept, "transaction_id")
 			if err != nil {
 				assert.NotEmpty(t, test.returnedError, "test.returnedError should not be empty when there is an error")
 				assert.Contains(t, err.Error(), test.returnedError, test.name)
