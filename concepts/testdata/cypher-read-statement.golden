@@ -1,5 +1,5 @@
 
-		MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+		MATCH (canonical:Thing {prefUUID:$uuid})<-[:EQUIVALENT_TO]-(source:Thing)
 		OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 		OPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(countryOfIncorporationNode:Thing)
 OPTIONAL MATCH (source)-[:COUNTRY_OF_OPERATIONS]->(countryOfOperationsNode:Thing)

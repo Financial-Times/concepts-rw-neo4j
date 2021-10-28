@@ -1,5 +1,5 @@
-Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
+Statement: MERGE (n:Thing {prefUUID: $prefUUID})
+								set n=$allprops
 								set n :,
 Paremeters: {
   "allprops": {
@@ -9,8 +9,8 @@ Paremeters: {
   "prefUUID": ""
 }
 ==============================================================================
-Statement: MERGE (n:Thing {uuid: {uuid}})
-											set n={allprops}
+Statement: MERGE (n:Thing {uuid: $uuid})
+											set n=$allprops
 											set n :,
 Paremeters: {
   "allprops": {
@@ -21,7 +21,7 @@ Paremeters: {
   "uuid": ""
 }
 ==============================================================================
-Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+Statement: MATCH (t:Thing {uuid:$uuid}), (c:Thing {prefUUID:$prefUUID})
 						MERGE (t)-[:EQUIVALENT_TO]->(c),
 Paremeters: {
   "prefUUID": "",

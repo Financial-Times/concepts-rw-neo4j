@@ -1,5 +1,5 @@
-Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
+Statement: MERGE (n:Thing {prefUUID: $prefUUID})
+								set n=$allprops
 								set n :PublicCompany:Company:Organisation:Concept:Thing,
 Paremeters: {
   "allprops": {
@@ -32,8 +32,8 @@ Paremeters: {
   "prefUUID": "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
 }
 ==============================================================================
-Statement: MERGE (n:Thing {uuid: {uuid}})
-											set n={allprops}
+Statement: MERGE (n:Thing {uuid: $uuid})
+											set n=$allprops
 											set n :PublicCompany:Company:Organisation:Concept:Thing,
 Paremeters: {
   "allprops": {
@@ -45,7 +45,7 @@ Paremeters: {
   "uuid": "c28fa0b4-4245-11e8-842f-0ed5f89f718b"
 }
 ==============================================================================
-Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+Statement: MATCH (t:Thing {uuid:$uuid}), (c:Thing {prefUUID:$prefUUID})
 						MERGE (t)-[:EQUIVALENT_TO]->(c),
 Paremeters: {
   "prefUUID": "c28fa0b4-4245-11e8-842f-0ed5f89f718b",
@@ -53,8 +53,8 @@ Paremeters: {
 }
 ==============================================================================
 Statement: 
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing:Thing {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
 		MERGE (thing)-[:SUB_ORGANISATION_OF]->(other)
 	,
 Paremeters: {

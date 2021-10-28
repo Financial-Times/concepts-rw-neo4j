@@ -1,5 +1,5 @@
-Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
+Statement: MERGE (n:Thing {prefUUID: $prefUUID})
+								set n=$allprops
 								set n :Section:Classification:Concept:Thing,
 Paremeters: {
   "allprops": {
@@ -10,8 +10,8 @@ Paremeters: {
   "prefUUID": "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
 }
 ==============================================================================
-Statement: MERGE (n:Thing {uuid: {uuid}})
-											set n={allprops}
+Statement: MERGE (n:Thing {uuid: $uuid})
+											set n=$allprops
 											set n :Section:Classification:Concept:Thing,
 Paremeters: {
   "allprops": {
@@ -23,7 +23,7 @@ Paremeters: {
   "uuid": "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
 }
 ==============================================================================
-Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+Statement: MATCH (t:Thing {uuid:$uuid}), (c:Thing {prefUUID:$prefUUID})
 						MERGE (t)-[:EQUIVALENT_TO]->(c),
 Paremeters: {
   "prefUUID": "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
@@ -31,8 +31,8 @@ Paremeters: {
 }
 ==============================================================================
 Statement: 
-		MATCH (concept:Concept {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
+		MATCH (concept:Concept {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
 		MERGE (concept)-[:SUPERSEDED_BY]->(other)	
 	,
 Paremeters: {
@@ -41,8 +41,8 @@ Paremeters: {
 }
 ==============================================================================
 Statement: 
-		MATCH (concept:Concept {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
+		MATCH (concept:Concept {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
 		MERGE (concept)-[:SUPERSEDED_BY]->(other)	
 	,
 Paremeters: {
