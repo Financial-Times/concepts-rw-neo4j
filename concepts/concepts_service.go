@@ -436,7 +436,8 @@ func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, second
 	return filteredMap
 }
 
-//Handle new source nodes that have been added to current concordance
+// Handle new source nodes that have been added to current concordance
+// nolint:gocognit
 func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]*cmneo4j.Query, error) {
 	var deleteLonePrefUUIDQueries []*cmneo4j.Query
 	for updatedSourceID := range conceptData {
@@ -616,7 +617,9 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 		queryBatch = append(queryBatch, deletePreviousSourceLabelsAndPropertiesQuery)
 	}
 
-	//cleanUP all the previous Equivalent to relationships
+	// cleanUP all the previous Equivalent to relationships
+	// It is safe to use Sprintf because getLabelsToRemove() doesn't come from the request
+	// nolint:gosec
 	deletePreviousCanonicalLabelsAndPropertiesQuery := &cmneo4j.Query{
 		Cypher: fmt.Sprintf(`MATCH (t:Thing {prefUUID:$acUUID})
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)

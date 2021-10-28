@@ -80,7 +80,10 @@ func main() {
 		}
 
 		conceptsService := concepts.NewConceptService(driver, log)
-		conceptsService.Initialise()
+		err = conceptsService.Initialise()
+		if err != nil {
+			log.WithError(err).Fatal("Failed to initialise ConceptService")
+		}
 
 		appConf := ServerConf{
 			AppSystemCode:    *appSystemCode,

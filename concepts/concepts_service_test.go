@@ -1770,7 +1770,8 @@ func TestInvalidTypesThrowError(t *testing.T) {
 	scenarios := []testStruct{invalidPrefConceptTypeTest, invalidSourceConceptTypeTest}
 
 	for _, scenario := range scenarios {
-		driver.Write(&cmneo4j.Query{Cypher: scenario.statementToWrite})
+		err := driver.Write(&cmneo4j.Query{Cypher: scenario.statementToWrite})
+		assert.NoError(t, err, "Unexpected error on Write to the db")
 		aggConcept, found, err := conceptsDriver.Read(scenario.prefUUID, "")
 		assert.Equal(t, ontology.AggregatedConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
 		assert.Equal(t, false, found, "Scenario "+scenario.testName+" failed; aggregate concept should not be returned from read")
@@ -1885,7 +1886,8 @@ func TestFilteringOfUniqueIds(t *testing.T) {
 
 func TestTransferConcordance(t *testing.T) {
 	statement := `MERGE (a:Thing{prefUUID:"1"}) MERGE (b:Thing{uuid:"1"}) MERGE (c:Thing{uuid:"2"}) MERGE (d:Thing{uuid:"3"}) MERGE (w:Thing{prefUUID:"4"}) MERGE (y:Thing{uuid:"5"}) MERGE (j:Thing{prefUUID:"6"}) MERGE (k:Thing{uuid:"6"}) MERGE (c)-[:EQUIVALENT_TO]->(a)<-[:EQUIVALENT_TO]-(b) MERGE (w)<-[:EQUIVALENT_TO]-(d) MERGE (j)<-[:EQUIVALENT_TO]-(k)`
-	driver.Write(&cmneo4j.Query{Cypher: statement})
+	err := driver.Write(&cmneo4j.Query{Cypher: statement})
+	assert.NoError(t, err, "Unexpected error on Write to the db")
 	var emptyQuery []*cmneo4j.Query
 	var updatedConcept ConceptChanges
 
@@ -1978,7 +1980,8 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	
 	MERGE (editorial)-[:EQUIVALENT_TO]->(editorialCanonical)<-[:EQUIVALENT_TO]-(factset)
 	MERGE (ml)-[:EQUIVALENT_TO]->(mlCanonical)<-[:EQUIVALENT_TO]-(tme)`
-	driver.Write(&cmneo4j.Query{Cypher: statement})
+	err := driver.Write(&cmneo4j.Query{Cypher: statement})
+	assert.NoError(t, err, "Unexpected error on Write to the db")
 	var emptyQuery []*cmneo4j.Query
 	var updatedConcept ConceptChanges
 
@@ -2741,9 +2744,9 @@ func deleteSourceNodes(t *testing.T, uuids ...string) {
 	qs := make([]*cmneo4j.Query, len(uuids))
 	for i, uuid := range uuids {
 		qs[i] = &cmneo4j.Query{
-			Cypher: fmt.Sprintf(`
-			MATCH (a:Thing {uuid: "%s"})
-			DETACH DELETE a`, uuid)}
+			Cypher: `MATCH (a:Thing {uuid: $uuid}) DETACH DELETE a`,
+			Params: map[string]interface{}{"uuid": uuid},
+		}
 	}
 	err := driver.Write(qs...)
 	assert.NoError(t, err, "Error executing clean up cypher")
@@ -2753,10 +2756,11 @@ func cleanSourceNodes(t *testing.T, uuids ...string) {
 	qs := make([]*cmneo4j.Query, len(uuids))
 	for i, uuid := range uuids {
 		qs[i] = &cmneo4j.Query{
-			Cypher: fmt.Sprintf(`
-			MATCH (a:Thing {uuid: "%s"})
-			OPTIONAL MATCH (a)-[hp:HAS_PARENT]-(p)
-			DELETE hp`, uuid)}
+			Cypher: `MATCH (a:Thing {uuid: $uuid})
+			         OPTIONAL MATCH (a)-[hp:HAS_PARENT]-(p)
+			         DELETE hp`,
+			Params: map[string]interface{}{"uuid": uuid},
+		}
 	}
 	err := driver.Write(qs...)
 	assert.NoError(t, err, "Error executing clean up cypher")
@@ -2766,10 +2770,11 @@ func deleteConcordedNodes(t *testing.T, uuids ...string) {
 	qs := make([]*cmneo4j.Query, len(uuids))
 	for i, uuid := range uuids {
 		qs[i] = &cmneo4j.Query{
-			Cypher: fmt.Sprintf(`
-			MATCH (a:Thing {prefUUID: "%s"})
-			OPTIONAL MATCH (a)-[rel]-(i)
-			DELETE rel, i, a`, uuid)}
+			Cypher: `MATCH (a:Thing {prefUUID: $uuid})
+			         OPTIONAL MATCH (a)-[rel]-(i)
+			         DELETE rel, i, a`,
+			Params: map[string]interface{}{"uuid": uuid},
+		}
 	}
 	err := driver.Write(qs...)
 	assert.NoError(t, err, "Error executing clean up cypher")
