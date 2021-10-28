@@ -10,7 +10,7 @@ import (
 
 func getReadStatement() string {
 	statementTemplate := `
-		MATCH (canonical:Thing {prefUUID:{uuid}})<-[:EQUIVALENT_TO]-(source:Thing)
+		MATCH (canonical:Thing {prefUUID:$uuid})<-[:EQUIVALENT_TO]-(source:Thing)
 		OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 		%s
 		WITH
@@ -72,12 +72,12 @@ func getReadStatement() string {
 
 func getDeleteStatement() string {
 	statementTemplate := `
-		MATCH (t:Thing {uuid:{id}})
+		MATCH (t:Thing {uuid:$id})
 		OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
 		OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
 		%s
 		REMOVE t:%s
-		SET t={uuid:{id}}
+		SET t={uuid:$id}
 		DELETE eq, issuerRel, %s`
 
 	return fmt.Sprintf(statementTemplate,

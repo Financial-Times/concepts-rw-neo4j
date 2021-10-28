@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	logger "github.com/Financial-Times/go-logger/v2"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/gorilla/mux"
 	cli "github.com/jawher/mow.cli"
 )
@@ -42,8 +42,8 @@ func main() {
 	})
 	neoURL := app.String(cli.StringOpt{
 		Name:   "neo-url",
-		Value:  "http://localhost:7474/db/data",
-		Desc:   "neo4j endpoint URL",
+		Value:  "botl://localhost:7687",
+		Desc:   "neoURL must point to a leader node or to use neo4j:// scheme, otherwise writes will fail",
 		EnvVar: "NEO_URL",
 	})
 	port := app.Int(cli.IntOpt{
@@ -51,12 +51,6 @@ func main() {
 		Value:  8080,
 		Desc:   "Port to listen on",
 		EnvVar: "APP_PORT",
-	})
-	batchSize := app.Int(cli.IntOpt{
-		Name:   "batchSize",
-		Value:  1024,
-		Desc:   "Maximum number of statements to execute per batch",
-		EnvVar: "BATCH_SIZE",
 	})
 	requestLoggingOn := app.Bool(cli.BoolOpt{
 		Name:   "requestLoggingOn",
@@ -67,19 +61,26 @@ func main() {
 	logLevel := app.String(cli.StringOpt{
 		Name:   "logLevel",
 		Value:  "info",
-		Desc:   "Level of logging to be shown",
+		Desc:   "Level of logging to be shown (debug, info, warn, error)",
 		EnvVar: "LOG_LEVEL",
+	})
+	dbDriverLogLevel := app.String(cli.StringOpt{
+		Name:   "dbDriverLogLevel",
+		Value:  "warn",
+		Desc:   "Db's driver logging level (debug, info, warn, error)",
+		EnvVar: "DB_DRIVER_LOG_LEVEL",
 	})
 
 	log := logger.NewUPPLogger(*appSystemCode, *logLevel)
+	dbDriverLog := logger.NewUPPLogger(*appName+"-cmneo4j-driver", *dbDriverLogLevel)
 	app.Action = func() {
-		conf := neoutils.DefaultConnectionConfig()
-		conf.BatchSize = *batchSize
-		db, err := neoutils.Connect(*neoURL, conf)
-
+		driver, err := cmneo4j.NewDefaultDriver(*neoURL, dbDriverLog)
 		if err != nil {
-			log.Errorf("Could not connect to neo4j, error=[%s]\n", err)
+			log.WithError(err).WithField("neoURL", *neoURL).Fatal("Could not create a cmneo4j driver")
 		}
+
+		conceptsService := concepts.NewConceptService(driver, log)
+		conceptsService.Initialise()
 
 		appConf := ServerConf{
 			AppSystemCode:    *appSystemCode,
@@ -87,10 +88,6 @@ func main() {
 			Port:             *port,
 			RequestLoggingOn: *requestLoggingOn,
 		}
-
-		conceptsService := concepts.NewConceptService(db, log)
-		conceptsService.Initialise()
-
 		handler := concepts.ConceptsHandler{ConceptsService: &conceptsService}
 		runServerWithParams(handler, appConf, log)
 	}

@@ -37,9 +37,7 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: global-config
-              key: neo4j.read.write.url
-        - name: BATCH_SIZE
-          value: "{{ .Values.env.BATCH_SIZE }}"
+              key: neo4j.cluster.bolt.url
         - name: LOG_LEVEL
           value: "{{ .Values.env.LOG_LEVEL }}"
         - name: REQUEST_LOGGING_ON
