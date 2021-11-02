@@ -26,5 +26,3 @@ require (
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
-
-replace github.com/jmcvetta/neoism => github.com/Financial-Times/neoism v1.3.2-0.20180622150314-0a3ba1ab89c4

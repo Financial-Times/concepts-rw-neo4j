@@ -283,17 +283,17 @@ func init() {
 		url = "bolt://localhost:7687"
 	}
 	log := logger.NewUPPLogger("test-concepts-rw-neo4j", "panic")
-	var err error // avoid shadowing the global driver variable
-	driver, err = cmneo4j.NewDefaultDriver(url, log)
+	d, err := cmneo4j.NewDefaultDriver(url, log)
 	if err != nil {
 		log.WithError(err).Fatal("could not create a new cmneo4j driver")
 	}
-	conceptsDriver = NewConceptService(driver, log)
+	conceptsDriver = NewConceptService(d, log)
 	err = conceptsDriver.Initialise()
 	if err != nil {
 		log.WithError(err).Fatal("failed to initialise ConceptSerivce")
 	}
 
+	driver = d
 	duration := 5 * time.Second
 	time.Sleep(duration)
 }

@@ -84,7 +84,7 @@ func (s *ConceptService) Initialise() error {
 		"Concept": "authorityValue",
 	})
 	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
-		s.log.WithError(err).Error("Could not run DB constraints")
+		s.log.WithError(err).Error("Could not run db index")
 		return err
 	}
 
@@ -100,10 +100,12 @@ func (s *ConceptService) Initialise() error {
 	}
 
 	err = s.driver.EnsureConstraints(constraintMap)
-	if errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
-		return nil
+	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
+		s.log.WithError(err).Error("Could not run db constraints")
+		return err
 	}
-	return err
+
+	return nil
 }
 
 type equivalenceResult struct {
@@ -125,13 +127,13 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 }
 
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
-	var results []neoAggregatedConcept
+	var neoAggregateConcept neoAggregatedConcept
 	query := &cmneo4j.Query{
 		Cypher: getReadStatement(),
 		Params: map[string]interface{}{
 			"uuid": uuid,
 		},
-		Result: &results,
+		Result: &neoAggregateConcept,
 	}
 
 	err := s.driver.Read(query)
@@ -139,16 +141,15 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 		s.log.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
 		return ontology.NewAggregatedConcept{}, false, nil
 	}
+	if errors.Is(err, cmneo4j.ErrMultipleResultsFound) {
+		s.log.WithTransactionID(transID).WithUUID(uuid).Errorf("read concept returned multiple rows, where one is expected")
+		return ontology.NewAggregatedConcept{}, false, ErrUnexpectedReadResult
+	}
 	if err != nil {
 		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Error executing neo4j read query")
 		return ontology.NewAggregatedConcept{}, false, err
 	}
-	if len(results) > 1 {
-		s.log.WithTransactionID(transID).WithUUID(uuid).Errorf("read concept returned '%d' rows, where one is expected", len(results))
-		return ontology.NewAggregatedConcept{}, false, ErrUnexpectedReadResult
-	}
 
-	neoAggregateConcept := results[0]
 	newAggregatedConcept, logMsg, err := neoAggregateConcept.ToOntologyNewAggregateConcept(ontology.GetConfig())
 	if err != nil {
 		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error(logMsg)

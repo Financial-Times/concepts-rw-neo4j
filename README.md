@@ -22,7 +22,7 @@ A RESTful API for managing Concepts in Neo4j
 Options:
       --app-system-code    System Code of the application (env $APP_SYSTEM_CODE) (default "concept-rw-neo4j")
       --app-name           Application name (env $APP_NAME) (default "Concept Rw Neo4j")
-      --neo-url            neoURL must point to a leader node or to use neo4j:// scheme, otherwise writes will fail (env $NEO_URL) (default "botl://localhost:7687")
+      --neo-url            neoURL must point to a leader node or to use neo4j:// scheme, otherwise writes will fail (env $NEO_URL) (default "bolt://localhost:7687")
       --port               Port to listen on (env $APP_PORT) (default 8080)
       --requestLoggingOn   Whether to log requests or not (env $REQUEST_LOGGING_ON) (default true)
       --logLevel           Level of logging to be shown (debug, info, warn, error) (env $LOG_LEVEL) (default "info")

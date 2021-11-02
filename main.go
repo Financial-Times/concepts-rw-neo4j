@@ -42,7 +42,7 @@ func main() {
 	})
 	neoURL := app.String(cli.StringOpt{
 		Name:   "neo-url",
-		Value:  "botl://localhost:7687",
+		Value:  "bolt://localhost:7687",
 		Desc:   "neoURL must point to a leader node or to use neo4j:// scheme, otherwise writes will fail",
 		EnvVar: "NEO_URL",
 	})
