@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
+	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 
 	"github.com/gorilla/mux"
@@ -252,7 +253,8 @@ func TestGtgHandler(t *testing.T) {
 	for _, test := range tests {
 		r := mux.NewRouter()
 		handler := ConceptsHandler{test.ds}
-		sm := handler.RegisterAdminHandlers(r, "", "", "", true)
+		log := logger.NewUPPLogger("handlers_test", "PANIC")
+		sm := handler.RegisterAdminHandlers(r, log, "", "", "", true)
 		rec := httptest.NewRecorder()
 		sm.ServeHTTP(rec, test.req)
 		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))

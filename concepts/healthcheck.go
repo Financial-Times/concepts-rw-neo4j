@@ -5,17 +5,18 @@ import (
 	"time"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
-	"github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/http-handlers-go/httphandlers"
+	httphandlers "github.com/Financial-Times/http-handlers-go/v2/httphandlers"
 	"github.com/Financial-Times/service-status-go/gtg"
 	st "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
-	log "github.com/sirupsen/logrus"
+
+	logger "github.com/Financial-Times/go-logger/v2"
 )
 
-func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCode string, appName string, appDescription string, enableRequestLogging bool) http.Handler {
-	logger.Info("Registering healthcheck handlers")
+func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, log *logger.UPPLogger,
+	appSystemCode, appName, appDescription string, enableRequestLogging bool) http.Handler {
+	log.Info("Registering healthcheck handlers")
 
 	hc := fthealth.TimedHealthCheck{
 		HealthCheck: fthealth.HealthCheck{
@@ -34,7 +35,7 @@ func (h *ConceptsHandler) RegisterAdminHandlers(router *mux.Router, appSystemCod
 
 	var monitoringRouter http.Handler = router
 	if enableRequestLogging {
-		monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), monitoringRouter)
+		monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log, monitoringRouter)
 	}
 	monitoringRouter = httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry, monitoringRouter)
 

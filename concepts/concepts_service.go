@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	logger "github.com/Financial-Times/go-logger"
+	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
@@ -48,6 +48,7 @@ var relationships = map[string]ontology.RelationshipConfig{
 // ConceptService - CypherDriver - CypherDriver
 type ConceptService struct {
 	conn neoutils.NeoConnection
+	log  *logger.UPPLogger
 }
 
 // ConceptServicer defines the functions any read-write application needs to implement
@@ -60,8 +61,8 @@ type ConceptServicer interface {
 }
 
 // NewConceptService instantiate driver
-func NewConceptService(cypherRunner neoutils.NeoConnection) ConceptService {
-	return ConceptService{cypherRunner}
+func NewConceptService(cypherRunner neoutils.NeoConnection, log *logger.UPPLogger) ConceptService {
+	return ConceptService{cypherRunner, log}
 }
 
 // Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
@@ -70,7 +71,7 @@ func (s *ConceptService) Initialise() error {
 		"Concept": "leiCode",
 	})
 	if err != nil {
-		logger.WithError(err).Error("Could not run db index")
+		s.log.WithError(err).Error("Could not run db index")
 		return err
 	}
 
@@ -79,7 +80,7 @@ func (s *ConceptService) Initialise() error {
 		"Concept": "authorityValue",
 	})
 	if err != nil {
-		logger.WithError(err).Error("Could not run DB constraints")
+		s.log.WithError(err).Error("Could not run DB constraints")
 		return err
 	}
 
@@ -90,7 +91,7 @@ func (s *ConceptService) Initialise() error {
 		"NAICSIndustryClassification": "industryIdentifier",
 	})
 	if err != nil {
-		logger.WithError(err).Error("Could not run db constraints")
+		s.log.WithError(err).Error("Could not run db constraints")
 		return err
 	}
 	return s.conn.EnsureConstraints(constraintMap)
@@ -108,7 +109,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
 	aggregatedConcept := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
 
-	logger.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
+	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
 	return aggregatedConcept, exists, err
 }
 
@@ -124,23 +125,23 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 
 	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Error executing neo4j read query")
+		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Error executing neo4j read query")
 		return ontology.NewAggregatedConcept{}, false, err
 	}
 
 	if len(results) == 0 {
-		logger.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
+		s.log.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
 		return ontology.NewAggregatedConcept{}, false, nil
 	}
 	if len(results) > 1 {
-		logger.WithTransactionID(transID).WithUUID(uuid).Errorf("read concept returned '%d' rows, where one is expected", len(results))
+		s.log.WithTransactionID(transID).WithUUID(uuid).Errorf("read concept returned '%d' rows, where one is expected", len(results))
 		return ontology.NewAggregatedConcept{}, false, ErrUnexpectedReadResult
 	}
 
 	neoAggregateConcept := results[0]
 	newAggregatedConcept, logMsg, err := neoAggregateConcept.ToOntologyNewAggregateConcept(ontology.GetConfig())
 	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error(logMsg)
+		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error(logMsg)
 		return ontology.NewAggregatedConcept{}, false, err
 	}
 
@@ -158,19 +159,19 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 	requestHash, err := hashstructure.Hash(aggregatedConceptToWrite, nil)
 	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error hashing json from request")
+		s.log.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error hashing json from request")
 		return ConceptChanges{}, err
 	}
 
 	hashAsString := strconv.FormatUint(requestHash, 10)
 
-	if err = validateObject(aggregatedConceptToWrite, transID); err != nil {
+	if err = s.validateObject(aggregatedConceptToWrite, transID); err != nil {
 		return ConceptChanges{}, err
 	}
 
 	existingAggregateConcept, exists, err := s.read(aggregatedConceptToWrite.PrefUUID, transID)
 	if err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Read request for existing concordance resulted in error")
+		s.log.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Read request for existing concordance resulted in error")
 		return ConceptChanges{}, err
 	}
 
@@ -186,16 +187,16 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		}
 		currentHash, err := strconv.ParseUint(existingAggregateConcept.AggregatedHash, 10, 64)
 		if err != nil {
-			logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Error whilst parsing existing concept hash")
+			s.log.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Error whilst parsing existing concept hash")
 			return updateRecord, nil
 		}
-		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debugf("Currently stored concept has hash of %d", currentHash)
-		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debugf("Aggregated concept has hash of %d", requestHash)
+		s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debugf("Currently stored concept has hash of %d", currentHash)
+		s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debugf("Aggregated concept has hash of %d", requestHash)
 		if currentHash == requestHash {
-			logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("This concept has not changed since most recent update")
+			s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("This concept has not changed since most recent update")
 			return updateRecord, nil
 		}
-		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("This concept is different to record stored in db, updating...")
+		s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("This concept is different to record stored in db, updating...")
 
 		existingSourceData := getSourceData(existingAggregateConcept.SourceRepresentations)
 
@@ -289,9 +290,9 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		},
 	})
 
-	logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
+	s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
 	for _, query := range queryBatch {
-		logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
+		s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
 	}
 
 	// check that the issuer is not already related to a different org
@@ -308,7 +309,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			Result: &fiRes,
 		}
 		if err := s.conn.CypherBatch([]*neoism.CypherQuery{issuerQuery}); err != nil {
-			logger.WithError(err).
+			s.log.WithError(err).
 				WithTransactionID(transID).
 				WithUUID(aggregatedConceptToWrite.PrefUUID).
 				Error("Could not get existing issuer.")
@@ -332,7 +333,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					fiUUID,
 					aggregatedConceptToWrite.PrefUUID,
 				)
-				logger.WithTransactionID(transID).
+				s.log.WithTransactionID(transID).
 					WithUUID(aggregatedConceptToWrite.PrefUUID).
 					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
 
@@ -354,25 +355,25 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	}
 
 	if err = s.conn.CypherBatch(queryBatch); err != nil {
-		logger.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error executing neo4j write queries. Concept NOT written.")
+		s.log.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error executing neo4j write queries. Concept NOT written.")
 		return updateRecord, err
 	}
 
-	logger.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Concept written to db")
+	s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Info("Concept written to db")
 	return updateRecord, nil
 }
 
-func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) error {
+func (s *ConceptService) validateObject(aggConcept ontology.NewAggregatedConcept, transID string) error {
 	if aggConcept.PrefLabel == "" {
-		return requestError{formatError("prefLabel", aggConcept.PrefUUID, transID)}
+		return requestError{s.formatError("prefLabel", aggConcept.PrefUUID, transID)}
 	}
 
 	if _, ok := constraintMap[aggConcept.Type]; !ok {
-		return requestError{formatError("type", aggConcept.PrefUUID, transID)}
+		return requestError{s.formatError("type", aggConcept.PrefUUID, transID)}
 	}
 
 	if aggConcept.SourceRepresentations == nil {
-		return requestError{formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
+		return requestError{s.formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
 	}
 
 	if err := ontology.GetConfig().ValidateProperties(aggConcept.Properties); err != nil {
@@ -382,29 +383,29 @@ func validateObject(aggConcept ontology.NewAggregatedConcept, transID string) er
 	for _, sourceConcept := range aggConcept.SourceRepresentations {
 		if err := sourceConcept.Validate(); err != nil {
 			if errors.Is(err, ontology.ErrUnknownAuthority) {
-				logger.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", sourceConcept.Authority)
+				s.log.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", sourceConcept.Authority)
 			} else {
-				logger.WithError(err).WithTransactionID(transID).WithUUID(sourceConcept.UUID).Error("Validation of payload failed")
+				s.log.WithError(err).WithTransactionID(transID).WithUUID(sourceConcept.UUID).Error("Validation of payload failed")
 			}
 
 			return requestError{err.Error()}
 		}
 
 		if sourceConcept.Type == "" {
-			return requestError{formatError("sourceRepresentation.type", sourceConcept.UUID, transID)}
+			return requestError{s.formatError("sourceRepresentation.type", sourceConcept.UUID, transID)}
 		}
 
 		if _, ok := constraintMap[sourceConcept.Type]; !ok {
-			return requestError{formatError("type", aggConcept.PrefUUID, transID)}
+			return requestError{s.formatError("type", aggConcept.PrefUUID, transID)}
 		}
 	}
 
 	return nil
 }
 
-func formatError(field string, uuid string, transID string) string {
+func (s *ConceptService) formatError(field, uuid, transID string) string {
 	err := errors.New("invalid request, no " + field + " has been supplied")
-	logger.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Validation of payload failed")
+	s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Validation of payload failed")
 	return err.Error()
 }
 
@@ -439,13 +440,13 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 		}
 		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
 		if err != nil {
-			logger.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error("Requests for source nodes canonical information resulted in error")
+			s.log.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error("Requests for source nodes canonical information resulted in error")
 			return deleteLonePrefUUIDQueries, err
 		}
 
 		//source node does not currently exist in neo4j, nothing to tidy up
 		if len(result) == 0 {
-			logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Info("No existing concordance record found")
+			s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Info("No existing concordance record found")
 			if updatedSourceID != newAggregatedConcept.PrefUUID {
 				//concept does not exist, need update event
 				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
@@ -475,25 +476,25 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 		} else if len(result) > 1 {
 			//this scenario should never happen
 			err = fmt.Errorf("Multiple source concepts found with matching uuid: %s", updatedSourceID)
-			logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error(err.Error())
+			s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error(err.Error())
 			return deleteLonePrefUUIDQueries, err
 		}
 
 		entityEquivalence := result[0]
 		conceptType, err := mapper.MostSpecificType(entityEquivalence.Types)
 		if err != nil {
-			logger.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Errorf("could not return most specific type from source node: %v", entityEquivalence.Types)
+			s.log.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Errorf("could not return most specific type from source node: %v", entityEquivalence.Types)
 			return deleteLonePrefUUIDQueries, err
 		}
 
-		logger.WithField("UUID", updatedSourceID).Debug("Existing prefUUID is " + entityEquivalence.PrefUUID + " equivalence count is " + strconv.Itoa(entityEquivalence.Equivalence))
+		s.log.WithField("UUID", updatedSourceID).Debug("Existing prefUUID is " + entityEquivalence.PrefUUID + " equivalence count is " + strconv.Itoa(entityEquivalence.Equivalence))
 		if entityEquivalence.Equivalence == 0 {
 			// Source is old as exists in Neo4j without a prefNode. It can be transferred without issue
 			continue
 		} else if entityEquivalence.Equivalence == 1 {
 			// Source exists in neo4j but is not concorded. It can be transferred without issue but its prefNode should be deleted
 			if updatedSourceID == entityEquivalence.PrefUUID {
-				logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Pref uuid node for source %s will need to be deleted as its source will be removed", updatedSourceID)
+				s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Pref uuid node for source %s will need to be deleted as its source will be removed", updatedSourceID)
 				deleteLonePrefUUIDQueries = append(deleteLonePrefUUIDQueries, deleteLonePrefUUID(entityEquivalence.PrefUUID))
 				//concordance added
 				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
@@ -511,7 +512,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 			} else {
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := fmt.Errorf("This source id: %s the only concordance to a non-matching node with prefUuid: %s", updatedSourceID, entityEquivalence.PrefUUID)
-				logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingDodgyData").Error(err)
+				s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingDodgyData").Error(err)
 				return deleteLonePrefUUIDQueries, err
 			}
 		} else {
@@ -519,7 +520,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 				if updatedSourceID != newAggregatedConcept.PrefUUID {
 					authority := newAggregatedConcept.GetCanonicalAuthority()
 					if entityEquivalence.Authority != authority && stringInArr(entityEquivalence.Authority, concordancesSources) {
-						logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transfered to the new concordance", updatedSourceID)
+						s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transferred to the new concordance", updatedSourceID)
 						// just delete the lone prefUUID node because the other concordances to
 						// this node should already be in the new sourceRepresentations (aggregate-concept-transformer responsability)
 						deleteLonePrefUUIDQueries = append(deleteLonePrefUUIDQueries, deleteLonePrefUUID(entityEquivalence.PrefUUID))
@@ -538,12 +539,12 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 					}
 					// Source is prefUUID for a different concordance
 					err := fmt.Errorf("Cannot currently process this record as it will break an existing concordance with prefUuid: %s", updatedSourceID)
-					logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingInvalidConcordance").Error(err)
+					s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingInvalidConcordance").Error(err)
 					return deleteLonePrefUUIDQueries, err
 				}
 			} else {
 				// Source was concorded to different concordance. Data on existing concordance is now out of date
-				logger.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingStaleData").Infof("Need to re-ingest concordance record for prefUuid: %s as source: %s has been removed.", entityEquivalence.PrefUUID, updatedSourceID)
+				s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingStaleData").Infof("Need to re-ingest concordance record for prefUuid: %s as source: %s has been removed.", entityEquivalence.PrefUUID, updatedSourceID)
 
 				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
 					ConceptType:   conceptType,
@@ -577,7 +578,6 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 
 //Clean up canonical nodes of a concept that has become a source of current concept
 func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
-	logger.WithField("UUID", prefUUID).Debug("Deleting orphaned prefUUID node")
 	equivQuery := &neoism.CypherQuery{
 		Statement: `MATCH (t:Thing {prefUUID:{id}}) DETACH DELETE t`,
 		Parameters: map[string]interface{}{
@@ -809,7 +809,7 @@ func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*neoism.C
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
 func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *neoism.CypherQuery {
 	allProps := setCanonicalProps(canonical, prefUUID)
-	logger.WithField("UUID", prefUUID).Debug("Creating prefUUID node for unconcorded concept")
+	s.log.WithField("UUID", prefUUID).Debug("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &neoism.CypherQuery{
 		Statement: fmt.Sprintf(`
 					MATCH (t:Thing{uuid:{prefUUID}})
