@@ -4,7 +4,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"math"
 
 	"gopkg.in/yaml.v2"
 )
@@ -77,17 +76,7 @@ func (cfg Config) IsPropValueValid(propName string, val interface{}) bool {
 		return true
 	case "int":
 		_, ok := val.(int)
-		if ok {
-			return true
-		}
-
-		floatVal, ok := val.(float64) // float64, for JSON numbers
-		if !ok {
-			return false
-		}
-
-		isWholeInteger := floatVal == math.Trunc(floatVal)
-		return isWholeInteger
+		return ok
 	default:
 		return false
 	}
