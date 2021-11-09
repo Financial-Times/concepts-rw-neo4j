@@ -47,11 +47,14 @@ func TransformToNewAggregateConcept(old AggregatedConcept) (NewAggregatedConcept
 	}, nil
 }
 
-func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept {
+func TransformToOldAggregateConcept(new NewAggregatedConcept) (AggregatedConcept, error) {
 	var oldSources []Concept
 	var roles []MembershipRole
 	for _, s := range new.SourceRepresentations {
-		oldSource := TransformToOldSourceConcept(s)
+		oldSource, err := TransformToOldSourceConcept(s)
+		if err != nil {
+			return AggregatedConcept{}, err
+		}
 
 		for _, r := range oldSource.MembershipRoles {
 			if r.RoleUUID == "" {
@@ -65,7 +68,9 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 
 	old := AggregatedConcept{}
 	newPropsBytes, _ := json.Marshal(new.Properties)
-	_ = json.Unmarshal(newPropsBytes, &old)
+	if err := json.Unmarshal(newPropsBytes, &old); err != nil {
+		return AggregatedConcept{}, err
+	}
 
 	old.PrefUUID = new.PrefUUID
 	old.PrefLabel = new.PrefLabel
@@ -83,7 +88,7 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	old.IsDeprecated = new.IsDeprecated
 	old.SourceRepresentations = oldSources
 
-	return old
+	return old, nil
 }
 
 // nolint: gocognit // TODO: simplify this function
@@ -163,7 +168,8 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 	}, nil
 }
 
-func TransformToOldSourceConcept(new NewConcept) Concept {
+// nolint: gocognit // TODO: simplify this function
+func TransformToOldSourceConcept(new NewConcept) (Concept, error) {
 	oldMap := map[string]interface{}{}
 	for _, rel := range new.Relationships {
 		if rel.UUID == "" {
@@ -218,7 +224,9 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 
 	old := Concept{}
 	relMapBytes, _ := json.Marshal(oldMap)
-	_ = json.Unmarshal(relMapBytes, &old)
+	if err := json.Unmarshal(relMapBytes, &old); err != nil {
+		return Concept{}, err
+	}
 
 	old.UUID = new.UUID
 	old.PrefLabel = new.PrefLabel
@@ -237,5 +245,5 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.NAICSIndustryClassifications = new.NAICSIndustryClassifications
 	old.IsDeprecated = new.IsDeprecated
 
-	return old
+	return old, nil
 }

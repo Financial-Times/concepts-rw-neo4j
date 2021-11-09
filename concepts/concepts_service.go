@@ -107,8 +107,10 @@ type equivalenceResult struct {
 
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
-	aggregatedConcept := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
-
+	if err != nil {
+		return ontology.AggregatedConcept{}, exists, err
+	}
+	aggregatedConcept, err := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
 	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
 	return aggregatedConcept, exists, err
 }

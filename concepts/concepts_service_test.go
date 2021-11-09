@@ -2537,7 +2537,8 @@ func readConceptAndCompare(t *testing.T, payload ontology.AggregatedConcept, tes
 	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Transformation Error occurred", testName))
 	clean := cleanSourceProperties(newPayload)
 
-	newClean := ontology.TransformToOldAggregateConcept(clean)
+	newClean, err := ontology.TransformToOldAggregateConcept(clean)
+	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Transformation Error occurred", testName))
 	expected := cleanHash(cleanConcept(newClean))
 
 	actual = cleanHash(cleanConcept(actual))

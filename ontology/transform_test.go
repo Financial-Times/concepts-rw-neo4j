@@ -49,7 +49,10 @@ func TestTransformAggregateConceptProperties(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := TransformToOldAggregateConcept(newAggregateConcept)
+	got, err := TransformToOldAggregateConcept(newAggregateConcept)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !cmp.Equal(got, expected) {
 		t.Errorf("transforming between old and new model has failed:\n%s", cmp.Diff(got, expected))
 	}
@@ -75,7 +78,10 @@ func TestTransformSourceConceptRelationships(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := TransformToOldSourceConcept(newSourceConcept)
+	got, err := TransformToOldSourceConcept(newSourceConcept)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	sort.Strings(expected.ParentUUIDs)
 	sort.Strings(expected.BroaderUUIDs)
