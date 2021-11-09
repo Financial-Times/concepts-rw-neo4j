@@ -45,7 +45,10 @@ func TestTransformAggregateConceptProperties(t *testing.T) {
 		IndustryIdentifier:     "industryIdentifier value",
 	}
 
-	newAggregateConcept := TransformToNewAggregateConcept(expected)
+	newAggregateConcept, err := TransformToNewAggregateConcept(expected)
+	if err != nil {
+		t.Fatal(err)
+	}
 	got := TransformToOldAggregateConcept(newAggregateConcept)
 	if !cmp.Equal(got, expected) {
 		t.Errorf("transforming between old and new model has failed:\n%s", cmp.Diff(got, expected))
@@ -68,7 +71,10 @@ func TestTransformSourceConceptRelationships(t *testing.T) {
 		ParentOrganisation:         "c001ee9c-94c5-11e8-8f42-da24cd01f044",
 	}
 
-	newSourceConcept := TransformToNewSourceConcept(expected)
+	newSourceConcept, err := TransformToNewSourceConcept(expected)
+	if err != nil {
+		t.Fatal(err)
+	}
 	got := TransformToOldSourceConcept(newSourceConcept)
 
 	sort.Strings(expected.ParentUUIDs)

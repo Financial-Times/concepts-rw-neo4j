@@ -152,7 +152,10 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	oldAggregatedConcept := thing.(ontology.AggregatedConcept)
-	aggregatedConceptToWrite := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
+	aggregatedConceptToWrite, err := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
+	if err != nil {
+		return ConceptChanges{}, err
+	}
 
 	aggregatedConceptToWrite = cleanSourceProperties(aggregatedConceptToWrite)
 	requestSourceData := getSourceData(aggregatedConceptToWrite.SourceRepresentations)

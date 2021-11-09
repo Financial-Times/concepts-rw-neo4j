@@ -5,15 +5,21 @@ import (
 	"sort"
 )
 
-func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept {
+func TransformToNewAggregateConcept(old AggregatedConcept) (NewAggregatedConcept, error) {
 	var newSources []NewConcept
 	for _, s := range old.SourceRepresentations {
-		newSources = append(newSources, TransformToNewSourceConcept(s))
+		src, err := TransformToNewSourceConcept(s)
+		if err != nil {
+			return NewAggregatedConcept{}, err
+		}
+		newSources = append(newSources, src)
 	}
 
 	oldMap := map[string]interface{}{}
 	oldBytes, _ := json.Marshal(old)
-	_ = json.Unmarshal(oldBytes, &oldMap)
+	if err := json.Unmarshal(oldBytes, &oldMap); err != nil {
+		return NewAggregatedConcept{}, err
+	}
 
 	props := map[string]interface{}{}
 	for field := range GetConfig().Fields {
@@ -38,7 +44,7 @@ func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept 
 		FigiCode:              old.FigiCode,
 		IssuedBy:              old.IssuedBy,
 		SourceRepresentations: newSources,
-	}
+	}, nil
 }
 
 func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept {
@@ -80,10 +86,13 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	return old
 }
 
-func TransformToNewSourceConcept(old Concept) NewConcept {
+// nolint: gocognit // TODO: simplify this function
+func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 	oldMap := map[string]interface{}{}
 	oldBytes, _ := json.Marshal(old)
-	_ = json.Unmarshal(oldBytes, &oldMap)
+	if err := json.Unmarshal(oldBytes, &oldMap); err != nil {
+		return NewConcept{}, err
+	}
 
 	rels := []Relationship{}
 	for rel, relCfg := range GetConfig().Relationships {
@@ -151,7 +160,7 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		IssuedBy:                     old.IssuedBy,
 		NAICSIndustryClassifications: old.NAICSIndustryClassifications,
 		IsDeprecated:                 old.IsDeprecated,
-	}
+	}, nil
 }
 
 func TransformToOldSourceConcept(new NewConcept) Concept {
