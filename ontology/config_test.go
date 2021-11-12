@@ -28,8 +28,7 @@ func TestConfigIsPropValueValid(t *testing.T) {
 	assert.False(t, cfg.IsPropValueValid("aliases", true))
 
 	assert.True(t, cfg.IsPropValueValid("yearFounded", 1234))
-	assert.True(t, cfg.IsPropValueValid("yearFounded", float64(1234)))
-	assert.True(t, cfg.IsPropValueValid("yearFounded", 1234.0))
+	assert.False(t, cfg.IsPropValueValid("yearFounded", 1234.0))
 	assert.False(t, cfg.IsPropValueValid("yearFounded", 1234.5))
 	assert.False(t, cfg.IsPropValueValid("yearFounded", "1234"))
 

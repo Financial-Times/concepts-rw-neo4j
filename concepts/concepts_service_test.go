@@ -2304,8 +2304,8 @@ func TestSetCanonicalProps(t *testing.T) {
 					"aliases":                []interface{}{"alias1", "alias2"},
 					"formerNames":            []interface{}{"former name 1", "former name 2"},
 					"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
-					"yearFounded":            float64(1),
-					"birthYear":              float64(2),
+					"yearFounded":            1,
+					"birthYear":              2,
 				},
 			},
 			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
@@ -2341,8 +2341,8 @@ func TestSetCanonicalProps(t *testing.T) {
 				"aliases":                []interface{}{"alias1", "alias2"},
 				"formerNames":            []interface{}{"former name 1", "former name 2"},
 				"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
-				"yearFounded":            float64(1),
-				"birthYear":              float64(2),
+				"yearFounded":            1,
+				"birthYear":              2,
 			},
 		},
 	}
@@ -2482,7 +2482,7 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
 		Properties: map[string]interface{}{
 			"salutation": "Mr",
-			"birthYear":  float64(2018),
+			"birthYear":  2018,
 		},
 		PrefUUID:         "cbadd9a7-5da9-407a-a5ec-e379460991f2",
 		PrefLabel:        "Membership Pref Label",

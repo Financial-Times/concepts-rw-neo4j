@@ -2,6 +2,7 @@ package ontology
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 )
 
@@ -22,10 +23,31 @@ func TransformToNewAggregateConcept(old AggregatedConcept) (NewAggregatedConcept
 	}
 
 	props := map[string]interface{}{}
-	for field := range GetConfig().Fields {
-		if val, ok := oldMap[field]; ok {
-			props[field] = val
+	for field, cfg := range GetConfig().Fields {
+		var v interface{}
+		val, ok := oldMap[field]
+		if !ok {
+			continue
 		}
+		fieldType := cfg.FieldType
+		switch fieldType {
+		case "string":
+			if v, ok = toString(val); !ok {
+				return NewAggregatedConcept{}, getInvalidPropValueError(field, v)
+			}
+		case "[]string":
+			if v, ok = toStringSlice(val); !ok {
+				return NewAggregatedConcept{}, getInvalidPropValueError(field, v)
+			}
+		case "int":
+			if v, ok = toInt(val); !ok {
+				return NewAggregatedConcept{}, getInvalidPropValueError(field, v)
+			}
+		default:
+			return NewAggregatedConcept{},
+				fmt.Errorf("unsupported field type '%s' for prop '%s': %w", fieldType, field, ErrUnknownProperty)
+		}
+		props[field] = v
 	}
 
 	return NewAggregatedConcept{
@@ -67,8 +89,12 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) (AggregatedConcept
 	}
 
 	old := AggregatedConcept{}
-	newPropsBytes, _ := json.Marshal(new.Properties)
-	if err := json.Unmarshal(newPropsBytes, &old); err != nil {
+	newPropsBytes, err := json.Marshal(new.Properties)
+	if err != nil {
+		return AggregatedConcept{}, err
+	}
+	err = json.Unmarshal(newPropsBytes, &old)
+	if err != nil {
 		return AggregatedConcept{}, err
 	}
 
@@ -246,4 +272,40 @@ func TransformToOldSourceConcept(new NewConcept) (Concept, error) {
 	old.IsDeprecated = new.IsDeprecated
 
 	return old, nil
+}
+
+func toString(val interface{}) (string, bool) {
+	str, ok := val.(string)
+	return str, ok
+}
+
+func toInt(val interface{}) (int, bool) {
+	switch v := val.(type) {
+	case int:
+		return v, true
+	case float64:
+		return int(v), true
+	default:
+		return 0, false
+	}
+}
+
+func toStringSlice(val interface{}) ([]string, bool) {
+	if vs, ok := val.([]string); ok {
+		return vs, ok
+	}
+	vs, ok := val.([]interface{})
+	if !ok {
+		return nil, false
+	}
+	var result []string
+	for _, v := range vs {
+		if str, ok := v.(string); ok {
+			result = append(result, str)
+		}
+	}
+	if len(result) != len(vs) {
+		return nil, false
+	}
+	return result, true
 }
