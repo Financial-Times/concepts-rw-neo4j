@@ -2,24 +2,52 @@ package ontology
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 )
 
-func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept {
+func TransformToNewAggregateConcept(old AggregatedConcept) (NewAggregatedConcept, error) {
 	var newSources []NewConcept
 	for _, s := range old.SourceRepresentations {
-		newSources = append(newSources, TransformToNewSourceConcept(s))
+		src, err := TransformToNewSourceConcept(s)
+		if err != nil {
+			return NewAggregatedConcept{}, err
+		}
+		newSources = append(newSources, src)
 	}
 
 	oldMap := map[string]interface{}{}
 	oldBytes, _ := json.Marshal(old)
-	_ = json.Unmarshal(oldBytes, &oldMap)
+	if err := json.Unmarshal(oldBytes, &oldMap); err != nil {
+		return NewAggregatedConcept{}, err
+	}
 
 	props := map[string]interface{}{}
-	for field := range GetConfig().Fields {
-		if val, ok := oldMap[field]; ok {
-			props[field] = val
+	for field, cfg := range GetConfig().Fields {
+		var v interface{}
+		val, ok := oldMap[field]
+		if !ok {
+			continue
 		}
+		fieldType := cfg.FieldType
+		switch fieldType {
+		case "string":
+			if v, ok = toString(val); !ok {
+				return NewAggregatedConcept{}, getInvalidPropValueError(field, v)
+			}
+		case "[]string":
+			if v, ok = toStringSlice(val); !ok {
+				return NewAggregatedConcept{}, getInvalidPropValueError(field, v)
+			}
+		case "int":
+			if v, ok = toInt(val); !ok {
+				return NewAggregatedConcept{}, getInvalidPropValueError(field, v)
+			}
+		default:
+			return NewAggregatedConcept{},
+				fmt.Errorf("unsupported field type '%s' for prop '%s': %w", fieldType, field, ErrUnknownProperty)
+		}
+		props[field] = v
 	}
 
 	return NewAggregatedConcept{
@@ -38,14 +66,17 @@ func TransformToNewAggregateConcept(old AggregatedConcept) NewAggregatedConcept 
 		FigiCode:              old.FigiCode,
 		IssuedBy:              old.IssuedBy,
 		SourceRepresentations: newSources,
-	}
+	}, nil
 }
 
-func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept {
+func TransformToOldAggregateConcept(new NewAggregatedConcept) (AggregatedConcept, error) {
 	var oldSources []Concept
 	var roles []MembershipRole
 	for _, s := range new.SourceRepresentations {
-		oldSource := TransformToOldSourceConcept(s)
+		oldSource, err := TransformToOldSourceConcept(s)
+		if err != nil {
+			return AggregatedConcept{}, err
+		}
 
 		for _, r := range oldSource.MembershipRoles {
 			if r.RoleUUID == "" {
@@ -58,8 +89,14 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	}
 
 	old := AggregatedConcept{}
-	newPropsBytes, _ := json.Marshal(new.Properties)
-	_ = json.Unmarshal(newPropsBytes, &old)
+	newPropsBytes, err := json.Marshal(new.Properties)
+	if err != nil {
+		return AggregatedConcept{}, err
+	}
+	err = json.Unmarshal(newPropsBytes, &old)
+	if err != nil {
+		return AggregatedConcept{}, err
+	}
 
 	old.PrefUUID = new.PrefUUID
 	old.PrefLabel = new.PrefLabel
@@ -77,13 +114,16 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) AggregatedConcept 
 	old.IsDeprecated = new.IsDeprecated
 	old.SourceRepresentations = oldSources
 
-	return old
+	return old, nil
 }
 
-func TransformToNewSourceConcept(old Concept) NewConcept {
+// nolint: gocognit // TODO: simplify this function
+func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 	oldMap := map[string]interface{}{}
 	oldBytes, _ := json.Marshal(old)
-	_ = json.Unmarshal(oldBytes, &oldMap)
+	if err := json.Unmarshal(oldBytes, &oldMap); err != nil {
+		return NewConcept{}, err
+	}
 
 	rels := []Relationship{}
 	for rel, relCfg := range GetConfig().Relationships {
@@ -151,10 +191,11 @@ func TransformToNewSourceConcept(old Concept) NewConcept {
 		IssuedBy:                     old.IssuedBy,
 		NAICSIndustryClassifications: old.NAICSIndustryClassifications,
 		IsDeprecated:                 old.IsDeprecated,
-	}
+	}, nil
 }
 
-func TransformToOldSourceConcept(new NewConcept) Concept {
+// nolint: gocognit // TODO: simplify this function
+func TransformToOldSourceConcept(new NewConcept) (Concept, error) {
 	oldMap := map[string]interface{}{}
 	for _, rel := range new.Relationships {
 		if rel.UUID == "" {
@@ -209,7 +250,9 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 
 	old := Concept{}
 	relMapBytes, _ := json.Marshal(oldMap)
-	_ = json.Unmarshal(relMapBytes, &old)
+	if err := json.Unmarshal(relMapBytes, &old); err != nil {
+		return Concept{}, err
+	}
 
 	old.UUID = new.UUID
 	old.PrefLabel = new.PrefLabel
@@ -228,5 +271,41 @@ func TransformToOldSourceConcept(new NewConcept) Concept {
 	old.NAICSIndustryClassifications = new.NAICSIndustryClassifications
 	old.IsDeprecated = new.IsDeprecated
 
-	return old
+	return old, nil
+}
+
+func toString(val interface{}) (string, bool) {
+	str, ok := val.(string)
+	return str, ok
+}
+
+func toInt(val interface{}) (int, bool) {
+	switch v := val.(type) {
+	case int:
+		return v, true
+	case float64:
+		return int(v), true
+	default:
+		return 0, false
+	}
+}
+
+func toStringSlice(val interface{}) ([]string, bool) {
+	if vs, ok := val.([]string); ok {
+		return vs, ok
+	}
+	vs, ok := val.([]interface{})
+	if !ok {
+		return nil, false
+	}
+	var result []string
+	for _, v := range vs {
+		if str, ok := v.(string); ok {
+			result = append(result, str)
+		}
+	}
+	if len(result) != len(vs) {
+		return nil, false
+	}
+	return result, true
 }

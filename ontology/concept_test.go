@@ -85,22 +85,22 @@ func TestNewAggregatedConceptGetPropertyValue(t *testing.T) {
 			name: "existing number prop",
 			concept: NewAggregatedConcept{
 				Properties: map[string]interface{}{
-					"birthYear": float64(1),
+					"birthYear": int(1),
 				},
 			},
 			propName:    "birthYear",
-			expectedVal: float64(1),
+			expectedVal: int(1),
 			expectedOk:  true,
 		},
 		{
 			name: "existing number prop zero",
 			concept: NewAggregatedConcept{
 				Properties: map[string]interface{}{
-					"birthYear": float64(0),
+					"birthYear": int(0),
 				},
 			},
 			propName:    "birthYear",
-			expectedVal: float64(0),
+			expectedVal: int(0),
 			expectedOk:  false,
 		},
 	}
@@ -155,12 +155,12 @@ func TestValidateProperties(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name: "float64 props are valid int fields",
+			name: "float64 props are not valid int fields",
 			props: map[string]interface{}{
 				"yearFounded": float64(1),
 				"birthYear":   float64(2),
 			},
-			expectedErr: nil,
+			expectedErr: ErrInvalidPropertyValue,
 		},
 		{
 			name: "non-number props are invalid int fields",

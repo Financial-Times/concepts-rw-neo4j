@@ -107,8 +107,10 @@ type equivalenceResult struct {
 
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
-	aggregatedConcept := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
-
+	if err != nil {
+		return ontology.AggregatedConcept{}, exists, err
+	}
+	aggregatedConcept, err := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
 	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
 	return aggregatedConcept, exists, err
 }
@@ -152,7 +154,10 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
 	oldAggregatedConcept := thing.(ontology.AggregatedConcept)
-	aggregatedConceptToWrite := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
+	aggregatedConceptToWrite, err := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
+	if err != nil {
+		return ConceptChanges{}, err
+	}
 
 	aggregatedConceptToWrite = cleanSourceProperties(aggregatedConceptToWrite)
 	requestSourceData := getSourceData(aggregatedConceptToWrite.SourceRepresentations)

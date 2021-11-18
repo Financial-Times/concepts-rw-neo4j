@@ -1066,9 +1066,10 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 	defer cleanDB(t)
 
 	oldConcept := getConcept(t, "old-membership.json")
-	newConcept := ontology.TransformToNewSourceConcept(oldConcept)
+	newConcept, err := ontology.TransformToNewSourceConcept(oldConcept)
+	assert.NoError(t, err)
 	queries := createNodeQueries(newConcept, membershipUUID)
-	err := db.CypherBatch(queries)
+	err = db.CypherBatch(queries)
 	assert.NoError(t, err, "Failed to write source")
 
 	_, err = conceptsDriver.Write(getAggregatedConcept(t, "membership.json"), "test_tid")
@@ -2028,7 +2029,8 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		newConcordance := ontology.TransformToNewAggregateConcept(scenario.targetConcordance)
+		newConcordance, err := ontology.TransformToNewAggregateConcept(scenario.targetConcordance)
+		assert.NoError(t, err)
 		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", newConcordance, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.returnResult == true {
@@ -2180,8 +2182,9 @@ func TestValidateObject(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			newAggConcept := ontology.TransformToNewAggregateConcept(test.aggConcept)
-			err := conceptsDriver.validateObject(newAggConcept, "transaction_id")
+			newAggConcept, err := ontology.TransformToNewAggregateConcept(test.aggConcept)
+			assert.NoError(t, err)
+			err = conceptsDriver.validateObject(newAggConcept, "transaction_id")
 			if err != nil {
 				assert.NotEmpty(t, test.returnedError, "test.returnedError should not be empty when there is an error")
 				assert.Contains(t, err.Error(), test.returnedError, test.name)
@@ -2301,8 +2304,8 @@ func TestSetCanonicalProps(t *testing.T) {
 					"aliases":                []interface{}{"alias1", "alias2"},
 					"formerNames":            []interface{}{"former name 1", "former name 2"},
 					"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
-					"yearFounded":            float64(1),
-					"birthYear":              float64(2),
+					"yearFounded":            1,
+					"birthYear":              2,
 				},
 			},
 			prefUUID: "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
@@ -2338,8 +2341,8 @@ func TestSetCanonicalProps(t *testing.T) {
 				"aliases":                []interface{}{"alias1", "alias2"},
 				"formerNames":            []interface{}{"former name 1", "former name 2"},
 				"tradeNames":             []interface{}{"trade name 1", "trade name 2"},
-				"yearFounded":            float64(1),
-				"birthYear":              float64(2),
+				"yearFounded":            1,
+				"birthYear":              2,
 			},
 		},
 	}
@@ -2363,66 +2366,62 @@ func TestSetCanonicalProps(t *testing.T) {
 func TestPopulateConceptQueries(t *testing.T) {
 	tests := []struct {
 		name           string
-		concept        ontology.NewAggregatedConcept
+		conceptFile    string
 		goldenFileName string
 	}{
 		{
 			name:           "Aggregate concept with default values",
-			concept:        ontology.NewAggregatedConcept{},
+			conceptFile:    "concept-queries-default.json",
 			goldenFileName: "testdata/concept-queries-default.golden",
 		},
 		{
-			name: "Aggregate concept with default values and single default source",
-			concept: ontology.NewAggregatedConcept{
-				SourceRepresentations: []ontology.NewConcept{
-					{},
-				},
-			},
+			name:           "Aggregate concept with default values and single default source",
+			conceptFile:    "concept-queries-default-source.json",
 			goldenFileName: "testdata/concept-queries-default-source.golden",
 		},
 		{
 			name:           "Aggregate concept with HAS_PARENT relationship",
-			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "full-concorded-aggregated-concept.json")),
+			conceptFile:    "full-concorded-aggregated-concept.json",
 			goldenFileName: "testdata/concept-queries-has-parent-rel.golden",
 		},
 		{
 			name:           "Aggregate concept with HAS_BROADER relationship",
-			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-has-broader.json")),
+			conceptFile:    "concept-with-multiple-has-broader.json",
 			goldenFileName: "testdata/concept-queries-has-broader-rel.golden",
 		},
 		{
 			name:           "Aggregate concept with IS_RELATED_TO relationship",
-			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-related-to.json")),
+			conceptFile:    "concept-with-multiple-related-to.json",
 			goldenFileName: "testdata/concept-queries-is-related-to-rel.golden",
 		},
 		{
 			name:           "Aggregate concept with SUPERSEDED_BY relationship",
-			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-superseded-by.json")),
+			conceptFile:    "concept-with-multiple-superseded-by.json",
 			goldenFileName: "testdata/concept-queries-superseded-by-rel.golden",
 		},
 		{
 			name:           "Aggregate concept with IMPLIED_BY relationship",
-			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "brand-with-multiple-implied-by.json")),
+			conceptFile:    "brand-with-multiple-implied-by.json",
 			goldenFileName: "testdata/concept-queries-implied-by-rel.golden",
 		},
 		{
 			name:           "Aggregate concept with HAS_FOCUS relationship",
-			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "concept-with-multiple-has-focus.json")),
+			conceptFile:    "concept-with-multiple-has-focus.json",
 			goldenFileName: "testdata/concept-queries-has-focus-rel.golden",
 		},
 		{
 			name:           "Aggregate concept with HAS_MEMBER, HAS_ORGANISATION & HAS_ROLE relationships",
-			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "updated-membership.json")),
+			conceptFile:    "updated-membership.json",
 			goldenFileName: "testdata/concept-queries-membership-rels.golden",
 		},
 		{
 			name:           "Aggregate concept with COUNTRY_OF & NAICS relationships",
-			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "organisation-with-naics.json")),
+			conceptFile:    "organisation-with-naics.json",
 			goldenFileName: "testdata/concept-queries-country-of-naics-rels.golden",
 		},
 		{
 			name:           "Aggregate concept with SUB_ORGANISATION_OF relationship",
-			concept:        ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, "organisation.json")),
+			conceptFile:    "organisation.json",
 			goldenFileName: "testdata/concept-queries-sub-organisation-of-rel.golden",
 		},
 	}
@@ -2430,7 +2429,15 @@ func TestPopulateConceptQueries(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var queryBatch []*neoism.CypherQuery
-			queries := populateConceptQueries(queryBatch, test.concept)
+			var concept ontology.NewAggregatedConcept
+			var err error
+			if test.conceptFile != "" {
+				concept, err = ontology.TransformToNewAggregateConcept(getAggregatedConcept(t, test.conceptFile))
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			queries := populateConceptQueries(queryBatch, concept)
 			got := cypherBatchToString(queries)
 
 			expectedStatement := getFromGoldenFile(t, test.goldenFileName, got, *update)
@@ -2461,7 +2468,8 @@ func cypherBatchToString(queryBatch []*neoism.CypherQuery) string {
 func TestProcessMembershipRoles(t *testing.T) {
 	defer cleanDB(t)
 	oldAggregatedConcept := getAggregatedConcept(t, "membership.json")
-	aggregateConcept := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
+	aggregateConcept, err := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
+	assert.NoError(t, err)
 	processMembershipRoles(&aggregateConcept)
 
 	expected := membWithProcessedMembRoles()
@@ -2474,7 +2482,7 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
 		Properties: map[string]interface{}{
 			"salutation": "Mr",
-			"birthYear":  float64(2018),
+			"birthYear":  2018,
 		},
 		PrefUUID:         "cbadd9a7-5da9-407a-a5ec-e379460991f2",
 		PrefLabel:        "Membership Pref Label",
@@ -2525,10 +2533,12 @@ func readConceptAndCompare(t *testing.T, payload ontology.AggregatedConcept, tes
 	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
 	actual := actualIf.(ontology.AggregatedConcept)
 
-	newPayload := ontology.TransformToNewAggregateConcept(payload)
+	newPayload, err := ontology.TransformToNewAggregateConcept(payload)
+	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Transformation Error occurred", testName))
 	clean := cleanSourceProperties(newPayload)
 
-	newClean := ontology.TransformToOldAggregateConcept(clean)
+	newClean, err := ontology.TransformToOldAggregateConcept(clean)
+	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Transformation Error occurred", testName))
 	expected := cleanHash(cleanConcept(newClean))
 
 	actual = cleanHash(cleanConcept(actual))
@@ -2783,7 +2793,8 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept ontology.AggregatedConce
 	err := db.CypherBatch([]*neoism.CypherQuery{query})
 	assert.NoError(t, err, fmt.Sprintf("Error while retrieving concept hash"))
 
-	newConcept := ontology.TransformToNewAggregateConcept(concept)
+	newConcept, err := ontology.TransformToNewAggregateConcept(concept)
+	assert.NoError(t, err)
 	conceptHash, _ := hashstructure.Hash(cleanSourceProperties(newConcept), nil)
 	hashAsString := strconv.FormatUint(conceptHash, 10)
 	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))

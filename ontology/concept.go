@@ -158,9 +158,11 @@ func (c NewAggregatedConcept) GetPropertyValue(propName string) (interface{}, bo
 	switch v := val.(type) {
 	case []interface{}:
 		return v, len(v) > 0
+	case []string:
+		return v, len(v) > 0
 	case string:
 		return v, v != ""
-	case float64:
+	case int:
 		return v, v > 0
 	default: // return values of unknown type but indicate that they were not validated
 		return v, false

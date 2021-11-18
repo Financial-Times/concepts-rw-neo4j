@@ -4,7 +4,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"math"
 
 	"gopkg.in/yaml.v2"
 )
@@ -38,7 +37,7 @@ func (cfg Config) ValidateProperties(props map[string]interface{}) error {
 		}
 
 		if !cfg.IsPropValueValid(propName, propVal) {
-			return fmt.Errorf("propName=%s, value=%v: %w", propName, propVal, ErrInvalidPropertyValue)
+			return getInvalidPropValueError(propName, propVal)
 		}
 	}
 
@@ -77,20 +76,14 @@ func (cfg Config) IsPropValueValid(propName string, val interface{}) bool {
 		return true
 	case "int":
 		_, ok := val.(int)
-		if ok {
-			return true
-		}
-
-		floatVal, ok := val.(float64) // float64, for JSON numbers
-		if !ok {
-			return false
-		}
-
-		isWholeInteger := floatVal == math.Trunc(floatVal)
-		return isWholeInteger
+		return ok
 	default:
 		return false
 	}
+}
+
+func getInvalidPropValueError(name string, val interface{}) error {
+	return fmt.Errorf("propName=%s, value=%v: %w", name, val, ErrInvalidPropertyValue)
 }
 
 var config Config
