@@ -1,5 +1,5 @@
-github.com/Financial-Times/cm-neo4j-driver v0.0.1 h1:AFD0V2LNHJaxhs2kNVc3BDRwnY6uv0hdyWbYk2eONZ0=
-github.com/Financial-Times/cm-neo4j-driver v0.0.1/go.mod h1:0q7rpnzwBxptooh2/cqd9xALfgNEgVF6JLEzw0ygIDQ=
+github.com/Financial-Times/cm-neo4j-driver v0.1.1 h1:rofDjk4/+DpetBHS+lEltJIodOE95J4uWwngbGS4VYQ=
+github.com/Financial-Times/cm-neo4j-driver v0.1.1/go.mod h1:0q7rpnzwBxptooh2/cqd9xALfgNEgVF6JLEzw0ygIDQ=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7 h1:dkf1EOTiHXA2lG2EJuePEim6y0HEOPt0hcqsT/qUr/k=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7/go.mod h1:gpAzq6W5rCheYlY32JOIxS/VjVcYHbC2PkMzQngHT9c=
 github.com/Financial-Times/go-logger/v2 v2.0.1 h1:iekEfSsUtlkg+YkXTZo+/fIN2VbZ2/3Hl9yolP3z5X8=
