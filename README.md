@@ -22,11 +22,11 @@ A RESTful API for managing Concepts in Neo4j
 Options:
       --app-system-code    System Code of the application (env $APP_SYSTEM_CODE) (default "concept-rw-neo4j")
       --app-name           Application name (env $APP_NAME) (default "Concept Rw Neo4j")
-      --neo-url            neo4j endpoint URL (env $NEO_URL) (default "http://localhost:7474/db/data")
+      --neo-url            neoURL must point to a leader node or to use neo4j:// scheme, otherwise writes will fail (env $NEO_URL) (default "bolt://localhost:7687")
       --port               Port to listen on (env $APP_PORT) (default 8080)
-      --batchSize          Maximum number of statements to execute per batch (env $BATCH_SIZE) (default 1024)
       --requestLoggingOn   Whether to log requests or not (env $REQUEST_LOGGING_ON) (default true)
-      --logLevel           Level of logging to be shown (env $LOG_LEVEL) (default "info")
+      --logLevel           Level of logging to be shown (debug, info, warn, error) (env $LOG_LEVEL) (default "info")
+      --dbDriverLogLevel   Db's driver logging level (debug, info, warn, error) (env $DB_DRIVER_LOG_LEVEL) (default "warn")
 ```
 
 All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080, batchSize of 1024.
@@ -35,7 +35,10 @@ All arguments are optional, they default to a local Neo4j install on the default
 
 * Unit tests only: `go test -mod=readonly -race ./...`
 * Unit and integration tests: 
+
+    In order to execute the integration tests you must provide GITHUB_USERNAME and GITHUB_TOKEN values, because the service is depending on internal repositories.
     ```
+    GITHUB_USERNAME=<username> GITHUB_TOKEN=<token> \
     docker-compose -f docker-compose-tests.yml up -d --build && \
     docker logs -f test-runner && \
     docker-compose -f docker-compose-tests.yml down -v

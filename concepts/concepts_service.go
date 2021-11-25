@@ -7,10 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
-	"github.com/jmcvetta/neoism"
 	"github.com/mitchellh/hashstructure"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
@@ -47,8 +46,8 @@ var relationships = map[string]ontology.RelationshipConfig{
 
 // ConceptService - CypherDriver - CypherDriver
 type ConceptService struct {
-	conn neoutils.NeoConnection
-	log  *logger.UPPLogger
+	driver *cmneo4j.Driver
+	log    *logger.UPPLogger
 }
 
 // ConceptServicer defines the functions any read-write application needs to implement
@@ -61,40 +60,52 @@ type ConceptServicer interface {
 }
 
 // NewConceptService instantiate driver
-func NewConceptService(cypherRunner neoutils.NeoConnection, log *logger.UPPLogger) ConceptService {
-	return ConceptService{cypherRunner, log}
+func NewConceptService(driver *cmneo4j.Driver, log *logger.UPPLogger) ConceptService {
+	return ConceptService{driver: driver, log: log}
 }
 
-// Initialise - Would this be better as an extension in Neo4j? i.e. that any Thing has this constraint added on creation
+// Initialise tries to create indexes and constraints if they are not already
+// created. For Neo4j 3.x it won't do anything because cmneo4j driver does
+// not support EnsureIndexes/Constraints for versions less than 4.
 func (s *ConceptService) Initialise() error {
-	err := s.conn.EnsureIndexes(map[string]string{
+	err := s.driver.EnsureIndexes(map[string]string{
 		"Concept": "leiCode",
 	})
-	if err != nil {
+	// We are ignoring ErrNeo4jVersionNotSupported because the service is expected
+	// to work with Neo4j v4 and if it's working with Neo4j v3.x we are expecting
+	// that the required constraints and indexes are already created in Neo4j.
+	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
 		s.log.WithError(err).Error("Could not run db index")
 		return err
 	}
 
-	err = s.conn.EnsureIndexes(map[string]string{
+	err = s.driver.EnsureIndexes(map[string]string{
 		"Thing":   "authorityValue",
 		"Concept": "authorityValue",
 	})
-	if err != nil {
-		s.log.WithError(err).Error("Could not run DB constraints")
+	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
+		s.log.WithError(err).Error("Could not run db index")
 		return err
 	}
 
-	err = s.conn.EnsureConstraints(map[string]string{
+	err = s.driver.EnsureConstraints(map[string]string{
 		"Thing":                       "prefUUID",
 		"Concept":                     "prefUUID",
 		"Location":                    "iso31661",
 		"NAICSIndustryClassification": "industryIdentifier",
 	})
-	if err != nil {
+	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
 		s.log.WithError(err).Error("Could not run db constraints")
 		return err
 	}
-	return s.conn.EnsureConstraints(constraintMap)
+
+	err = s.driver.EnsureConstraints(constraintMap)
+	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
+		s.log.WithError(err).Error("Could not run db constraints")
+		return err
+	}
+
+	return nil
 }
 
 type equivalenceResult struct {
@@ -116,31 +127,29 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 }
 
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
-	var results []neoAggregatedConcept
-	query := &neoism.CypherQuery{
-		Statement: getReadStatement(),
-		Parameters: map[string]interface{}{
+	var neoAggregateConcept neoAggregatedConcept
+	query := &cmneo4j.Query{
+		Cypher: getReadStatement(),
+		Params: map[string]interface{}{
 			"uuid": uuid,
 		},
-		Result: &results,
+		Result: &neoAggregateConcept,
 	}
 
-	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
+	err := s.driver.Read(query)
+	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
+		s.log.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
+		return ontology.NewAggregatedConcept{}, false, nil
+	}
+	if errors.Is(err, cmneo4j.ErrMultipleResultsFound) {
+		s.log.WithTransactionID(transID).WithUUID(uuid).Errorf("read concept returned multiple rows, where one is expected")
+		return ontology.NewAggregatedConcept{}, false, ErrUnexpectedReadResult
+	}
 	if err != nil {
 		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Error executing neo4j read query")
 		return ontology.NewAggregatedConcept{}, false, err
 	}
 
-	if len(results) == 0 {
-		s.log.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
-		return ontology.NewAggregatedConcept{}, false, nil
-	}
-	if len(results) > 1 {
-		s.log.WithTransactionID(transID).WithUUID(uuid).Errorf("read concept returned '%d' rows, where one is expected", len(results))
-		return ontology.NewAggregatedConcept{}, false, ErrUnexpectedReadResult
-	}
-
-	neoAggregateConcept := results[0]
 	newAggregatedConcept, logMsg, err := neoAggregateConcept.ToOntologyNewAggregateConcept(ontology.GetConfig())
 	if err != nil {
 		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error(logMsg)
@@ -182,8 +191,8 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 	processMembershipRoles(&aggregatedConceptToWrite)
 
-	var queryBatch []*neoism.CypherQuery
-	var prefUUIDsToBeDeletedQueryBatch []*neoism.CypherQuery
+	var queryBatch []*cmneo4j.Query
+	var prefUUIDsToBeDeletedQueryBatch []*cmneo4j.Query
 	var updatedUUIDList []string
 	updateRecord := ConceptChanges{}
 	if exists {
@@ -303,17 +312,19 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	// check that the issuer is not already related to a different org
 	if aggregatedConceptToWrite.IssuedBy != "" {
 		var fiRes []map[string]string
-		issuerQuery := &neoism.CypherQuery{
-			Statement: `
-					MATCH (issuer:Thing {uuid: {issuerUUID}})<-[:ISSUED_BY]-(fi)
+		issuerQuery := &cmneo4j.Query{
+			Cypher: `
+					MATCH (issuer:Thing {uuid: $issuerUUID})<-[:ISSUED_BY]-(fi)
 					RETURN fi.uuid AS fiUUID
 				`,
-			Parameters: map[string]interface{}{
+			Params: map[string]interface{}{
 				"issuerUUID": aggregatedConceptToWrite.IssuedBy,
 			},
 			Result: &fiRes,
 		}
-		if err := s.conn.CypherBatch([]*neoism.CypherQuery{issuerQuery}); err != nil {
+
+		err := s.driver.Read(issuerQuery)
+		if err != nil && !errors.Is(err, cmneo4j.ErrNoResultsFound) {
 			s.log.WithError(err).
 				WithTransactionID(transID).
 				WithUUID(aggregatedConceptToWrite.PrefUUID).
@@ -342,14 +353,14 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					WithUUID(aggregatedConceptToWrite.PrefUUID).
 					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
 
-				deleteIssuerRelations := &neoism.CypherQuery{
-					Statement: `
-					MATCH (issuer:Thing {uuid: {issuerUUID}})
-					MATCH (fi:Thing {uuid: {fiUUID}})
+				deleteIssuerRelations := &cmneo4j.Query{
+					Cypher: `
+					MATCH (issuer:Thing {uuid: $issuerUUID})
+					MATCH (fi:Thing {uuid: $fiUUID})
 					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(fi)
 					DELETE issuerRel
 				`,
-					Parameters: map[string]interface{}{
+					Params: map[string]interface{}{
 						"issuerUUID": aggregatedConceptToWrite.IssuedBy,
 						"fiUUID":     fiUUID,
 					},
@@ -359,7 +370,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		}
 	}
 
-	if err = s.conn.CypherBatch(queryBatch); err != nil {
+	if err = s.driver.Write(queryBatch...); err != nil {
 		s.log.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Error executing neo4j write queries. Concept NOT written.")
 		return updateRecord, err
 	}
@@ -426,25 +437,26 @@ func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, second
 	return filteredMap
 }
 
-//Handle new source nodes that have been added to current concordance
-func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]*neoism.CypherQuery, error) {
-	var result []equivalenceResult
-	var deleteLonePrefUUIDQueries []*neoism.CypherQuery
-
+// Handle new source nodes that have been added to current concordance
+// nolint:gocognit
+func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]*cmneo4j.Query, error) {
+	var deleteLonePrefUUIDQueries []*cmneo4j.Query
 	for updatedSourceID := range conceptData {
-		equivQuery := &neoism.CypherQuery{
-			Statement: `
-					MATCH (t:Thing {uuid:{id}})
+		var result []equivalenceResult
+		equivQuery := &cmneo4j.Query{
+			Cypher: `
+					MATCH (t:Thing {uuid:$id})
 					OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c)
 					OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing)
 					RETURN t.uuid as sourceUuid, labels(t) as types, c.prefUUID as prefUuid, t.authority as authority, COUNT(DISTINCT eq) as count`,
-			Parameters: map[string]interface{}{
+			Params: map[string]interface{}{
 				"id": updatedSourceID,
 			},
 			Result: &result,
 		}
-		err := s.conn.CypherBatch([]*neoism.CypherQuery{equivQuery})
-		if err != nil {
+
+		err := s.driver.Read(equivQuery)
+		if err != nil && !errors.Is(err, cmneo4j.ErrNoResultsFound) {
 			s.log.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error("Requests for source nodes canonical information resulted in error")
 			return deleteLonePrefUUIDQueries, err
 		}
@@ -582,10 +594,10 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 }
 
 //Clean up canonical nodes of a concept that has become a source of current concept
-func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
-	equivQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {prefUUID:{id}}) DETACH DELETE t`,
-		Parameters: map[string]interface{}{
+func deleteLonePrefUUID(prefUUID string) *cmneo4j.Query {
+	equivQuery := &cmneo4j.Query{
+		Cypher: `MATCH (t:Thing {prefUUID:$id}) DETACH DELETE t`,
+		Params: map[string]interface{}{
 			"id": prefUUID,
 		},
 	}
@@ -593,27 +605,29 @@ func deleteLonePrefUUID(prefUUID string) *neoism.CypherQuery {
 }
 
 //Clear down current concept node
-func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept) []*neoism.CypherQuery {
+func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept) []*cmneo4j.Query {
 	acUUID := ac.PrefUUID
-	var queryBatch []*neoism.CypherQuery
+	var queryBatch []*cmneo4j.Query
 	for _, sr := range ac.SourceRepresentations {
-		deletePreviousSourceLabelsAndPropertiesQuery := &neoism.CypherQuery{
-			Statement: getDeleteStatement(),
-			Parameters: map[string]interface{}{
+		deletePreviousSourceLabelsAndPropertiesQuery := &cmneo4j.Query{
+			Cypher: getDeleteStatement(),
+			Params: map[string]interface{}{
 				"id": sr.UUID,
 			},
 		}
 		queryBatch = append(queryBatch, deletePreviousSourceLabelsAndPropertiesQuery)
 	}
 
-	//cleanUP all the previous Equivalent to relationships
-	deletePreviousCanonicalLabelsAndPropertiesQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MATCH (t:Thing {prefUUID:{acUUID}})
+	// cleanUP all the previous Equivalent to relationships
+	// It is safe to use Sprintf because getLabelsToRemove() doesn't come from the request
+	// nolint:gosec
+	deletePreviousCanonicalLabelsAndPropertiesQuery := &cmneo4j.Query{
+		Cypher: fmt.Sprintf(`MATCH (t:Thing {prefUUID:$acUUID})
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
 			REMOVE t:%s
-			SET t={prefUUID:{acUUID}}
+			SET t={prefUUID:$acUUID}
 			DELETE rel`, getLabelsToRemove()),
-		Parameters: map[string]interface{}{
+		Params: map[string]interface{}{
 			"acUUID": acUUID,
 		},
 	}
@@ -623,7 +637,7 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 }
 
 //Curate all queries to populate concept nodes
-func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
+func populateConceptQueries(queryBatch []*cmneo4j.Query, aggregatedConcept ontology.NewAggregatedConcept) []*cmneo4j.Query {
 	queryBatch = append(queryBatch, createCanonicalNodeQueries(aggregatedConcept, aggregatedConcept.PrefUUID)...)
 
 	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
@@ -648,12 +662,12 @@ func populateConceptQueries(queryBatch []*neoism.CypherQuery, aggregatedConcept 
 	return queryBatch
 }
 
-func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConcept ontology.NewAggregatedConcept) []*neoism.CypherQuery {
-	var queryBatch []*neoism.CypherQuery
-	equivQuery := &neoism.CypherQuery{
-		Statement: `MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConcept ontology.NewAggregatedConcept) []*cmneo4j.Query {
+	var queryBatch []*cmneo4j.Query
+	equivQuery := &cmneo4j.Query{
+		Cypher: `MATCH (t:Thing {uuid:$uuid}), (c:Thing {prefUUID:$prefUUID})
 						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
-		Parameters: map[string]interface{}{
+		Params: map[string]interface{}{
 			"uuid":     sourceConcept.UUID,
 			"prefUUID": aggregatedConcept.PrefUUID,
 		},
@@ -663,16 +677,16 @@ func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConc
 	return queryBatch
 }
 
-func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUID string) []*neoism.CypherQuery {
-	var queryBatch []*neoism.CypherQuery
-	var createConceptQuery *neoism.CypherQuery
+func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUID string) []*cmneo4j.Query {
+	var queryBatch []*cmneo4j.Query
+	var createConceptQuery *cmneo4j.Query
 
 	allProps := setCanonicalProps(canonical, prefUUID)
-	createConceptQuery = &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
+	createConceptQuery = &cmneo4j.Query{
+		Cypher: fmt.Sprintf(`MERGE (n:Thing {prefUUID: $prefUUID})
+								set n=$allprops
 								set n :%s`, getAllLabels(canonical.Type)),
-		Parameters: map[string]interface{}{
+		Params: map[string]interface{}{
 			"prefUUID": prefUUID,
 			"allprops": allProps,
 		},
@@ -682,16 +696,16 @@ func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUI
 	return queryBatch
 }
 
-func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.CypherQuery {
-	var queryBatch []*neoism.CypherQuery
-	var createConceptQuery *neoism.CypherQuery
+func createNodeQueries(concept ontology.NewConcept, uuid string) []*cmneo4j.Query {
+	var queryBatch []*cmneo4j.Query
+	var createConceptQuery *cmneo4j.Query
 
 	allProps := setProps(concept, uuid)
-	createConceptQuery = &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`MERGE (n:Thing {uuid: {uuid}})
-											set n={allprops}
+	createConceptQuery = &cmneo4j.Query{
+		Cypher: fmt.Sprintf(`MERGE (n:Thing {uuid: $uuid})
+											set n=$allprops
 											set n :%s`, getAllLabels(concept.Type)),
-		Parameters: map[string]interface{}{
+		Params: map[string]interface{}{
 			"uuid":     uuid,
 			"allprops": allProps,
 		},
@@ -702,11 +716,11 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 
 	for _, naics := range concept.NAICSIndustryClassifications {
 		if naics.UUID != "" {
-			writeNAICS := &neoism.CypherQuery{
-				Statement: `MERGE (org:Thing {uuid: {uuid}})
-								MERGE (naicsIC:Thing {uuid: {naicsUUID}})
-								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:{rank}}]->(naicsIC)`,
-				Parameters: neoism.Props{
+			writeNAICS := &cmneo4j.Query{
+				Cypher: `MERGE (org:Thing {uuid: $uuid})
+								MERGE (naicsIC:Thing {uuid: $naicsUUID})
+								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:$rank}]->(naicsIC)`,
+				Params: map[string]interface{}{
 					"naicsUUID": naics.UUID,
 					"rank":      naics.Rank,
 					"uuid":      concept.UUID,
@@ -717,7 +731,7 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 	}
 
 	for _, membershipRole := range concept.MembershipRoles {
-		params := neoism.Props{
+		params := map[string]interface{}{
 			"inceptionDate":        nil,
 			"inceptionDateEpoch":   nil,
 			"terminationDate":      nil,
@@ -737,19 +751,19 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 		if membershipRole.TerminationDateEpoch > 0 {
 			params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
 		}
-		writeParent := &neoism.CypherQuery{
-			Statement: `MERGE (node:Thing{uuid: {nodeUUID}})
-							MERGE (role:Thing{uuid: {roleUUID}})
+		writeParent := &cmneo4j.Query{
+			Cypher: `MERGE (node:Thing{uuid: $nodeUUID})
+							MERGE (role:Thing{uuid: $roleUUID})
 								ON CREATE SET
-									role.uuid = {roleUUID}
+									role.uuid = $roleUUID
 							MERGE (node)-[rel:HAS_ROLE]->(role)
 								ON CREATE SET
-									rel.inceptionDate = {inceptionDate},
-									rel.inceptionDateEpoch = {inceptionDateEpoch},
-									rel.terminationDate = {terminationDate},
-									rel.terminationDateEpoch = {terminationDateEpoch}
+									rel.inceptionDate = $inceptionDate,
+									rel.inceptionDateEpoch = $inceptionDateEpoch,
+									rel.terminationDate = $terminationDate,
+									rel.terminationDateEpoch = $terminationDateEpoch
 							`,
-			Parameters: params,
+			Params: params,
 		}
 		queryBatch = append(queryBatch, writeParent)
 	}
@@ -759,16 +773,16 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*neoism.Cyphe
 }
 
 // createRelQueries creates relationships Cypher queries for concepts
-func createRelQueries(conceptID string, relationshipIDs []string, relationshipType string, shouldCreate bool) []*neoism.CypherQuery {
+func createRelQueries(conceptID string, relationshipIDs []string, relationshipType string, shouldCreate bool) []*cmneo4j.Query {
 	const createMissing = `
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing:Thing {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
 		MERGE (thing)-[:%s]->(other)
 	`
 
 	const matchExisting = `
-		MATCH (concept:Concept {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
+		MATCH (concept:Concept {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
 		MERGE (concept)-[:%s]->(other)	
 	`
 
@@ -777,11 +791,11 @@ func createRelQueries(conceptID string, relationshipIDs []string, relationshipTy
 		cypherStatement = createMissing
 	}
 
-	var queryBatch []*neoism.CypherQuery
+	var queryBatch []*cmneo4j.Query
 	for _, id := range relationshipIDs {
-		addRelationshipQuery := &neoism.CypherQuery{
-			Statement: fmt.Sprintf(cypherStatement, relationshipType),
-			Parameters: map[string]interface{}{
+		addRelationshipQuery := &cmneo4j.Query{
+			Cypher: fmt.Sprintf(cypherStatement, relationshipType),
+			Params: map[string]interface{}{
 				"uuid": conceptID,
 				"id":   id,
 			},
@@ -792,15 +806,15 @@ func createRelQueries(conceptID string, relationshipIDs []string, relationshipTy
 	return queryBatch
 }
 
-func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*neoism.CypherQuery {
-	var queryBatch []*neoism.CypherQuery
-	setRelProps := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`
-			MATCH (t:Thing {uuid: {uuid}})
-			MATCH (other:Thing {uuid: {otherUUID}})
+func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*cmneo4j.Query {
+	var queryBatch []*cmneo4j.Query
+	setRelProps := &cmneo4j.Query{
+		Cypher: fmt.Sprintf(`
+			MATCH (t:Thing {uuid: $uuid})
+			MATCH (other:Thing {uuid: $otherUUID})
 			MATCH (t)-[rel:%s]->(other)
-			set rel={relProps}`, rel.Label),
-		Parameters: neoism.Props{
+			set rel=$relProps`, rel.Label),
+		Params: map[string]interface{}{
 			"uuid":      conceptID,
 			"otherUUID": rel.UUID,
 			"relProps":  rel.Properties,
@@ -812,17 +826,17 @@ func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*neoism.C
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
-func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *neoism.CypherQuery {
+func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *cmneo4j.Query {
 	allProps := setCanonicalProps(canonical, prefUUID)
 	s.log.WithField("UUID", prefUUID).Debug("Creating prefUUID node for unconcorded concept")
-	createCanonicalNodeQuery := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`
-					MATCH (t:Thing{uuid:{prefUUID}})
-					MERGE (n:Thing {prefUUID: {prefUUID}})
+	createCanonicalNodeQuery := &cmneo4j.Query{
+		Cypher: fmt.Sprintf(`
+					MATCH (t:Thing{uuid:$prefUUID})
+					MERGE (n:Thing {prefUUID: $prefUUID})
 					MERGE (n)<-[:EQUIVALENT_TO]-(t)
-					set n={allprops}
+					set n=$allprops
 					set n :%s`, getAllLabels(canonical.Type)),
-		Parameters: map[string]interface{}{
+		Params: map[string]interface{}{
 			"prefUUID": prefUUID,
 			"allprops": allProps,
 		},
@@ -945,10 +959,7 @@ func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, err
 
 //Check - checker
 func (s *ConceptService) Check() error {
-	if err := neoutils.CheckWritable(s.conn); err != nil {
-		return err
-	}
-	return neoutils.Check(s.conn)
+	return s.driver.VerifyWriteConnectivity()
 }
 
 type requestError struct {

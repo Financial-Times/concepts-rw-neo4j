@@ -1,5 +1,5 @@
-Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
+Statement: MERGE (n:Thing {prefUUID: $prefUUID})
+								set n=$allprops
 								set n :Membership:Concept:Thing,
 Paremeters: {
   "allprops": {
@@ -11,16 +11,16 @@ Paremeters: {
   "prefUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 }
 ==============================================================================
-Statement: MERGE (node:Thing{uuid: {nodeUUID}})
-							MERGE (role:Thing{uuid: {roleUUID}})
+Statement: MERGE (node:Thing{uuid: $nodeUUID})
+							MERGE (role:Thing{uuid: $roleUUID})
 								ON CREATE SET
-									role.uuid = {roleUUID}
+									role.uuid = $roleUUID
 							MERGE (node)-[rel:HAS_ROLE]->(role)
 								ON CREATE SET
-									rel.inceptionDate = {inceptionDate},
-									rel.inceptionDateEpoch = {inceptionDateEpoch},
-									rel.terminationDate = {terminationDate},
-									rel.terminationDateEpoch = {terminationDateEpoch}
+									rel.inceptionDate = $inceptionDate,
+									rel.inceptionDateEpoch = $inceptionDateEpoch,
+									rel.terminationDate = $terminationDate,
+									rel.terminationDateEpoch = $terminationDateEpoch
 							,
 Paremeters: {
   "inceptionDate": "2011-06-27",
@@ -31,8 +31,8 @@ Paremeters: {
   "terminationDateEpoch": null
 }
 ==============================================================================
-Statement: MERGE (n:Thing {uuid: {uuid}})
-											set n={allprops}
+Statement: MERGE (n:Thing {uuid: $uuid})
+											set n=$allprops
 											set n :Membership:Concept:Thing,
 Paremeters: {
   "allprops": {
@@ -44,7 +44,7 @@ Paremeters: {
   "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 }
 ==============================================================================
-Statement: MATCH (t:Thing {uuid:{uuid}}), (c:Thing {prefUUID:{prefUUID}})
+Statement: MATCH (t:Thing {uuid:$uuid}), (c:Thing {prefUUID:$prefUUID})
 						MERGE (t)-[:EQUIVALENT_TO]->(c),
 Paremeters: {
   "prefUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2",
@@ -52,8 +52,8 @@ Paremeters: {
 }
 ==============================================================================
 Statement: 
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing:Thing {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
 		MERGE (thing)-[:HAS_MEMBER]->(other)
 	,
 Paremeters: {
@@ -62,8 +62,8 @@ Paremeters: {
 }
 ==============================================================================
 Statement: 
-		MERGE (thing:Thing {uuid: {uuid}})
-		MERGE (other:Thing {uuid: {id}})
+		MERGE (thing:Thing {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
 		MERGE (thing)-[:HAS_ORGANISATION]->(other)
 	,
 Paremeters: {

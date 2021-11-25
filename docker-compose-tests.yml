@@ -4,9 +4,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.tests
+      args:
+        GITHUB_USERNAME: "${GITHUB_USERNAME}"
+        GITHUB_TOKEN: "${GITHUB_TOKEN}"
     container_name: test-runner
     environment:
-      - NEO4J_TEST_URL=http://neo4j:7474/db/data
+      - NEO4J_TEST_URL=bolt://neo4j:7687
     command: ["go", "test", "-mod=readonly", "-race", "-tags=integration", "./..."]
     depends_on:
       - neo4j

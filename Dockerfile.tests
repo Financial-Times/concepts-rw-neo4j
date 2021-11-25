@@ -5,12 +5,16 @@ ENV PROJECT=concepts-rw-neo4j
 ENV ORG_PATH="github.com/Financial-Times"
 ENV SRC_FOLDER="${GOPATH}/src/${ORG_PATH}/${PROJECT}"
 
+ARG GITHUB_USERNAME
+ARG GITHUB_TOKEN
+
 WORKDIR ${SRC_FOLDER}
 
 RUN echo "Fetching dependencies..." \
   && git clone https://github.com/vishnubob/wait-for-it.git \
   && cd wait-for-it \
-  && mv ./wait-for-it.sh ${SRC_FOLDER}
+  && mv ./wait-for-it.sh ${SRC_FOLDER} \
+  && git config --global url."https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
 
 COPY go.mod /
 COPY go.sum /

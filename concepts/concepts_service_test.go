@@ -19,12 +19,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/jmcvetta/neoism"
 	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
 
+	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	logger "github.com/Financial-Times/go-logger/v2"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
@@ -86,8 +85,8 @@ var (
 	}
 )
 
-//Reusable Neo4J connection
-var db neoutils.NeoConnection
+//Reusable Neo4J driver
+var driver *cmneo4j.Driver
 
 //Concept Service under test
 var conceptsDriver ConceptService
@@ -278,24 +277,28 @@ func getLocationWithISO31661AndConcordance() ontology.AggregatedConcept {
 func init() {
 	// We are initialising a lot of constraints on an empty database therefore we need the database to be fit before
 	// we run tests so initialising the service will create the constraints first
-	log := logger.NewUPPLogger("test-concepts-rw-neo4j", "panic")
 
-	conf := neoutils.DefaultConnectionConfig()
-	conf.Transactional = false
-	db, _ = neoutils.Connect(newURL(), conf)
-	if db == nil {
-		panic("Cannot connect to Neo4J")
+	url := os.Getenv("NEO4J_TEST_URL")
+	if url == "" {
+		url = "bolt://localhost:7687"
 	}
-	conceptsDriver = NewConceptService(db, log)
-	conceptsDriver.Initialise()
+	log := logger.NewUPPLogger("test-concepts-rw-neo4j", "panic")
+	d, err := cmneo4j.NewDefaultDriver(url, log)
+	if err != nil {
+		log.WithError(err).Fatal("could not create a new cmneo4j driver")
+	}
+	conceptsDriver = NewConceptService(d, log)
+	err = conceptsDriver.Initialise()
+	if err != nil {
+		log.WithError(err).Fatal("failed to initialise ConceptSerivce")
+	}
 
+	driver = d
 	duration := 5 * time.Second
 	time.Sleep(duration)
 }
 
 func TestWriteService(t *testing.T) {
-	defer cleanDB(t)
-
 	tests := []struct {
 		testName             string
 		aggregatedConcept    ontology.AggregatedConcept
@@ -972,12 +975,15 @@ func TestWriteService(t *testing.T) {
 			// Create the related, broader than and impliedBy on concepts
 			for _, relatedConcept := range test.otherRelatedConcepts {
 				_, err := conceptsDriver.Write(relatedConcept, "")
-				assert.NoError(t, err, "Failed to write related/broader/impliedBy concept")
+				if !assert.NoError(t, err, "Failed to write related/broader/impliedBy concept") {
+					return
+				}
 			}
-
 			updatedConcepts, err := conceptsDriver.Write(test.aggregatedConcept, "")
 			if test.errStr == "" {
-				assert.NoError(t, err, "Failed to write concept")
+				if !assert.NoError(t, err, "Failed to write concept") {
+					return
+				}
 				readConceptAndCompare(t, test.aggregatedConcept, test.testName, test.writtenNotReadFields...)
 
 				sort.Slice(test.updatedConcepts.ChangedRecords, func(i, j int) bool {
@@ -1069,7 +1075,7 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 	newConcept, err := ontology.TransformToNewSourceConcept(oldConcept)
 	assert.NoError(t, err)
 	queries := createNodeQueries(newConcept, membershipUUID)
-	err = db.CypherBatch(queries)
+	err = driver.Write(queries...)
 	assert.NoError(t, err, "Failed to write source")
 
 	_, err = conceptsDriver.Write(getAggregatedConcept(t, "membership.json"), "test_tid")
@@ -1764,7 +1770,8 @@ func TestInvalidTypesThrowError(t *testing.T) {
 	scenarios := []testStruct{invalidPrefConceptTypeTest, invalidSourceConceptTypeTest}
 
 	for _, scenario := range scenarios {
-		db.CypherBatch([]*neoism.CypherQuery{{Statement: scenario.statementToWrite}})
+		err := driver.Write(&cmneo4j.Query{Cypher: scenario.statementToWrite})
+		assert.NoError(t, err, "Unexpected error on Write to the db")
 		aggConcept, found, err := conceptsDriver.Read(scenario.prefUUID, "")
 		assert.Equal(t, ontology.AggregatedConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
 		assert.Equal(t, false, found, "Scenario "+scenario.testName+" failed; aggregate concept should not be returned from read")
@@ -1879,8 +1886,9 @@ func TestFilteringOfUniqueIds(t *testing.T) {
 
 func TestTransferConcordance(t *testing.T) {
 	statement := `MERGE (a:Thing{prefUUID:"1"}) MERGE (b:Thing{uuid:"1"}) MERGE (c:Thing{uuid:"2"}) MERGE (d:Thing{uuid:"3"}) MERGE (w:Thing{prefUUID:"4"}) MERGE (y:Thing{uuid:"5"}) MERGE (j:Thing{prefUUID:"6"}) MERGE (k:Thing{uuid:"6"}) MERGE (c)-[:EQUIVALENT_TO]->(a)<-[:EQUIVALENT_TO]-(b) MERGE (w)<-[:EQUIVALENT_TO]-(d) MERGE (j)<-[:EQUIVALENT_TO]-(k)`
-	db.CypherBatch([]*neoism.CypherQuery{{Statement: statement}})
-	var emptyQuery []*neoism.CypherQuery
+	err := driver.Write(&cmneo4j.Query{Cypher: statement})
+	assert.NoError(t, err, "Unexpected error on Write to the db")
+	var emptyQuery []*cmneo4j.Query
 	var updatedConcept ConceptChanges
 
 	type testStruct struct {
@@ -1972,8 +1980,9 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	
 	MERGE (editorial)-[:EQUIVALENT_TO]->(editorialCanonical)<-[:EQUIVALENT_TO]-(factset)
 	MERGE (ml)-[:EQUIVALENT_TO]->(mlCanonical)<-[:EQUIVALENT_TO]-(tme)`
-	db.CypherBatch([]*neoism.CypherQuery{{Statement: statement}})
-	var emptyQuery []*neoism.CypherQuery
+	err := driver.Write(&cmneo4j.Query{Cypher: statement})
+	assert.NoError(t, err, "Unexpected error on Write to the db")
+	var emptyQuery []*cmneo4j.Query
 	var updatedConcept ConceptChanges
 
 	type testStruct struct {
@@ -2428,7 +2437,8 @@ func TestPopulateConceptQueries(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var queryBatch []*neoism.CypherQuery
+
+			var queryBatch []*cmneo4j.Query
 			var concept ontology.NewAggregatedConcept
 			var err error
 			if test.conceptFile != "" {
@@ -2448,18 +2458,18 @@ func TestPopulateConceptQueries(t *testing.T) {
 	}
 }
 
-func cypherBatchToString(queryBatch []*neoism.CypherQuery) string {
+func cypherBatchToString(queryBatch []*cmneo4j.Query) string {
 	var queries []string
 	for _, query := range queryBatch {
 		// ignore lastModifiedEpoch from allprops
-		if _, ok := query.Parameters["allprops"]; ok {
-			props := query.Parameters["allprops"].(map[string]interface{})
+		if _, ok := query.Params["allprops"]; ok {
+			props := query.Params["allprops"].(map[string]interface{})
 			delete(props, "lastModifiedEpoch")
-			query.Parameters["allprops"] = props
+			query.Params["allprops"] = props
 		}
 
-		params, _ := json.MarshalIndent(query.Parameters, "", "  ")
-		queries = append(queries, fmt.Sprintf("Statement: %v,\nParemeters: %v", query.Statement, string(params)))
+		params, _ := json.MarshalIndent(query.Params, "", "  ")
+		queries = append(queries, fmt.Sprintf("Statement: %v,\nParemeters: %v", query.Cypher, string(params)))
 	}
 
 	return strings.Join(queries, "\n==============================================================================\n")
@@ -2610,14 +2620,6 @@ func collectRelatedUUIDs(concept ontology.AggregatedConcept) []string {
 	return result
 }
 
-func newURL() string {
-	url := os.Getenv("NEO4J_TEST_URL")
-	if url == "" {
-		url = "http://localhost:7474/db/data"
-	}
-	return url
-}
-
 func cleanDB(t *testing.T) {
 	cleanSourceNodes(t,
 		parentUUID,
@@ -2739,40 +2741,42 @@ func cleanDB(t *testing.T) {
 }
 
 func deleteSourceNodes(t *testing.T, uuids ...string) {
-	qs := make([]*neoism.CypherQuery, len(uuids))
+	qs := make([]*cmneo4j.Query, len(uuids))
 	for i, uuid := range uuids {
-		qs[i] = &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`
-			MATCH (a:Thing {uuid: "%s"})
-			DETACH DELETE a`, uuid)}
+		qs[i] = &cmneo4j.Query{
+			Cypher: `MATCH (a:Thing {uuid: $uuid}) DETACH DELETE a`,
+			Params: map[string]interface{}{"uuid": uuid},
+		}
 	}
-	err := db.CypherBatch(qs)
+	err := driver.Write(qs...)
 	assert.NoError(t, err, "Error executing clean up cypher")
 }
 
 func cleanSourceNodes(t *testing.T, uuids ...string) {
-	qs := make([]*neoism.CypherQuery, len(uuids))
+	qs := make([]*cmneo4j.Query, len(uuids))
 	for i, uuid := range uuids {
-		qs[i] = &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`
-			MATCH (a:Thing {uuid: "%s"})
-			OPTIONAL MATCH (a)-[hp:HAS_PARENT]-(p)
-			DELETE hp`, uuid)}
+		qs[i] = &cmneo4j.Query{
+			Cypher: `MATCH (a:Thing {uuid: $uuid})
+			         OPTIONAL MATCH (a)-[hp:HAS_PARENT]-(p)
+			         DELETE hp`,
+			Params: map[string]interface{}{"uuid": uuid},
+		}
 	}
-	err := db.CypherBatch(qs)
+	err := driver.Write(qs...)
 	assert.NoError(t, err, "Error executing clean up cypher")
 }
 
 func deleteConcordedNodes(t *testing.T, uuids ...string) {
-	qs := make([]*neoism.CypherQuery, len(uuids))
+	qs := make([]*cmneo4j.Query, len(uuids))
 	for i, uuid := range uuids {
-		qs[i] = &neoism.CypherQuery{
-			Statement: fmt.Sprintf(`
-			MATCH (a:Thing {prefUUID: "%s"})
-			OPTIONAL MATCH (a)-[rel]-(i)
-			DELETE rel, i, a`, uuid)}
+		qs[i] = &cmneo4j.Query{
+			Cypher: `MATCH (a:Thing {prefUUID: $uuid})
+			         OPTIONAL MATCH (a)-[rel]-(i)
+			         DELETE rel, i, a`,
+			Params: map[string]interface{}{"uuid": uuid},
+		}
 	}
-	err := db.CypherBatch(qs)
+	err := driver.Write(qs...)
 	assert.NoError(t, err, "Error executing clean up cypher")
 }
 
@@ -2781,16 +2785,16 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept ontology.AggregatedConce
 		Hash string `json:"a.aggregateHash"`
 	}
 
-	query := &neoism.CypherQuery{
-		Statement: `
-			MATCH (a:Thing {prefUUID: {uuid}})
+	query := &cmneo4j.Query{
+		Cypher: `
+			MATCH (a:Thing {prefUUID: $uuid})
 			RETURN a.aggregateHash`,
-		Parameters: map[string]interface{}{
+		Params: map[string]interface{}{
 			"uuid": concept.PrefUUID,
 		},
 		Result: &results,
 	}
-	err := db.CypherBatch([]*neoism.CypherQuery{query})
+	err := driver.Read(query)
 	assert.NoError(t, err, fmt.Sprintf("Error while retrieving concept hash"))
 
 	newConcept, err := ontology.TransformToNewAggregateConcept(concept)

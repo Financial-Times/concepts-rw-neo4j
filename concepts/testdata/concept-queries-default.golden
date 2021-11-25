@@ -1,5 +1,5 @@
-Statement: MERGE (n:Thing {prefUUID: {prefUUID}})
-								set n={allprops}
+Statement: MERGE (n:Thing {prefUUID: $prefUUID})
+								set n=$allprops
 								set n :,
 Paremeters: {
   "allprops": {
