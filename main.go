@@ -14,6 +14,7 @@ import (
 	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/gorilla/mux"
 	cli "github.com/jawher/mow.cli"
+	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
 const appDescription = "A RESTful API for managing Concepts in Neo4j"
@@ -70,11 +71,20 @@ func main() {
 		Desc:   "Db's driver logging level (debug, info, warn, error)",
 		EnvVar: "DB_DRIVER_LOG_LEVEL",
 	})
+	maxTxRetryTime := app.Int(cli.IntOpt{
+		Name:   "maxTxRetryTime",
+		Value:  30,
+		Desc:   "Maximum amount of time a to retry executing a transaction(in seconds)",
+		EnvVar: "MAX_TX_RETRY_TIME",
+	})
 
 	log := logger.NewUPPLogger(*appSystemCode, *logLevel)
 	dbDriverLog := logger.NewUPPLogger(*appName+"-cmneo4j-driver", *dbDriverLogLevel)
 	app.Action = func() {
-		driver, err := cmneo4j.NewDefaultDriver(*neoURL, dbDriverLog)
+		driver, err := cmneo4j.NewDriver(*neoURL, neo4j.NoAuth(), func(c *neo4j.Config) {
+			c.MaxTransactionRetryTime = time.Duration(*maxTxRetryTime) * time.Second
+			c.Log = cmneo4j.NewLogger(dbDriverLog)
+		})
 		if err != nil {
 			log.WithError(err).WithField("neoURL", *neoURL).Fatal("Could not create a cmneo4j driver")
 		}

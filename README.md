@@ -27,6 +27,7 @@ Options:
       --requestLoggingOn   Whether to log requests or not (env $REQUEST_LOGGING_ON) (default true)
       --logLevel           Level of logging to be shown (debug, info, warn, error) (env $LOG_LEVEL) (default "info")
       --dbDriverLogLevel   Db's driver logging level (debug, info, warn, error) (env $DB_DRIVER_LOG_LEVEL) (default "warn")
+      --maxTxRetryTime     Maximum amount of time a to retry executing a transaction(in seconds) (env $MAX_TX_RETRY_TIME) (default 30)
 ```
 
 All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080, batchSize of 1024.

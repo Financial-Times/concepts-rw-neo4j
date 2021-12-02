@@ -20,6 +20,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0
+	github.com/neo4j/neo4j-go-driver/v4 v4.3.3
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 	github.com/sirupsen/logrus v1.1.1 // indirect
 	github.com/stretchr/testify v1.6.1
