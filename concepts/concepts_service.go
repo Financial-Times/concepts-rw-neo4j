@@ -828,7 +828,7 @@ func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*cmneo4j.
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
 func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *cmneo4j.Query {
 	allProps := setCanonicalProps(canonical, prefUUID)
-	s.log.WithField("UUID", prefUUID).Debug("Creating prefUUID node for unconcorded concept")
+	s.log.WithField("UUID", prefUUID).Warn("Creating prefUUID node for unconcorded concept")
 	createCanonicalNodeQuery := &cmneo4j.Query{
 		Cypher: fmt.Sprintf(`
 					MATCH (t:Thing{uuid:$prefUUID})
