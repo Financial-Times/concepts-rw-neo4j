@@ -30,7 +30,7 @@ func main() {
 	app := cli.App(serviceName, appDescription)
 	appSystemCode := app.String(cli.StringOpt{
 		Name:   "app-system-code",
-		Value:  "concept-rw-neo4j",
+		Value:  "concepts-rw-neo4j",
 		Desc:   "System Code of the application",
 		EnvVar: "APP_SYSTEM_CODE",
 	})
@@ -72,7 +72,7 @@ func main() {
 	})
 
 	log := logger.NewUPPLogger(*appSystemCode, *logLevel)
-	dbDriverLog := logger.NewUPPLogger(*appName+"-cmneo4j-driver", *dbDriverLogLevel)
+	dbDriverLog := logger.NewUPPLogger(*appSystemCode+"-cmneo4j-driver", *dbDriverLogLevel)
 	app.Action = func() {
 		driver, err := cmneo4j.NewDefaultDriver(*neoURL, dbDriverLog)
 		if err != nil {
