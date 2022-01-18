@@ -128,7 +128,7 @@ func TestPutHandler(t *testing.T) {
 			},
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
-			body:        errorMessage("Concept type does not match path"),
+			body:        errorMessage("concept type does not match path"),
 		},
 	}
 
@@ -199,7 +199,7 @@ func TestGetHandler(t *testing.T) {
 			},
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
-			body:        errorMessage("Concept type does not match path"),
+			body:        errorMessage("concept type does not match path"),
 		},
 	}
 
