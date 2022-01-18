@@ -136,15 +136,17 @@ func writeJSONError(w http.ResponseWriter, errorMsg string, statusCode int) {
 }
 
 func checkConceptTypeAgainstPath(conceptType, path string) error {
-	if ipath, ok := irregularConceptTypePaths[conceptType]; ok && ipath != "" {
+	if iPath, ok := irregularConceptTypePaths[conceptType]; ok && iPath != "" {
+		if iPath != path {
+			return errors.New("path does not match content type")
+		}
 		return nil
 	}
 
-	if toSnakeCase(conceptType)+"s" == path {
-		return nil
+	if toSnakeCase(conceptType)+"s" != path {
+		return errors.New("path does not match content type")
 	}
-
-	return errors.New("path does not match content type")
+	return nil
 }
 
 var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
