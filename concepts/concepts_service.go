@@ -65,16 +65,13 @@ func NewConceptService(driver *cmneo4j.Driver, log *logger.UPPLogger) ConceptSer
 }
 
 // Initialise tries to create indexes and constraints if they are not already
-// created. For Neo4j 3.x it won't do anything because cmneo4j driver does
-// not support EnsureIndexes/Constraints for versions less than 4.
+// created.
 func (s *ConceptService) Initialise() error {
 	err := s.driver.EnsureIndexes(map[string]string{
 		"Concept": "leiCode",
 	})
-	// We are ignoring ErrNeo4jVersionNotSupported because the service is expected
-	// to work with Neo4j v4 and if it's working with Neo4j v3.x we are expecting
-	// that the required constraints and indexes are already created in Neo4j.
-	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
+
+	if err != nil {
 		s.log.WithError(err).Error("Could not run db index")
 		return err
 	}
@@ -83,7 +80,7 @@ func (s *ConceptService) Initialise() error {
 		"Thing":   "authorityValue",
 		"Concept": "authorityValue",
 	})
-	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
+	if err != nil {
 		s.log.WithError(err).Error("Could not run db index")
 		return err
 	}
@@ -94,13 +91,13 @@ func (s *ConceptService) Initialise() error {
 		"Location":                    "iso31661",
 		"NAICSIndustryClassification": "industryIdentifier",
 	})
-	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
+	if err != nil {
 		s.log.WithError(err).Error("Could not run db constraints")
 		return err
 	}
 
 	err = s.driver.EnsureConstraints(constraintMap)
-	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
+	if err != nil {
 		s.log.WithError(err).Error("Could not run db constraints")
 		return err
 	}
