@@ -61,7 +61,7 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 
 	agConcept := inst.(ontology.AggregatedConcept)
 	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
-		writeJSONError(w, "Concept type does not match path", http.StatusBadRequest)
+		writeJSONError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -119,7 +119,7 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 
 	agConcept := obj.(ontology.AggregatedConcept)
 	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
-		writeJSONError(w, "Concept type does not match path", http.StatusBadRequest)
+		writeJSONError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -136,15 +136,17 @@ func writeJSONError(w http.ResponseWriter, errorMsg string, statusCode int) {
 }
 
 func checkConceptTypeAgainstPath(conceptType, path string) error {
-	if ipath, ok := irregularConceptTypePaths[conceptType]; ok && ipath != "" {
+	if iPath, ok := irregularConceptTypePaths[conceptType]; ok && iPath != "" {
+		if iPath != path {
+			return errors.New("concept type does not match path")
+		}
 		return nil
 	}
 
-	if toSnakeCase(conceptType)+"s" == path {
-		return nil
+	if toSnakeCase(conceptType)+"s" != path {
+		return errors.New("concept type does not match path")
 	}
-
-	return errors.New("path does not match content type")
+	return nil
 }
 
 var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")

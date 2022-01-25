@@ -29,7 +29,7 @@ func TestPutHandler(t *testing.T) {
 		body        string
 	}{
 		{
-			name: "Success",
+			name: "IrregularPathSuccess",
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
@@ -42,6 +42,21 @@ func TestPutHandler(t *testing.T) {
 			statusCode:  http.StatusOK,
 			contentType: "",
 			body:        "{\"events\":null,\"updatedIDs\":null}",
+		},
+		{
+			name: "IrregularPathFailure",
+			req:  newRequest("PUT", fmt.Sprintf("/Dummy/%s", knownUUID), t),
+			mockService: &mockConceptService{
+				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
+					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+				},
+				write: func(thing interface{}, transID string) (interface{}, error) {
+					return ConceptChanges{}, nil
+				},
+			},
+			statusCode:  http.StatusBadRequest,
+			contentType: "",
+			body:        errorMessage("concept type does not match path"),
 		},
 		{
 			name: "RegularPathSuccess",
@@ -57,6 +72,21 @@ func TestPutHandler(t *testing.T) {
 			statusCode:  http.StatusOK,
 			contentType: "",
 			body:        "{\"events\":null,\"updatedIDs\":null}",
+		},
+		{
+			name: "RegularPathFailure",
+			req:  newRequest("PUT", fmt.Sprintf("/FinancialInstrument/%s", knownUUID), t),
+			mockService: &mockConceptService{
+				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
+					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "FinancialInstrument"}, knownUUID, nil
+				},
+				write: func(thing interface{}, transID string) (interface{}, error) {
+					return ConceptChanges{}, nil
+				},
+			},
+			statusCode:  http.StatusBadRequest,
+			contentType: "",
+			body:        errorMessage("concept type does not match path"),
 		},
 		{
 			name: "ParseError",
@@ -128,7 +158,7 @@ func TestPutHandler(t *testing.T) {
 			},
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
-			body:        errorMessage("Concept type does not match path"),
+			body:        errorMessage("concept type does not match path"),
 		},
 	}
 
@@ -154,7 +184,7 @@ func TestGetHandler(t *testing.T) {
 		body        string
 	}{
 		{
-			name: "Success",
+			name: "IrregularPathSuccess",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
@@ -164,6 +194,42 @@ func TestGetHandler(t *testing.T) {
 			statusCode:  http.StatusOK,
 			contentType: "",
 			body:        "{\"prefUUID\":\"12345\",\"type\":\"Dummy\"}\n",
+		},
+		{
+			name: "IrregularPathFailure",
+			req:  newRequest("GET", fmt.Sprintf("/Dummy/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+				},
+			},
+			statusCode:  http.StatusBadRequest,
+			contentType: "",
+			body:        errorMessage("concept type does not match path"),
+		},
+		{
+			name: "RegularPathSuccess",
+			req:  newRequest("GET", fmt.Sprintf("/locations/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+				},
+			},
+			statusCode:  http.StatusOK,
+			contentType: "",
+			body:        "{\"prefUUID\":\"12345\",\"type\":\"Location\"}\n",
+		},
+		{
+			name: "RegularPathFailure",
+			req:  newRequest("GET", fmt.Sprintf("/Location/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+				},
+			},
+			statusCode:  http.StatusBadRequest,
+			contentType: "",
+			body:        errorMessage("concept type does not match path"),
 		},
 		{
 			name: "NotFound",
@@ -190,7 +256,7 @@ func TestGetHandler(t *testing.T) {
 			body:        errorMessage("TEST failing to READ"),
 		},
 		{
-			name: "BadConceptOrPath",
+			name: "BadConceptType",
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
@@ -199,7 +265,7 @@ func TestGetHandler(t *testing.T) {
 			},
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
-			body:        errorMessage("Concept type does not match path"),
+			body:        errorMessage("concept type does not match path"),
 		},
 	}
 
