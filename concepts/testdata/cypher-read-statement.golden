@@ -13,7 +13,7 @@ OPTIONAL MATCH (source)-[:IMPLIED_BY]->(impliedByNode:Thing)
 OPTIONAL MATCH (source)-[:IS_RELATED_TO]->(isRelatedToNode:Thing)
 OPTIONAL MATCH (source)-[:SUB_ORGANISATION_OF]->(subOrganisationOfNode:Thing)
 OPTIONAL MATCH (source)-[:SUPERSEDED_BY]->(supersededByNode:Thing)
-OPTIONAL MATCH (source)-[hasIndustryClassificationRel:HAS_INDUSTRY_CLASSIFICATION]->(hasIndustryClassificationNode:NAICSIndustryClassification)
+OPTIONAL MATCH (source)-[hasIndustryClassificationRel:HAS_INDUSTRY_CLASSIFICATION]->(hasIndustryClassificationNode:Thing)
 OPTIONAL MATCH (source)-[hasRoleRel:HAS_ROLE]->(hasRoleNode:Thing)
 		WITH
 			canonical,
@@ -61,7 +61,7 @@ countryOfRiskUUID: countryOfRiskNode.uuid,
 hasFocusUUIDs: collect(DISTINCT hasFocusNode.uuid),
 impliedByUUIDs: collect(DISTINCT impliedByNode.uuid),
 membershipRoles: collect(DISTINCT {membershipRoleUUID: hasRoleNode.uuid, inceptionDate: hasRoleRel.inceptionDate, terminationDate: hasRoleRel.terminationDate, inceptionDateEpoch: hasRoleRel.inceptionDateEpoch, terminationDateEpoch: hasRoleRel.terminationDateEpoch}),
-naicsIndustryClassifications: collect(DISTINCT {UUID: hasIndustryClassificationNode.uuid, rank: hasIndustryClassificationRel.rank}),
+naicsIndustryClassifications: collect(DISTINCT {UUID: hasIndustryClassificationNode.uuid, uuid: hasIndustryClassificationRel.uuid, rank: hasIndustryClassificationRel.rank}),
 organisationUUID: hasOrganisationNode.uuid,
 parentOrganisation: subOrganisationOfNode.uuid,
 parentUUIDs: collect(DISTINCT hasParentNode.uuid),

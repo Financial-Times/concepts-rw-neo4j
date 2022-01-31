@@ -37,11 +37,6 @@ var relationships = map[string]ontology.RelationshipConfig{
 			"terminationDateEpoch",
 		},
 	},
-	"HAS_INDUSTRY_CLASSIFICATION": {
-		ConceptField:    "naicsIndustryClassifications",
-		Properties:      []string{"rank"},
-		ToNodeWithLabel: "NAICSIndustryClassification",
-	},
 }
 
 // ConceptService - CypherDriver - CypherDriver
@@ -714,22 +709,6 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*cmneo4j.Quer
 	relIDs := filterSlice([]string{concept.IssuedBy})
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
 
-	for _, naics := range concept.NAICSIndustryClassifications {
-		if naics.UUID != "" {
-			writeNAICS := &cmneo4j.Query{
-				Cypher: `MERGE (org:Thing {uuid: $uuid})
-								MERGE (naicsIC:Thing {uuid: $naicsUUID})
-								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:$rank}]->(naicsIC)`,
-				Params: map[string]interface{}{
-					"naicsUUID": naics.UUID,
-					"rank":      naics.Rank,
-					"uuid":      concept.UUID,
-				},
-			}
-			queryBatch = append(queryBatch, writeNAICS)
-		}
-	}
-
 	for _, membershipRole := range concept.MembershipRoles {
 		params := map[string]interface{}{
 			"inceptionDate":        nil,
@@ -1009,8 +988,6 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 			IssuedBy:        source.IssuedBy,
 			FigiCode:        source.FigiCode,
 			IsDeprecated:    source.IsDeprecated,
-			// Organisations
-			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

@@ -174,23 +174,22 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 	})
 
 	return NewConcept{
-		Relationships:                rels,
-		UUID:                         old.UUID,
-		PrefLabel:                    old.PrefLabel,
-		Type:                         old.Type,
-		Authority:                    old.Authority,
-		AuthorityValue:               old.AuthorityValue,
-		LastModifiedEpoch:            old.LastModifiedEpoch,
-		Hash:                         old.Hash,
-		MembershipRoles:              old.MembershipRoles,
-		InceptionDate:                old.InceptionDate,
-		TerminationDate:              old.TerminationDate,
-		InceptionDateEpoch:           old.InceptionDateEpoch,
-		TerminationDateEpoch:         old.TerminationDateEpoch,
-		FigiCode:                     old.FigiCode,
-		IssuedBy:                     old.IssuedBy,
-		NAICSIndustryClassifications: old.NAICSIndustryClassifications,
-		IsDeprecated:                 old.IsDeprecated,
+		Relationships:        rels,
+		UUID:                 old.UUID,
+		PrefLabel:            old.PrefLabel,
+		Type:                 old.Type,
+		Authority:            old.Authority,
+		AuthorityValue:       old.AuthorityValue,
+		LastModifiedEpoch:    old.LastModifiedEpoch,
+		Hash:                 old.Hash,
+		MembershipRoles:      old.MembershipRoles,
+		InceptionDate:        old.InceptionDate,
+		TerminationDate:      old.TerminationDate,
+		InceptionDateEpoch:   old.InceptionDateEpoch,
+		TerminationDateEpoch: old.TerminationDateEpoch,
+		FigiCode:             old.FigiCode,
+		IssuedBy:             old.IssuedBy,
+		IsDeprecated:         old.IsDeprecated,
 	}, nil
 }
 
@@ -268,7 +267,6 @@ func TransformToOldSourceConcept(new NewConcept) (Concept, error) {
 	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
-	old.NAICSIndustryClassifications = new.NAICSIndustryClassifications
 	old.IsDeprecated = new.IsDeprecated
 
 	return old, nil

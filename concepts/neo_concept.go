@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
+
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
 
 type neoAggregatedConcept struct {
@@ -193,18 +194,17 @@ func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.Rel
 	}
 
 	return ontology.NewConcept{
-		Relationships:                filterRelationships(rels),
-		Authority:                    nc.Authority,
-		AuthorityValue:               nc.AuthorityValue,
-		FigiCode:                     nc.FigiCode,
-		IssuedBy:                     nc.IssuedBy,
-		LastModifiedEpoch:            0,
-		MembershipRoles:              cleanMembershipRoles(nc.MembershipRoles),
-		PrefLabel:                    nc.PrefLabel,
-		NAICSIndustryClassifications: cleanNAICS(nc.NAICSIndustryClassifications),
-		Type:                         conceptType,
-		UUID:                         nc.UUID,
-		IsDeprecated:                 nc.IsDeprecated,
+		Relationships:     filterRelationships(rels),
+		Authority:         nc.Authority,
+		AuthorityValue:    nc.AuthorityValue,
+		FigiCode:          nc.FigiCode,
+		IssuedBy:          nc.IssuedBy,
+		LastModifiedEpoch: 0,
+		MembershipRoles:   cleanMembershipRoles(nc.MembershipRoles),
+		PrefLabel:         nc.PrefLabel,
+		Type:              conceptType,
+		UUID:              nc.UUID,
+		IsDeprecated:      nc.IsDeprecated,
 	}, nil
 }
 
@@ -275,9 +275,6 @@ func sortSources(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept 
 	for j := range c.SourceRepresentations {
 		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
 			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
-		})
-		sort.SliceStable(c.SourceRepresentations[j].NAICSIndustryClassifications, func(k, l int) bool {
-			return c.SourceRepresentations[j].NAICSIndustryClassifications[k].Rank < c.SourceRepresentations[j].NAICSIndustryClassifications[l].Rank
 		})
 	}
 

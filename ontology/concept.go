@@ -197,8 +197,7 @@ type NewConcept struct {
 	FigiCode             string           `json:"figiCode,omitempty"`
 	IssuedBy             string           `json:"issuedBy,omitempty"`
 	// Organisations
-	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
-	IsDeprecated                 bool                          `json:"isDeprecated,omitempty"`
+	IsDeprecated bool `json:"isDeprecated,omitempty"`
 }
 
 var ErrEmptyAuthority = errors.New("invalid request, no sourceRepresentation.authority has been supplied")
