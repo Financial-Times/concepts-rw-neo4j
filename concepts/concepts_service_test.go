@@ -2475,19 +2475,6 @@ func cypherBatchToString(queryBatch []*cmneo4j.Query) string {
 	return strings.Join(queries, "\n==============================================================================\n")
 }
 
-func TestProcessMembershipRoles(t *testing.T) {
-	defer cleanDB(t)
-	oldAggregatedConcept := getAggregatedConcept(t, "membership.json")
-	aggregateConcept, err := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
-	assert.NoError(t, err)
-	processMembershipRoles(&aggregateConcept)
-
-	expected := membWithProcessedMembRoles()
-	if !cmp.Equal(expected, aggregateConcept) {
-		t.Errorf("Test %s failed: Concepts were not equal:\n%s", "TestProcessMembershipRoles", cmp.Diff(expected, aggregateConcept))
-	}
-}
-
 func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
 		Properties: map[string]interface{}{
@@ -2512,6 +2499,24 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 						UUID:  "7f40d291-b3cb-47c4-9bce-18413e9350cf",
 						Label: "HAS_ORGANISATION",
 					},
+					{
+						UUID:  "f807193d-337b-412f-b32c-afa14b385819",
+						Label: "HAS_ROLE",
+						Properties: map[string]interface{}{
+							"inceptionDate":        "2016-01-01",
+							"terminationDate":      "2017-02-02",
+							"inceptionDateEpoch":   1451606400,
+							"terminationDateEpoch": 1485993600,
+						},
+					},
+					{
+						UUID:  "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+						Label: "HAS_ROLE",
+						Properties: map[string]interface{}{
+							"inceptionDate":      "2011-06-27",
+							"inceptionDateEpoch": 1309132800,
+						},
+					},
 				},
 				UUID:            "cbadd9a7-5da9-407a-a5ec-e379460991f2",
 				PrefLabel:       "Membership Pref Label",
@@ -2520,20 +2525,6 @@ func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
 				AuthorityValue:  "746464",
 				InceptionDate:   "2016-01-01",
 				TerminationDate: "2017-02-02",
-				MembershipRoles: []ontology.MembershipRole{
-					{
-						RoleUUID:             "f807193d-337b-412f-b32c-afa14b385819",
-						InceptionDate:        "2016-01-01",
-						TerminationDate:      "2017-02-02",
-						InceptionDateEpoch:   1451606400,
-						TerminationDateEpoch: 1485993600,
-					},
-					{
-						RoleUUID:           "fe94adc6-ca44-438f-ad8f-0188d4a74987",
-						InceptionDate:      "2011-06-27",
-						InceptionDateEpoch: 1309132800,
-					},
-				},
 			},
 		},
 	}

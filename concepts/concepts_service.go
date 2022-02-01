@@ -27,18 +27,6 @@ var ErrUnexpectedReadResult = errors.New("unexpected read result count")
 
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
-var relationships = map[string]ontology.RelationshipConfig{
-	"HAS_ROLE": {
-		ConceptField: "membershipRoles",
-		Properties: []string{
-			"inceptionDate",
-			"terminationDate",
-			"inceptionDateEpoch",
-			"terminationDateEpoch",
-		},
-	},
-}
-
 // ConceptService - CypherDriver - CypherDriver
 type ConceptService struct {
 	driver *cmneo4j.Driver
@@ -183,8 +171,6 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		s.log.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Read request for existing concordance resulted in error")
 		return ConceptChanges{}, err
 	}
-
-	processMembershipRoles(&aggregatedConceptToWrite)
 
 	var queryBatch []*cmneo4j.Query
 	var prefUUIDsToBeDeletedQueryBatch []*cmneo4j.Query
@@ -649,7 +635,7 @@ func populateConceptQueries(queryBatch []*cmneo4j.Query, aggregatedConcept ontol
 			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, relIDs, rel.Label, relCfg.NeoCreate)...)
 
 			if len(relCfg.Properties) > 0 {
-				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel)...)
+				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel, relCfg)...)
 			}
 		}
 	}
@@ -709,44 +695,6 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*cmneo4j.Quer
 	relIDs := filterSlice([]string{concept.IssuedBy})
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
 
-	for _, membershipRole := range concept.MembershipRoles {
-		params := map[string]interface{}{
-			"inceptionDate":        nil,
-			"inceptionDateEpoch":   nil,
-			"terminationDate":      nil,
-			"terminationDateEpoch": nil,
-			"roleUUID":             membershipRole.RoleUUID,
-			"nodeUUID":             concept.UUID,
-		}
-		if membershipRole.InceptionDate != "" {
-			params["inceptionDate"] = membershipRole.InceptionDate
-		}
-		if membershipRole.InceptionDateEpoch > 0 {
-			params["inceptionDateEpoch"] = membershipRole.InceptionDateEpoch
-		}
-		if membershipRole.TerminationDate != "" {
-			params["terminationDate"] = membershipRole.TerminationDate
-		}
-		if membershipRole.TerminationDateEpoch > 0 {
-			params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
-		}
-		writeParent := &cmneo4j.Query{
-			Cypher: `MERGE (node:Thing{uuid: $nodeUUID})
-							MERGE (role:Thing{uuid: $roleUUID})
-								ON CREATE SET
-									role.uuid = $roleUUID
-							MERGE (node)-[rel:HAS_ROLE]->(role)
-								ON CREATE SET
-									rel.inceptionDate = $inceptionDate,
-									rel.inceptionDateEpoch = $inceptionDateEpoch,
-									rel.terminationDate = $terminationDate,
-									rel.terminationDateEpoch = $terminationDateEpoch
-							`,
-			Params: params,
-		}
-		queryBatch = append(queryBatch, writeParent)
-	}
-
 	queryBatch = append(queryBatch, createConceptQuery)
 	return queryBatch
 }
@@ -785,7 +733,11 @@ func createRelQueries(conceptID string, relationshipIDs []string, relationshipTy
 	return queryBatch
 }
 
-func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*cmneo4j.Query {
+func setRelPropsQueries(conceptID string, rel ontology.Relationship, cfg ontology.RelationshipConfig) []*cmneo4j.Query {
+	props := map[string]interface{}{}
+	for _, label := range cfg.Properties {
+		props[label] = rel.Properties[label]
+	}
 	var queryBatch []*cmneo4j.Query
 	setRelProps := &cmneo4j.Query{
 		Cypher: fmt.Sprintf(`
@@ -796,7 +748,7 @@ func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*cmneo4j.
 		Params: map[string]interface{}{
 			"uuid":      conceptID,
 			"otherUUID": rel.UUID,
-			"relProps":  rel.Properties,
+			"relProps":  props,
 		},
 	}
 
@@ -955,39 +907,19 @@ func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }
 
-func processMembershipRoles(c *ontology.NewAggregatedConcept) {
-	for _, s := range c.SourceRepresentations {
-		s.MembershipRoles = cleanMembershipRoles(s.MembershipRoles)
-		for i := range s.MembershipRoles {
-			s.MembershipRoles[i].InceptionDateEpoch = getEpoch(s.MembershipRoles[i].InceptionDate)
-			s.MembershipRoles[i].TerminationDateEpoch = getEpoch(s.MembershipRoles[i].TerminationDate)
-		}
-	}
-}
-
-func getEpoch(t string) int64 {
-	if t == "" {
-		return 0
-	}
-
-	tt, _ := time.Parse(iso8601DateOnly, t)
-	return tt.Unix()
-}
-
 func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	var cleanSources []ontology.NewConcept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewConcept{
-			Relationships:   source.Relationships,
-			UUID:            source.UUID,
-			PrefLabel:       source.PrefLabel,
-			Type:            source.Type,
-			Authority:       source.Authority,
-			AuthorityValue:  source.AuthorityValue,
-			MembershipRoles: source.MembershipRoles,
-			IssuedBy:        source.IssuedBy,
-			FigiCode:        source.FigiCode,
-			IsDeprecated:    source.IsDeprecated,
+			Relationships:  source.Relationships,
+			UUID:           source.UUID,
+			PrefLabel:      source.PrefLabel,
+			Type:           source.Type,
+			Authority:      source.Authority,
+			AuthorityValue: source.AuthorityValue,
+			IssuedBy:       source.IssuedBy,
+			FigiCode:       source.FigiCode,
+			IsDeprecated:   source.IsDeprecated,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}

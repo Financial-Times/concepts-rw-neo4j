@@ -115,6 +115,14 @@ relationships:
     properties:
       - uuid
       - rank
+  HAS_ROLE:
+    conceptField: "membershipRoles"
+    neoCreate: true
+    properties:
+      - inceptionDate
+      - terminationDate
+      - inceptionDateEpoch
+      - terminationDateEpoch
 authorities:
   - TME
   - FACTSET
