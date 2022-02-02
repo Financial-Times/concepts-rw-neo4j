@@ -70,9 +70,8 @@ Paremeters: {
   "otherUUID": "fe94adc6-ca44-438f-ad8f-0188d4a74987",
   "relProps": {
     "inceptionDate": "2011-06-27",
-    "inceptionDateEpoch": null,
-    "terminationDate": null,
-    "terminationDateEpoch": null
+    "inceptionDateEpoch": 1309132800,
+    "terminationDate": null
   },
   "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 }

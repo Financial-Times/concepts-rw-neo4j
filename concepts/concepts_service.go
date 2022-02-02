@@ -735,8 +735,12 @@ func createRelQueries(conceptID string, relationshipIDs []string, relationshipTy
 
 func setRelPropsQueries(conceptID string, rel ontology.Relationship, cfg ontology.RelationshipConfig) []*cmneo4j.Query {
 	props := map[string]interface{}{}
-	for label := range cfg.Properties {
-		props[label] = rel.Properties[label]
+	for label, t := range cfg.Properties {
+		val := rel.Properties[label]
+		props[label] = val
+		if val != nil && t == ontology.PropertyTypeDate {
+			props[label+"Epoch"] = getEpoch(rel.Properties[label].(string))
+		}
 	}
 	var queryBatch []*cmneo4j.Query
 	setRelProps := &cmneo4j.Query{
@@ -754,6 +758,15 @@ func setRelPropsQueries(conceptID string, rel ontology.Relationship, cfg ontolog
 
 	queryBatch = append(queryBatch, setRelProps)
 	return queryBatch
+}
+
+func getEpoch(t string) int64 {
+	if t == "" {
+		return 0
+	}
+
+	tt, _ := time.Parse(iso8601DateOnly, t)
+	return tt.Unix()
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone

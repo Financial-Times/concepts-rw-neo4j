@@ -13,6 +13,8 @@ type FieldConfig struct {
 	FieldType string `yaml:"type"`
 }
 
+const PropertyTypeDate = "date"
+
 type RelationshipConfig struct {
 	ConceptField    string            `yaml:"conceptField"`
 	OneToOne        bool              `yaml:"oneToOne"`

@@ -118,10 +118,8 @@ relationships:
     conceptField: "membershipRoles"
     neoCreate: true
     properties:
-      inceptionDate: string
-      terminationDate: string
-      inceptionDateEpoch: int
-      terminationDateEpoch: int
+      inceptionDate: date
+      terminationDate: date
 authorities:
   - TME
   - FACTSET

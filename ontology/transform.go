@@ -168,6 +168,10 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 							}
 
 							switch fieldType {
+							case "date":
+								if v, ok = toString(val); !ok {
+									return nil, getInvalidPropValueError(field, v)
+								}
 							case "string":
 								if v, ok = toString(val); !ok {
 									return nil, getInvalidPropValueError(field, v)

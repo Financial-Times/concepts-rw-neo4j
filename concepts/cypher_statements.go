@@ -197,8 +197,11 @@ func getSourceRelForRead(relLabel string, relCfg ontology.RelationshipConfig) st
 		return fmt.Sprintf("%s: collect(DISTINCT %s.uuid)", relCfg.ConceptField, nodeName)
 	} else {
 		var relProps []string
-		for relProp := range relCfg.Properties {
+		for relProp, propType := range relCfg.Properties {
 			relProps = append(relProps, fmt.Sprintf("%s: %s.%s", relProp, relName, relProp))
+			if propType == ontology.PropertyTypeDate {
+				relProps = append(relProps, fmt.Sprintf("%sEpoch: %s.%sEpoch", relProp, relName, relProp))
+			}
 		}
 		// the sort is not needed for the normal functionality, but is useful when testing
 		sort.Strings(relProps)
