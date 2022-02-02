@@ -735,7 +735,7 @@ func createRelQueries(conceptID string, relationshipIDs []string, relationshipTy
 
 func setRelPropsQueries(conceptID string, rel ontology.Relationship, cfg ontology.RelationshipConfig) []*cmneo4j.Query {
 	props := map[string]interface{}{}
-	for _, label := range cfg.Properties {
+	for label := range cfg.Properties {
 		props[label] = rel.Properties[label]
 	}
 	var queryBatch []*cmneo4j.Query

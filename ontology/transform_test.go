@@ -72,6 +72,25 @@ func TestTransformSourceConceptRelationships(t *testing.T) {
 		CountryOfIncorporationUUID: "coieb1c1-7ecd-4600-8cbb-c02ba53ced4b",
 		CountryOfOperationsUUID:    "cooeb1c1-7ecd-4600-8cbb-c02ba53ced4b",
 		ParentOrganisation:         "c001ee9c-94c5-11e8-8f42-da24cd01f044",
+		MembershipRoles: []MembershipRole{
+			{
+				RoleUUID:             "f7063d80-0f52-418f-874c-f2968a9ffe9b",
+				InceptionDate:        "2022-02-02",
+				TerminationDate:      "",
+				InceptionDateEpoch:   1643767200,
+				TerminationDateEpoch: 0,
+			},
+		},
+		NAICSIndustryClassifications: []NAICSIndustryClassification{
+			{
+				UUID: "67c42188-d4fe-47bf-b952-83600d01b6bf",
+				Rank: 2,
+			},
+			{
+				UUID: "786d6cee-800f-4028-98ed-6f19a6d2a701",
+				Rank: 1,
+			},
+		},
 	}
 
 	newSourceConcept, err := TransformToNewSourceConcept(expected)
@@ -90,12 +109,48 @@ func TestTransformSourceConceptRelationships(t *testing.T) {
 	sort.Strings(expected.ImpliedByUUIDs)
 	sort.Strings(expected.HasFocusUUIDs)
 
+	sort.SliceStable(expected.NAICSIndustryClassifications, func(i, j int) bool {
+		return expected.NAICSIndustryClassifications[i].Rank < expected.NAICSIndustryClassifications[j].Rank
+	})
+	sort.SliceStable(expected.MembershipRoles, func(i, j int) bool {
+		left := expected.MembershipRoles[i]
+		right := expected.MembershipRoles[j]
+		if left.RoleUUID < right.RoleUUID {
+			return true
+		}
+		if left.InceptionDateEpoch < right.InceptionDateEpoch {
+			return true
+		}
+		if left.TerminationDate < right.TerminationDate {
+			return true
+		}
+		return false
+	})
+
 	sort.Strings(got.ParentUUIDs)
 	sort.Strings(got.BroaderUUIDs)
 	sort.Strings(got.RelatedUUIDs)
 	sort.Strings(got.SupersededByUUIDs)
 	sort.Strings(got.ImpliedByUUIDs)
 	sort.Strings(got.HasFocusUUIDs)
+
+	sort.SliceStable(got.NAICSIndustryClassifications, func(i, j int) bool {
+		return got.NAICSIndustryClassifications[i].Rank < got.NAICSIndustryClassifications[j].Rank
+	})
+	sort.SliceStable(got.MembershipRoles, func(i, j int) bool {
+		left := got.MembershipRoles[i]
+		right := got.MembershipRoles[j]
+		if left.RoleUUID < right.RoleUUID {
+			return true
+		}
+		if left.InceptionDateEpoch < right.InceptionDateEpoch {
+			return true
+		}
+		if left.TerminationDate < right.TerminationDate {
+			return true
+		}
+		return false
+	})
 
 	if !cmp.Equal(got, expected) {
 		t.Errorf("transforming between old and new source model has failed:\n%s", cmp.Diff(got, expected))

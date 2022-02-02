@@ -139,24 +139,64 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 		} else {
 			for _, v := range val.([]interface{}) {
 				if len(relCfg.Properties) > 0 {
+					// extract uuid
 					relMap := v.(map[string]interface{})
-					uuid, ok := relMap["uuid"]
+					extractUUIDFunc := func(props map[string]interface{}) (string, string, bool) {
+						uuid, ok := props["uuid"]
+						if ok {
+							return uuid.(string), "uuid", true
+						}
+
+						// Handle membership roles as special case
+						uuid, ok = relMap["membershipRoleUUID"]
+						if ok {
+							return uuid.(string), "membershipRoleUUID", true
+						}
+
+						return "", "", false
+
+					}
+					uuid, uuidKey, ok := extractUUIDFunc(relMap)
+
+					reTypeProps := func(props map[string]interface{}, config RelationshipConfig) (map[string]interface{}, error) {
+						for field, fieldType := range config.Properties {
+							var v interface{}
+							val, ok := props[field]
+							if !ok {
+								props[field] = nil
+								continue
+							}
+
+							switch fieldType {
+							case "string":
+								if v, ok = toString(val); !ok {
+									return nil, getInvalidPropValueError(field, v)
+								}
+							case "[]string":
+								if v, ok = toStringSlice(val); !ok {
+									return nil, getInvalidPropValueError(field, v)
+								}
+							case "int":
+								if v, ok = toInt(val); !ok {
+									return nil, getInvalidPropValueError(field, v)
+								}
+							default:
+								return nil,
+									fmt.Errorf("unsupported field type '%s' for prop '%s': %w", fieldType, field, ErrUnknownProperty)
+							}
+							props[field] = v
+						}
+						return props, nil
+					}
+
 					if ok {
-						delete(relMap, "uuid")
-
-						rels = append(rels, Relationship{UUID: uuid.(string), Label: rel, Properties: relMap})
-						continue
+						delete(relMap, uuidKey)
+						relMap, err := reTypeProps(relMap, relCfg)
+						if err != nil {
+							return NewConcept{}, err
+						}
+						rels = append(rels, Relationship{UUID: uuid, Label: rel, Properties: relMap})
 					}
-
-					// Handle membership roles as special case
-					uuid, ok = relMap["membershipRoleUUID"]
-					if !ok {
-						continue
-					}
-
-					delete(relMap, "membershipRoleUUID")
-
-					rels = append(rels, Relationship{UUID: uuid.(string), Label: rel, Properties: relMap})
 				} else {
 					uuid := v.(string)
 					rels = append(rels, Relationship{UUID: uuid, Label: rel})

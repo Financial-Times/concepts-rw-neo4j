@@ -113,16 +113,16 @@ relationships:
     conceptField: "naicsIndustryClassifications"
     neoCreate: true
     properties:
-      - uuid
-      - rank
+      uuid: string
+      rank: int
   HAS_ROLE:
     conceptField: "membershipRoles"
     neoCreate: true
     properties:
-      - inceptionDate
-      - terminationDate
-      - inceptionDateEpoch
-      - terminationDateEpoch
+      inceptionDate: string
+      terminationDate: string
+      inceptionDateEpoch: int
+      terminationDateEpoch: int
 authorities:
   - TME
   - FACTSET

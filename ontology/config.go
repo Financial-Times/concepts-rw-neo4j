@@ -14,11 +14,11 @@ type FieldConfig struct {
 }
 
 type RelationshipConfig struct {
-	ConceptField    string   `yaml:"conceptField"`
-	OneToOne        bool     `yaml:"oneToOne"`
-	NeoCreate       bool     `yaml:"neoCreate"`
-	Properties      []string `yaml:"properties"`
-	ToNodeWithLabel string   `yaml:"toNodeWithLabel"`
+	ConceptField    string            `yaml:"conceptField"`
+	OneToOne        bool              `yaml:"oneToOne"`
+	NeoCreate       bool              `yaml:"neoCreate"`
+	Properties      map[string]string `yaml:"properties"` // map of property label: type
+	ToNodeWithLabel string            `yaml:"toNodeWithLabel"`
 }
 
 type Config struct {
