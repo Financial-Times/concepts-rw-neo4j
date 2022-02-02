@@ -67,8 +67,7 @@ Statement:
 Paremeters: {
   "otherUUID": "38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
   "relProps": {
-    "rank": 2,
-    "uuid": null
+    "rank": 2
   },
   "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
 }
@@ -121,8 +120,7 @@ Statement:
 Paremeters: {
   "otherUUID": "49da878c-67ce-4343-9a09-a4a767e584a2",
   "relProps": {
-    "rank": 1,
-    "uuid": null
+    "rank": 1
   },
   "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
 }

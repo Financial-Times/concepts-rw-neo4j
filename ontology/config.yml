@@ -113,7 +113,6 @@ relationships:
     conceptField: "naicsIndustryClassifications"
     neoCreate: true
     properties:
-      uuid: string
       rank: int
   HAS_ROLE:
     conceptField: "membershipRoles"
