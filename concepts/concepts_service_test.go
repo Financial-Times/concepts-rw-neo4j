@@ -2416,7 +2416,7 @@ func TestPopulateConceptQueries(t *testing.T) {
 		},
 		{
 			name:           "Aggregate concept with HAS_MEMBER, HAS_ORGANISATION & HAS_ROLE relationships",
-			conceptFile:    "updated-membership.json",
+			conceptFile:    "membership-with-roles-and-org.json",
 			goldenFileName: "testdata/concept-queries-membership-rels.golden",
 		},
 		{

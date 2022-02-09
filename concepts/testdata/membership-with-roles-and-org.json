@@ -1,0 +1,40 @@
+{  
+    "prefUUID":"cbadd9a7-5da9-407a-a5ec-e379460991f2",
+    "prefLabel":"Membership Pref Label",
+    "type":"Membership",
+    "organisationUUID":"7f40d291-b3cb-47c4-9bce-18413e9350cf",
+    "personUUID":"35946807-0205-4fc1-8516-bb1ae141659b",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"cbadd9a7-5da9-407a-a5ec-e379460991f2",
+            "prefLabel":"Membership Pref Label",
+            "type":"Membership",
+            "authority":"Smartlogic",
+            "authorityValue":"746464",
+            "organisationUUID":"7f40d291-b3cb-47c4-9bce-18413e9350cf",
+            "personUUID":"35946807-0205-4fc1-8516-bb1ae141659b",
+            "membershipRoles":[  
+                {  
+                    "membershipRoleUUID":"f807193d-337b-412f-b32c-afa14b385819",
+                    "inceptionDate":"2016-01-01",
+                    "terminationDate":"2017-02-02"
+                }
+            ],
+            "inceptionDate":"2016-01-01",
+            "terminationDate":"2017-02-02",
+            "salutation":"Mr",
+            "birthYear":2018
+        }
+    ],
+    "membershipRoles":[  
+        {  
+            "membershipRoleUUID":"f807193d-337b-412f-b32c-afa14b385819",
+            "inceptionDate":"2016-01-01",
+            "terminationDate":"2017-02-02"
+        }
+    ],
+    "inceptionDate":"2016-01-01",
+    "terminationDate":"2017-02-02",
+    "salutation":"Mr",
+    "birthYear":2018
+}
