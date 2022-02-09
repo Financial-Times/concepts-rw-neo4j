@@ -739,7 +739,16 @@ func setRelPropsQueries(conceptID string, rel ontology.Relationship, cfg ontolog
 		val := rel.Properties[label]
 		props[label] = val
 		if val != nil && t == ontology.PropertyTypeDate {
-			props[label+"Epoch"] = getEpoch(rel.Properties[label].(string))
+			str, ok := rel.Properties[label].(string)
+			if !ok {
+				continue
+			}
+			unixTime := getEpoch(str)
+			// in the old times we skipped unix timestamps with valuse less or equal 0
+			if unixTime <= 0 {
+				continue
+			}
+			props[label+"Epoch"] = unixTime
 		}
 	}
 	var queryBatch []*cmneo4j.Query
@@ -765,8 +774,15 @@ func getEpoch(t string) int64 {
 		return 0
 	}
 
-	tt, _ := time.Parse(iso8601DateOnly, t)
-	return tt.Unix()
+	tt, err := time.Parse(iso8601DateOnly, t)
+	if err != nil {
+		return 0
+	}
+	unixTime := tt.Unix()
+	if unixTime < 0 {
+		return 0
+	}
+	return unixTime
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
