@@ -18,6 +18,11 @@
                     "membershipRoleUUID":"f807193d-337b-412f-b32c-afa14b385819",
                     "inceptionDate":"2016-01-01",
                     "terminationDate":"2017-02-02"
+                },
+                {
+                    "membershipRoleUUID":"fe94adc6-ca44-438f-ad8f-0188d4a74987",
+                    "inceptionDate": "1968-01-01",
+                    "terminationDate": "1968-01-01"
                 }
             ],
             "inceptionDate":"2016-01-01",
@@ -31,6 +36,11 @@
             "membershipRoleUUID":"f807193d-337b-412f-b32c-afa14b385819",
             "inceptionDate":"2016-01-01",
             "terminationDate":"2017-02-02"
+        },
+        {
+            "membershipRoleUUID":"fe94adc6-ca44-438f-ad8f-0188d4a74987",
+            "inceptionDate": "1968-01-01",
+            "terminationDate": "1968-01-01"
         }
     ],
     "inceptionDate":"2016-01-01",

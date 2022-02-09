@@ -79,3 +79,27 @@ Paremeters: {
   },
   "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 }
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
+		MERGE (thing)-[:HAS_ROLE]->(other)
+	,
+Paremeters: {
+  "id": "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: 
+			MATCH (t:Thing {uuid: $uuid})
+			MATCH (other:Thing {uuid: $otherUUID})
+			MATCH (t)-[rel:HAS_ROLE]->(other)
+			set rel=$relProps,
+Paremeters: {
+  "otherUUID": "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+  "relProps": {
+    "inceptionDate": "1968-01-01",
+    "terminationDate": "1968-01-01"
+  },
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
