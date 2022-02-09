@@ -218,21 +218,17 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 	})
 
 	return NewConcept{
-		Relationships:        rels,
-		UUID:                 old.UUID,
-		PrefLabel:            old.PrefLabel,
-		Type:                 old.Type,
-		Authority:            old.Authority,
-		AuthorityValue:       old.AuthorityValue,
-		LastModifiedEpoch:    old.LastModifiedEpoch,
-		Hash:                 old.Hash,
-		InceptionDate:        old.InceptionDate,
-		TerminationDate:      old.TerminationDate,
-		InceptionDateEpoch:   old.InceptionDateEpoch,
-		TerminationDateEpoch: old.TerminationDateEpoch,
-		FigiCode:             old.FigiCode,
-		IssuedBy:             old.IssuedBy,
-		IsDeprecated:         old.IsDeprecated,
+		Relationships:     rels,
+		UUID:              old.UUID,
+		PrefLabel:         old.PrefLabel,
+		Type:              old.Type,
+		Authority:         old.Authority,
+		AuthorityValue:    old.AuthorityValue,
+		LastModifiedEpoch: old.LastModifiedEpoch,
+		Hash:              old.Hash,
+		FigiCode:          old.FigiCode,
+		IssuedBy:          old.IssuedBy,
+		IsDeprecated:      old.IsDeprecated,
 	}, nil
 }
 
@@ -303,10 +299,6 @@ func TransformToOldSourceConcept(new NewConcept) (Concept, error) {
 	old.AuthorityValue = new.AuthorityValue
 	old.LastModifiedEpoch = new.LastModifiedEpoch
 	old.Hash = new.Hash
-	old.InceptionDate = new.InceptionDate
-	old.TerminationDate = new.TerminationDate
-	old.InceptionDateEpoch = new.InceptionDateEpoch
-	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
 	old.IsDeprecated = new.IsDeprecated

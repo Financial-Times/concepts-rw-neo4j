@@ -950,15 +950,31 @@ func stringInArr(searchFor string, values []string) bool {
 }
 
 func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
+	var inceptionDate string
+	var terminationDate string
+	for _, r := range source.Relationships {
+		if r.Label != "HAS_ROLE" {
+			continue
+		}
+		if v, ok := r.Properties["inceptionDate"]; ok {
+			if s, ok := v.(string); ok {
+				inceptionDate = s
+			}
+		}
+		if v, ok := r.Properties["terminationDate"]; ok {
+			if s, ok := v.(string); ok {
+				terminationDate = s
+			}
+		}
+		break
+	}
 	return ontology.NewAggregatedConcept{
-		AggregatedHash:       source.Hash,
-		InceptionDate:        source.InceptionDate,
-		InceptionDateEpoch:   source.InceptionDateEpoch,
-		IssuedBy:             source.IssuedBy,
-		PrefLabel:            source.PrefLabel,
-		TerminationDate:      source.TerminationDate,
-		TerminationDateEpoch: source.TerminationDateEpoch,
-		Type:                 source.Type,
-		IsDeprecated:         source.IsDeprecated,
+		AggregatedHash:  source.Hash,
+		InceptionDate:   inceptionDate,
+		IssuedBy:        source.IssuedBy,
+		PrefLabel:       source.PrefLabel,
+		TerminationDate: terminationDate,
+		Type:            source.Type,
+		IsDeprecated:    source.IsDeprecated,
 	}
 }

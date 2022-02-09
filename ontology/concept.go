@@ -181,20 +181,16 @@ func (c NewAggregatedConcept) GetCanonicalAuthority() string {
 
 // NewConcept - could be any concept genre, subject etc
 type NewConcept struct {
-	Relationships        []Relationship `json:"relationships"`
-	UUID                 string         `json:"uuid,omitempty"`
-	PrefLabel            string         `json:"prefLabel,omitempty"`
-	Type                 string         `json:"type,omitempty"`
-	Authority            string         `json:"authority,omitempty"`
-	AuthorityValue       string         `json:"authorityValue,omitempty"`
-	LastModifiedEpoch    int            `json:"lastModifiedEpoch,omitempty"`
-	Hash                 string         `json:"hash,omitempty"`
-	InceptionDate        string         `json:"inceptionDate,omitempty"`
-	TerminationDate      string         `json:"terminationDate,omitempty"`
-	InceptionDateEpoch   int64          `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch int64          `json:"terminationDateEpoch,omitempty"`
-	FigiCode             string         `json:"figiCode,omitempty"`
-	IssuedBy             string         `json:"issuedBy,omitempty"`
+	Relationships     []Relationship `json:"relationships"`
+	UUID              string         `json:"uuid,omitempty"`
+	PrefLabel         string         `json:"prefLabel,omitempty"`
+	Type              string         `json:"type,omitempty"`
+	Authority         string         `json:"authority,omitempty"`
+	AuthorityValue    string         `json:"authorityValue,omitempty"`
+	LastModifiedEpoch int            `json:"lastModifiedEpoch,omitempty"`
+	Hash              string         `json:"hash,omitempty"`
+	FigiCode          string         `json:"figiCode,omitempty"`
+	IssuedBy          string         `json:"issuedBy,omitempty"`
 	// Organisations
 	IsDeprecated bool `json:"isDeprecated,omitempty"`
 }

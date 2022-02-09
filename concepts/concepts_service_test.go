@@ -2475,61 +2475,6 @@ func cypherBatchToString(queryBatch []*cmneo4j.Query) string {
 	return strings.Join(queries, "\n==============================================================================\n")
 }
 
-func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
-	return ontology.NewAggregatedConcept{
-		Properties: map[string]interface{}{
-			"salutation": "Mr",
-			"birthYear":  2018,
-		},
-		PrefUUID:         "cbadd9a7-5da9-407a-a5ec-e379460991f2",
-		PrefLabel:        "Membership Pref Label",
-		Type:             "Membership",
-		OrganisationUUID: "7f40d291-b3cb-47c4-9bce-18413e9350cf",
-		PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
-		InceptionDate:    "2016-01-01",
-		TerminationDate:  "2017-02-02",
-		SourceRepresentations: []ontology.NewConcept{
-			{
-				Relationships: []ontology.Relationship{
-					{
-						UUID:  "35946807-0205-4fc1-8516-bb1ae141659b",
-						Label: "HAS_MEMBER",
-					},
-					{
-						UUID:  "7f40d291-b3cb-47c4-9bce-18413e9350cf",
-						Label: "HAS_ORGANISATION",
-					},
-					{
-						UUID:  "f807193d-337b-412f-b32c-afa14b385819",
-						Label: "HAS_ROLE",
-						Properties: map[string]interface{}{
-							"inceptionDate":        "2016-01-01",
-							"terminationDate":      "2017-02-02",
-							"inceptionDateEpoch":   1451606400,
-							"terminationDateEpoch": 1485993600,
-						},
-					},
-					{
-						UUID:  "fe94adc6-ca44-438f-ad8f-0188d4a74987",
-						Label: "HAS_ROLE",
-						Properties: map[string]interface{}{
-							"inceptionDate":      "2011-06-27",
-							"inceptionDateEpoch": 1309132800,
-						},
-					},
-				},
-				UUID:            "cbadd9a7-5da9-407a-a5ec-e379460991f2",
-				PrefLabel:       "Membership Pref Label",
-				Type:            "Membership",
-				Authority:       "Smartlogic",
-				AuthorityValue:  "746464",
-				InceptionDate:   "2016-01-01",
-				TerminationDate: "2017-02-02",
-			},
-		},
-	}
-}
-
 func readConceptAndCompare(t *testing.T, payload ontology.AggregatedConcept, testName string, ignoredFields ...string) {
 	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
 	actual := actualIf.(ontology.AggregatedConcept)
