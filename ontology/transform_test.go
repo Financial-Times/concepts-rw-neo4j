@@ -24,8 +24,6 @@ func TestTransformAggregateConceptProperties(t *testing.T) {
 		AggregatedHash:         "aggregateHash value",
 		InceptionDate:          "inceptionDate value",
 		TerminationDate:        "terminationDate value",
-		InceptionDateEpoch:     1,
-		TerminationDateEpoch:   2,
 		FigiCode:               "figiCode value",
 		ProperName:             "properName value",
 		ShortName:              "shortName value",

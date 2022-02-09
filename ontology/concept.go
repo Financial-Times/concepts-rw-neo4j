@@ -142,8 +142,6 @@ type NewAggregatedConcept struct {
 	SourceRepresentations []NewConcept           `json:"sourceRepresentations,omitempty"`
 	InceptionDate         string                 `json:"inceptionDate,omitempty"`
 	TerminationDate       string                 `json:"terminationDate,omitempty"`
-	InceptionDateEpoch    int64                  `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch  int64                  `json:"terminationDateEpoch,omitempty"`
 	FigiCode              string                 `json:"figiCode,omitempty"`
 	IssuedBy              string                 `json:"issuedBy,omitempty"`
 	IsDeprecated          bool                   `json:"isDeprecated,omitempty"`

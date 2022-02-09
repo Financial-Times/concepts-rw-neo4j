@@ -884,12 +884,6 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	if canonical.TerminationDate != "" {
 		nodeProps["terminationDate"] = canonical.TerminationDate
 	}
-	if canonical.InceptionDateEpoch > 0 {
-		nodeProps["inceptionDateEpoch"] = canonical.InceptionDateEpoch
-	}
-	if canonical.TerminationDateEpoch > 0 {
-		nodeProps["terminationDateEpoch"] = canonical.TerminationDateEpoch
-	}
 
 	return nodeProps
 }

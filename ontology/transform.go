@@ -61,8 +61,6 @@ func TransformToNewAggregateConcept(old AggregatedConcept) (NewAggregatedConcept
 		AggregatedHash:        old.AggregatedHash,
 		InceptionDate:         old.InceptionDate,
 		TerminationDate:       old.TerminationDate,
-		InceptionDateEpoch:    old.InceptionDateEpoch,
-		TerminationDateEpoch:  old.TerminationDateEpoch,
 		FigiCode:              old.FigiCode,
 		IssuedBy:              old.IssuedBy,
 		SourceRepresentations: newSources,
@@ -107,8 +105,6 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) (AggregatedConcept
 	old.MembershipRoles = roles
 	old.InceptionDate = new.InceptionDate
 	old.TerminationDate = new.TerminationDate
-	old.InceptionDateEpoch = new.InceptionDateEpoch
-	old.TerminationDateEpoch = new.TerminationDateEpoch
 	old.FigiCode = new.FigiCode
 	old.IssuedBy = new.IssuedBy
 	old.IsDeprecated = new.IsDeprecated
