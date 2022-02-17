@@ -159,6 +159,7 @@ type NeoConcept struct {
 	NAICSIndustryClassifications []transform.NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 }
 
+// nolint: gocognit // TODO: simplify this function
 func (nc NeoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.RelationshipConfig) (ontology.NewConcept, error) {
 	conceptType, err := mapper.MostSpecificType(nc.Types)
 	if err != nil {
@@ -244,39 +245,6 @@ func filterRelationships(rels []ontology.Relationship) []ontology.Relationship {
 	}
 
 	return filtered
-}
-
-func cleanMembershipRoles(m []transform.MembershipRole) []transform.MembershipRole {
-	deleted := 0
-	for i := range m {
-		j := i - deleted
-		if m[j].RoleUUID == "" {
-			m = m[:j+copy(m[j:], m[j+1:])]
-			deleted++
-			continue
-		}
-
-		m[j].InceptionDateEpoch = 0
-		m[j].TerminationDateEpoch = 0
-	}
-
-	if len(m) == 0 {
-		return nil
-	}
-
-	return m
-}
-
-// cleanNAICS returns the same slice of NAICSIndustryClassification if all are valid,
-// skips the invalid ones, returns nil if the input slice doesn't have valid NAICSIndustryClassification objects
-func cleanNAICS(naics []transform.NAICSIndustryClassification) []transform.NAICSIndustryClassification {
-	var res []transform.NAICSIndustryClassification
-	for _, ic := range naics {
-		if ic.UUID != "" {
-			res = append(res, ic)
-		}
-	}
-	return res
 }
 
 func sortSources(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
