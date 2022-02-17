@@ -7,34 +7,35 @@ import (
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 )
 
 type neoAggregatedConcept struct {
-	AggregateHash         string                    `json:"aggregateHash,omitempty"`
-	Aliases               []string                  `json:"aliases,omitempty"`
-	DescriptionXML        string                    `json:"descriptionXML,omitempty"`
-	EmailAddress          string                    `json:"emailAddress,omitempty"`
-	FacebookPage          string                    `json:"facebookPage,omitempty"`
-	FigiCode              string                    `json:"figiCode,omitempty"`
-	ImageURL              string                    `json:"imageUrl,omitempty"`
-	InceptionDate         string                    `json:"inceptionDate,omitempty"`
-	InceptionDateEpoch    int64                     `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy              string                    `json:"issuedBy,omitempty"`
-	LastModifiedEpoch     int                       `json:"lastModifiedEpoch,omitempty"`
-	MembershipRoles       []ontology.MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID      string                    `json:"organisationUUID,omitempty"`
-	PersonUUID            string                    `json:"personUUID,omitempty"`
-	PrefLabel             string                    `json:"prefLabel"`
-	PrefUUID              string                    `json:"prefUUID,omitempty"`
-	ScopeNote             string                    `json:"scopeNote,omitempty"`
-	ShortLabel            string                    `json:"shortLabel,omitempty"`
-	SourceRepresentations []neoConcept              `json:"sourceRepresentations"`
-	Strapline             string                    `json:"strapline,omitempty"`
-	TerminationDate       string                    `json:"terminationDate,omitempty"`
-	TerminationDateEpoch  int64                     `json:"terminationDateEpoch,omitempty"`
-	TwitterHandle         string                    `json:"twitterHandle,omitempty"`
-	Types                 []string                  `json:"types"`
-	IsDeprecated          bool                      `json:"isDeprecated,omitempty"`
+	AggregateHash         string                     `json:"aggregateHash,omitempty"`
+	Aliases               []string                   `json:"aliases,omitempty"`
+	DescriptionXML        string                     `json:"descriptionXML,omitempty"`
+	EmailAddress          string                     `json:"emailAddress,omitempty"`
+	FacebookPage          string                     `json:"facebookPage,omitempty"`
+	FigiCode              string                     `json:"figiCode,omitempty"`
+	ImageURL              string                     `json:"imageUrl,omitempty"`
+	InceptionDate         string                     `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch    int64                      `json:"inceptionDateEpoch,omitempty"`
+	IssuedBy              string                     `json:"issuedBy,omitempty"`
+	LastModifiedEpoch     int                        `json:"lastModifiedEpoch,omitempty"`
+	MembershipRoles       []transform.MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID      string                     `json:"organisationUUID,omitempty"`
+	PersonUUID            string                     `json:"personUUID,omitempty"`
+	PrefLabel             string                     `json:"prefLabel"`
+	PrefUUID              string                     `json:"prefUUID,omitempty"`
+	ScopeNote             string                     `json:"scopeNote,omitempty"`
+	ShortLabel            string                     `json:"shortLabel,omitempty"`
+	SourceRepresentations []neoConcept               `json:"sourceRepresentations"`
+	Strapline             string                     `json:"strapline,omitempty"`
+	TerminationDate       string                     `json:"terminationDate,omitempty"`
+	TerminationDateEpoch  int64                      `json:"terminationDateEpoch,omitempty"`
+	TwitterHandle         string                     `json:"twitterHandle,omitempty"`
+	Types                 []string                   `json:"types"`
+	IsDeprecated          bool                       `json:"isDeprecated,omitempty"`
 	// Organisations
 	ProperName             string   `json:"properName,omitempty"`
 	ShortName              string   `json:"shortName,omitempty"`
@@ -104,35 +105,35 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontolo
 }
 
 type neoConcept struct {
-	Authority            string                    `json:"authority,omitempty"`
-	AuthorityValue       string                    `json:"authorityValue,omitempty"`
-	BroaderUUIDs         []string                  `json:"broaderUUIDs,omitempty"`
-	FigiCode             string                    `json:"figiCode,omitempty"`
-	InceptionDate        string                    `json:"inceptionDate,omitempty"`
-	InceptionDateEpoch   int64                     `json:"inceptionDateEpoch,omitempty"`
-	IssuedBy             string                    `json:"issuedBy,omitempty"`
-	LastModifiedEpoch    int                       `json:"lastModifiedEpoch,omitempty"`
-	MembershipRoles      []ontology.MembershipRole `json:"membershipRoles,omitempty"`
-	OrganisationUUID     string                    `json:"organisationUUID,omitempty"`
-	ParentUUIDs          []string                  `json:"parentUUIDs,omitempty"`
-	PersonUUID           string                    `json:"personUUID,omitempty"`
-	PrefLabel            string                    `json:"prefLabel,omitempty"`
-	PrefUUID             string                    `json:"prefUUID,omitempty"`
-	RelatedUUIDs         []string                  `json:"relatedUUIDs,omitempty"`
-	SupersededByUUIDs    []string                  `json:"supersededByUUIDs,omitempty"`
-	ImpliedByUUIDs       []string                  `json:"impliedByUUIDs,omitempty"`
-	HasFocusUUIDs        []string                  `json:"hasFocusUUIDs,omitempty"`
-	TerminationDate      string                    `json:"terminationDate,omitempty"`
-	TerminationDateEpoch int64                     `json:"terminationDateEpoch,omitempty"`
-	Types                []string                  `json:"types,omitempty"`
-	UUID                 string                    `json:"uuid,omitempty"`
-	IsDeprecated         bool                      `json:"isDeprecated,omitempty"`
+	Authority            string                     `json:"authority,omitempty"`
+	AuthorityValue       string                     `json:"authorityValue,omitempty"`
+	BroaderUUIDs         []string                   `json:"broaderUUIDs,omitempty"`
+	FigiCode             string                     `json:"figiCode,omitempty"`
+	InceptionDate        string                     `json:"inceptionDate,omitempty"`
+	InceptionDateEpoch   int64                      `json:"inceptionDateEpoch,omitempty"`
+	IssuedBy             string                     `json:"issuedBy,omitempty"`
+	LastModifiedEpoch    int                        `json:"lastModifiedEpoch,omitempty"`
+	MembershipRoles      []transform.MembershipRole `json:"membershipRoles,omitempty"`
+	OrganisationUUID     string                     `json:"organisationUUID,omitempty"`
+	ParentUUIDs          []string                   `json:"parentUUIDs,omitempty"`
+	PersonUUID           string                     `json:"personUUID,omitempty"`
+	PrefLabel            string                     `json:"prefLabel,omitempty"`
+	PrefUUID             string                     `json:"prefUUID,omitempty"`
+	RelatedUUIDs         []string                   `json:"relatedUUIDs,omitempty"`
+	SupersededByUUIDs    []string                   `json:"supersededByUUIDs,omitempty"`
+	ImpliedByUUIDs       []string                   `json:"impliedByUUIDs,omitempty"`
+	HasFocusUUIDs        []string                   `json:"hasFocusUUIDs,omitempty"`
+	TerminationDate      string                     `json:"terminationDate,omitempty"`
+	TerminationDateEpoch int64                      `json:"terminationDateEpoch,omitempty"`
+	Types                []string                   `json:"types,omitempty"`
+	UUID                 string                     `json:"uuid,omitempty"`
+	IsDeprecated         bool                       `json:"isDeprecated,omitempty"`
 	// Organisations
-	CountryOfRiskUUID            string                                 `json:"countryOfRiskUUID,omitempty"`
-	CountryOfIncorporationUUID   string                                 `json:"countryOfIncorporationUUID,omitempty"`
-	CountryOfOperationsUUID      string                                 `json:"countryOfOperationsUUID,omitempty"`
-	ParentOrganisation           string                                 `json:"parentOrganisation,omitempty"`
-	NAICSIndustryClassifications []ontology.NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
+	CountryOfRiskUUID            string                                  `json:"countryOfRiskUUID,omitempty"`
+	CountryOfIncorporationUUID   string                                  `json:"countryOfIncorporationUUID,omitempty"`
+	CountryOfOperationsUUID      string                                  `json:"countryOfOperationsUUID,omitempty"`
+	ParentOrganisation           string                                  `json:"parentOrganisation,omitempty"`
+	NAICSIndustryClassifications []transform.NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 }
 
 func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.RelationshipConfig) (ontology.NewConcept, error) {
@@ -237,7 +238,7 @@ func filterRelationships(rels []ontology.Relationship) []ontology.Relationship {
 	return filtered
 }
 
-func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole {
+func cleanMembershipRoles(m []transform.MembershipRole) []transform.MembershipRole {
 	deleted := 0
 	for i := range m {
 		j := i - deleted
@@ -260,8 +261,8 @@ func cleanMembershipRoles(m []ontology.MembershipRole) []ontology.MembershipRole
 
 // cleanNAICS returns the same slice of NAICSIndustryClassification if all are valid,
 // skips the invalid ones, returns nil if the input slice doesn't have valid NAICSIndustryClassification objects
-func cleanNAICS(naics []ontology.NAICSIndustryClassification) []ontology.NAICSIndustryClassification {
-	var res []ontology.NAICSIndustryClassification
+func cleanNAICS(naics []transform.NAICSIndustryClassification) []transform.NAICSIndustryClassification {
+	var res []transform.NAICSIndustryClassification
 	for _, ic := range naics {
 		if ic.UUID != "" {
 			res = append(res, ic)

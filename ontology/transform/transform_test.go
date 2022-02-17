@@ -1,4 +1,4 @@
-package ontology
+package transform
 
 import (
 	"sort"
