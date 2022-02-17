@@ -13,6 +13,7 @@ import (
 	"github.com/mitchellh/hashstructure"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology/neo4j"
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 )
 
@@ -111,7 +112,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 }
 
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
-	var neoAggregateConcept neoAggregatedConcept
+	var neoAggregateConcept neo4j.NeoAggregatedConcept
 	query := &cmneo4j.Query{
 		Cypher: getReadStatement(),
 		Params: map[string]interface{}{
@@ -636,6 +637,20 @@ func populateConceptQueries(queryBatch []*cmneo4j.Query, aggregatedConcept ontol
 	}
 
 	return queryBatch
+}
+
+func filterSlice(a []string) []string {
+	r := []string{}
+	for _, str := range a {
+		if str != "" {
+			r = append(r, str)
+		}
+	}
+	if len(r) == 0 {
+		return nil
+	}
+
+	return r
 }
 
 func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConcept ontology.NewAggregatedConcept) []*cmneo4j.Query {

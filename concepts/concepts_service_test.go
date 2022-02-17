@@ -2455,6 +2455,59 @@ func TestPopulateConceptQueries(t *testing.T) {
 	}
 }
 
+func TestFilterSlice(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{
+			name:     "nil should return nil",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name:     "empty slice should return nil",
+			input:    []string{},
+			expected: nil,
+		},
+		{
+			name:     "one element empty string slice should return nil",
+			input:    []string{""},
+			expected: nil,
+		},
+		{
+			name:     "one element non-empty string slice should return itself",
+			input:    []string{"non-empty-string"},
+			expected: []string{"non-empty-string"},
+		},
+		{
+			name:     "multiple empty strings slice should return nil",
+			input:    []string{"", "", "", "", ""},
+			expected: nil,
+		},
+		{
+			name:     "multiple non-empty strings slice should return itself",
+			input:    []string{"multiple", "non-empty", "strings", "slice"},
+			expected: []string{"multiple", "non-empty", "strings", "slice"},
+		},
+		{
+			name:     "multiple strings slice should return slice with non-empty strings",
+			input:    []string{"multiple", "", "strings", "", "slice"},
+			expected: []string{"multiple", "strings", "slice"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := filterSlice(test.input)
+			if !cmp.Equal(test.expected, got) {
+				t.Error(cmp.Diff(test.expected, got))
+			}
+		})
+	}
+}
+
 func cypherBatchToString(queryBatch []*cmneo4j.Query) string {
 	var queries []string
 	for _, query := range queryBatch {
