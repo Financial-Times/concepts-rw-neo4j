@@ -1,4 +1,4 @@
-package concepts
+package neo4j
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 )
 
-type neoAggregatedConcept struct {
+type NeoAggregatedConcept struct {
 	AggregateHash         string                     `json:"aggregateHash,omitempty"`
 	Aliases               []string                   `json:"aliases,omitempty"`
 	DescriptionXML        string                     `json:"descriptionXML,omitempty"`
@@ -29,7 +29,7 @@ type neoAggregatedConcept struct {
 	PrefUUID              string                     `json:"prefUUID,omitempty"`
 	ScopeNote             string                     `json:"scopeNote,omitempty"`
 	ShortLabel            string                     `json:"shortLabel,omitempty"`
-	SourceRepresentations []neoConcept               `json:"sourceRepresentations"`
+	SourceRepresentations []NeoConcept               `json:"sourceRepresentations"`
 	Strapline             string                     `json:"strapline,omitempty"`
 	TerminationDate       string                     `json:"terminationDate,omitempty"`
 	TerminationDateEpoch  int64                      `json:"terminationDateEpoch,omitempty"`
@@ -58,7 +58,7 @@ type neoAggregatedConcept struct {
 	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
 }
 
-func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontology.Config) (ontology.NewAggregatedConcept, string, error) {
+func (nac NeoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontology.Config) (ontology.NewAggregatedConcept, string, error) {
 	typeName, err := mapper.MostSpecificType(nac.Types)
 	if err != nil {
 		return ontology.NewAggregatedConcept{}, "Returned concept had no recognized type", err
@@ -104,7 +104,7 @@ func (nac neoAggregatedConcept) ToOntologyNewAggregateConcept(ontologyCfg ontolo
 	return sortSources(aggregateConcept), "", nil
 }
 
-type neoConcept struct {
+type NeoConcept struct {
 	Authority            string                     `json:"authority,omitempty"`
 	AuthorityValue       string                     `json:"authorityValue,omitempty"`
 	BroaderUUIDs         []string                   `json:"broaderUUIDs,omitempty"`
@@ -136,7 +136,7 @@ type neoConcept struct {
 	NAICSIndustryClassifications []transform.NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
 }
 
-func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.RelationshipConfig) (ontology.NewConcept, error) {
+func (nc NeoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.RelationshipConfig) (ontology.NewConcept, error) {
 	conceptType, err := mapper.MostSpecificType(nc.Types)
 	if err != nil {
 		return ontology.NewConcept{}, err
@@ -206,21 +206,6 @@ func (nc neoConcept) ТоOntologyNewConcept(ontologyRels map[string]ontology.Rel
 		UUID:              nc.UUID,
 		IsDeprecated:      nc.IsDeprecated,
 	}, nil
-}
-
-func filterSlice(a []string) []string {
-	r := []string{}
-	for _, str := range a {
-		if str != "" {
-			r = append(r, str)
-		}
-	}
-
-	if len(r) == 0 {
-		return nil
-	}
-
-	return r
 }
 
 func filterRelationships(rels []ontology.Relationship) []ontology.Relationship {
