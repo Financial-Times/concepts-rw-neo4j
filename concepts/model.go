@@ -47,25 +47,3 @@ var constraintMap = map[string]string{
 	"IndustryClassification":      "uuid",
 	"NAICSIndustryClassification": "uuid",
 }
-
-var conceptLabels = [...]string{
-	"Concept",
-	"Classification",
-	"Section",
-	"Subject",
-	"SpecialReport",
-	"Topic",
-	"Location",
-	"Genre",
-	"Brand",
-	"Person",
-	"Organisation",
-	"MembershipRole",
-	"Membership",
-	"BoardRole",
-	"FinancialInstrument",
-	"Company",
-	"PublicCompany",
-	"IndustryClassification",
-	"NAICSIndustryClassification",
-}
