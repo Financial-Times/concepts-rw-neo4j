@@ -8,10 +8,10 @@ import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
 
-func TransformToNewAggregateConcept(old AggregatedConcept) (ontology.NewAggregatedConcept, error) {
+func ToNewAggregateConcept(old OldAggregatedConcept) (ontology.NewAggregatedConcept, error) {
 	var newSources []ontology.NewConcept
 	for _, s := range old.SourceRepresentations {
-		src, err := TransformToNewSourceConcept(s)
+		src, err := ToNewSourceConcept(s)
 		if err != nil {
 			return ontology.NewAggregatedConcept{}, err
 		}
@@ -69,13 +69,13 @@ func TransformToNewAggregateConcept(old AggregatedConcept) (ontology.NewAggregat
 	}, nil
 }
 
-func TransformToOldAggregateConcept(new ontology.NewAggregatedConcept) (AggregatedConcept, error) {
-	var oldSources []Concept
+func ToOldAggregateConcept(new ontology.NewAggregatedConcept) (OldAggregatedConcept, error) {
+	var oldSources []OldConcept
 	var roles []MembershipRole
 	for _, s := range new.SourceRepresentations {
-		oldSource, err := TransformToOldSourceConcept(s)
+		oldSource, err := ToOldSourceConcept(s)
 		if err != nil {
-			return AggregatedConcept{}, err
+			return OldAggregatedConcept{}, err
 		}
 
 		for _, r := range oldSource.MembershipRoles {
@@ -88,14 +88,14 @@ func TransformToOldAggregateConcept(new ontology.NewAggregatedConcept) (Aggregat
 		oldSources = append(oldSources, oldSource)
 	}
 
-	old := AggregatedConcept{}
+	old := OldAggregatedConcept{}
 	newPropsBytes, err := json.Marshal(new.Properties)
 	if err != nil {
-		return AggregatedConcept{}, err
+		return OldAggregatedConcept{}, err
 	}
 	err = json.Unmarshal(newPropsBytes, &old)
 	if err != nil {
-		return AggregatedConcept{}, err
+		return OldAggregatedConcept{}, err
 	}
 
 	old.PrefUUID = new.PrefUUID
@@ -116,7 +116,7 @@ func TransformToOldAggregateConcept(new ontology.NewAggregatedConcept) (Aggregat
 }
 
 // nolint: gocognit // TODO: simplify this function
-func TransformToNewSourceConcept(old Concept) (ontology.NewConcept, error) {
+func ToNewSourceConcept(old OldConcept) (ontology.NewConcept, error) {
 	oldMap := map[string]interface{}{}
 	oldBytes, _ := json.Marshal(old)
 	if err := json.Unmarshal(oldBytes, &oldMap); err != nil {
@@ -231,7 +231,7 @@ func TransformToNewSourceConcept(old Concept) (ontology.NewConcept, error) {
 }
 
 // nolint: gocognit // TODO: simplify this function
-func TransformToOldSourceConcept(new ontology.NewConcept) (Concept, error) {
+func ToOldSourceConcept(new ontology.NewConcept) (OldConcept, error) {
 	oldMap := map[string]interface{}{}
 	for _, rel := range new.Relationships {
 		if rel.UUID == "" {
@@ -284,10 +284,10 @@ func TransformToOldSourceConcept(new ontology.NewConcept) (Concept, error) {
 		}
 	}
 
-	old := Concept{}
+	old := OldConcept{}
 	relMapBytes, _ := json.Marshal(oldMap)
 	if err := json.Unmarshal(relMapBytes, &old); err != nil {
-		return Concept{}, err
+		return OldConcept{}, err
 	}
 
 	old.UUID = new.UUID
@@ -338,125 +338,4 @@ func toStringSlice(val interface{}) ([]string, bool) {
 		return nil, false
 	}
 	return result, true
-}
-
-type AggregatedConcept struct {
-	PrefUUID              string           `json:"prefUUID,omitempty"`
-	PrefLabel             string           `json:"prefLabel,omitempty"`
-	Type                  string           `json:"type,omitempty"`
-	Aliases               []string         `json:"aliases,omitempty"`
-	Strapline             string           `json:"strapline,omitempty"`
-	DescriptionXML        string           `json:"descriptionXML,omitempty"`
-	ImageURL              string           `json:"_imageUrl,omitempty"`
-	EmailAddress          string           `json:"emailAddress,omitempty"`
-	FacebookPage          string           `json:"facebookPage,omitempty"`
-	TwitterHandle         string           `json:"twitterHandle,omitempty"`
-	ScopeNote             string           `json:"scopeNote,omitempty"`
-	ShortLabel            string           `json:"shortLabel,omitempty"`
-	OrganisationUUID      string           `json:"organisationUUID,omitempty"`
-	PersonUUID            string           `json:"personUUID,omitempty"`
-	AggregatedHash        string           `json:"aggregateHash,omitempty"`
-	SourceRepresentations []Concept        `json:"sourceRepresentations,omitempty"`
-	MembershipRoles       []MembershipRole `json:"membershipRoles,omitempty"`
-	InceptionDate         string           `json:"inceptionDate,omitempty"`
-	TerminationDate       string           `json:"terminationDate,omitempty"`
-	InceptionDateEpoch    int64            `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch  int64            `json:"terminationDateEpoch,omitempty"`
-	FigiCode              string           `json:"figiCode,omitempty"`
-	IssuedBy              string           `json:"issuedBy,omitempty"`
-	// Organisations
-	ProperName             string   `json:"properName,omitempty"`
-	ShortName              string   `json:"shortName,omitempty"`
-	TradeNames             []string `json:"tradeNames,omitempty"`
-	FormerNames            []string `json:"formerNames,omitempty"`
-	CountryCode            string   `json:"countryCode,omitempty"`
-	CountryOfRisk          string   `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation string   `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations    string   `json:"countryOfOperations,omitempty"`
-	PostalCode             string   `json:"postalCode,omitempty"`
-	YearFounded            int      `json:"yearFounded,omitempty"`
-	LeiCode                string   `json:"leiCode,omitempty"`
-	IsDeprecated           bool     `json:"isDeprecated,omitempty"`
-	// Location
-	ISO31661 string `json:"iso31661,omitempty"`
-	// Person
-	Salutation string `json:"salutation,omitempty"`
-	BirthYear  int    `json:"birthYear,omitempty"`
-	// Industry Classifications
-	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
-}
-
-// Concept - could be any concept genre, subject etc
-type Concept struct {
-	UUID                 string           `json:"uuid,omitempty"`
-	PrefLabel            string           `json:"prefLabel,omitempty"`
-	Type                 string           `json:"type,omitempty"`
-	Authority            string           `json:"authority,omitempty"`
-	AuthorityValue       string           `json:"authorityValue,omitempty"`
-	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	Aliases              []string         `json:"aliases,omitempty"`
-	ParentUUIDs          []string         `json:"parentUUIDs,omitempty"`
-	Strapline            string           `json:"strapline,omitempty"`
-	DescriptionXML       string           `json:"descriptionXML,omitempty"`
-	ImageURL             string           `json:"_imageUrl,omitempty"`
-	EmailAddress         string           `json:"emailAddress,omitempty"`
-	FacebookPage         string           `json:"facebookPage,omitempty"`
-	TwitterHandle        string           `json:"twitterHandle,omitempty"`
-	ScopeNote            string           `json:"scopeNote,omitempty"`
-	ShortLabel           string           `json:"shortLabel,omitempty"`
-	BroaderUUIDs         []string         `json:"broaderUUIDs,omitempty"`
-	RelatedUUIDs         []string         `json:"relatedUUIDs,omitempty"`
-	SupersededByUUIDs    []string         `json:"supersededByUUIDs,omitempty"`
-	ImpliedByUUIDs       []string         `json:"impliedByUUIDs,omitempty"`
-	HasFocusUUIDs        []string         `json:"hasFocusUUIDs,omitempty"`
-	OrganisationUUID     string           `json:"organisationUUID,omitempty"`
-	PersonUUID           string           `json:"personUUID,omitempty"`
-	Hash                 string           `json:"hash,omitempty"`
-	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
-	InceptionDate        string           `json:"inceptionDate,omitempty"`
-	TerminationDate      string           `json:"terminationDate,omitempty"`
-	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
-	FigiCode             string           `json:"figiCode,omitempty"`
-	IssuedBy             string           `json:"issuedBy,omitempty"`
-	// Organisations
-	ProperName                   string                        `json:"properName,omitempty"`
-	ShortName                    string                        `json:"shortName,omitempty"`
-	TradeNames                   []string                      `json:"tradeNames,omitempty"`
-	FormerNames                  []string                      `json:"formerNames,omitempty"`
-	CountryCode                  string                        `json:"countryCode,omitempty"`
-	CountryOfRisk                string                        `json:"countryOfRisk,omitempty"`
-	CountryOfIncorporation       string                        `json:"countryOfIncorporation,omitempty"`
-	CountryOfOperations          string                        `json:"countryOfOperations,omitempty"`
-	CountryOfRiskUUID            string                        `json:"countryOfRiskUUID,omitempty"`
-	CountryOfIncorporationUUID   string                        `json:"countryOfIncorporationUUID,omitempty"`
-	CountryOfOperationsUUID      string                        `json:"countryOfOperationsUUID,omitempty"`
-	PostalCode                   string                        `json:"postalCode,omitempty"`
-	YearFounded                  int                           `json:"yearFounded,omitempty"`
-	LeiCode                      string                        `json:"leiCode,omitempty"`
-	ParentOrganisation           string                        `json:"parentOrganisation,omitempty"`
-	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
-	IsDeprecated                 bool                          `json:"isDeprecated,omitempty"`
-	// Location
-	ISO31661 string `json:"iso31661,omitempty"`
-	// Person
-	Salutation string `json:"salutation,omitempty"`
-	BirthYear  int    `json:"birthYear,omitempty"`
-	// Industry Classifications
-	IndustryIdentifier string `json:"industryIdentifier,omitempty"`
-}
-
-type MembershipRole struct {
-	RoleUUID             string `json:"membershipRoleUUID,omitempty"`
-	InceptionDate        string `json:"inceptionDate,omitempty"`
-	TerminationDate      string `json:"terminationDate,omitempty"`
-	InceptionDateEpoch   int64  `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch int64  `json:"terminationDateEpoch,omitempty"`
-}
-
-// NAICSIndustryClassification represents a pair of uuid of industry classification concept and the rank
-// of that industry classification for a particular organisation
-type NAICSIndustryClassification struct {
-	UUID string `json:"uuid,omitempty"`
-	Rank int    `json:"rank,omitempty"`
 }

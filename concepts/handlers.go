@@ -60,7 +60,7 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	agConcept := inst.(transform.AggregatedConcept)
+	agConcept := inst.(transform.OldAggregatedConcept)
 	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
 		writeJSONError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -118,7 +118,7 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	agConcept := obj.(transform.AggregatedConcept)
+	agConcept := obj.(transform.OldAggregatedConcept)
 	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
 		writeJSONError(w, err.Error(), http.StatusBadRequest)
 		return
