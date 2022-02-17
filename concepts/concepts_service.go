@@ -100,9 +100,9 @@ type equivalenceResult struct {
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
 	if err != nil {
-		return transform.AggregatedConcept{}, exists, err
+		return transform.OldAggregatedConcept{}, exists, err
 	}
-	aggregatedConcept, err := transform.TransformToOldAggregateConcept(newAggregatedConcept)
+	aggregatedConcept, err := transform.ToOldAggregateConcept(newAggregatedConcept)
 	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
 	return aggregatedConcept, exists, err
 }
@@ -143,8 +143,8 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
-	oldAggregatedConcept := thing.(transform.AggregatedConcept)
-	aggregatedConceptToWrite, err := transform.TransformToNewAggregateConcept(oldAggregatedConcept)
+	oldAggregatedConcept := thing.(transform.OldAggregatedConcept)
+	aggregatedConceptToWrite, err := transform.ToNewAggregateConcept(oldAggregatedConcept)
 	if err != nil {
 		return ConceptChanges{}, err
 	}
@@ -896,7 +896,7 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 
 //DecodeJSON - decode json
 func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
-	sub := transform.AggregatedConcept{}
+	sub := transform.OldAggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
