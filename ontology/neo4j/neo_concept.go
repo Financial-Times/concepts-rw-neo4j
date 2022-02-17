@@ -10,6 +10,29 @@ import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 )
 
+// TODO: Concept labels should be defined in the ontology config and not in the code
+var conceptLabels = []string{
+	"Concept",
+	"Classification",
+	"Section",
+	"Subject",
+	"SpecialReport",
+	"Topic",
+	"Location",
+	"Genre",
+	"Brand",
+	"Person",
+	"Organisation",
+	"MembershipRole",
+	"Membership",
+	"BoardRole",
+	"FinancialInstrument",
+	"Company",
+	"PublicCompany",
+	"IndustryClassification",
+	"NAICSIndustryClassification",
+}
+
 type NeoAggregatedConcept struct {
 	AggregateHash         string                     `json:"aggregateHash,omitempty"`
 	Aliases               []string                   `json:"aliases,omitempty"`

@@ -111,7 +111,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
 	var neoAggregateConcept neo4j.NeoAggregatedConcept
 	query := &cmneo4j.Query{
-		Cypher: getReadStatement(),
+		Cypher: neo4j.GetReadStatement(),
 		Params: map[string]interface{}{
 			"uuid": uuid,
 		},
@@ -590,7 +590,7 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 	var queryBatch []*cmneo4j.Query
 	for _, sr := range ac.SourceRepresentations {
 		deletePreviousSourceLabelsAndPropertiesQuery := &cmneo4j.Query{
-			Cypher: getDeleteStatement(),
+			Cypher: neo4j.GetDeleteStatement(),
 			Params: map[string]interface{}{
 				"id": sr.UUID,
 			},
@@ -606,7 +606,7 @@ func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
 			REMOVE t:%s
 			SET t={prefUUID:$acUUID}
-			DELETE rel`, getLabelsToRemove()),
+			DELETE rel`, neo4j.GetLabelsToRemove()),
 		Params: map[string]interface{}{
 			"acUUID": acUUID,
 		},
@@ -818,18 +818,6 @@ func getAllLabels(conceptType string) string {
 		parentType = mapper.ParentType(parentType)
 	}
 	return labels
-}
-
-//return existing labels
-func getLabelsToRemove() string {
-	var labelsToRemove string
-	for i, conceptType := range conceptLabels {
-		labelsToRemove += conceptType
-		if i+1 < len(conceptLabels) {
-			labelsToRemove += ":"
-		}
-	}
-	return labelsToRemove
 }
 
 //extract uuids of the source concepts

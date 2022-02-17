@@ -6,6 +6,7 @@ package concepts
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -28,6 +29,8 @@ import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 )
+
+var update = flag.Bool("update", false, "update the golden files for tests")
 
 //all uuids to be cleaned from DB
 const (
@@ -2832,4 +2835,36 @@ func cleanConcept(c transform.OldAggregatedConcept) transform.OldAggregatedConce
 func cleanHash(c transform.OldAggregatedConcept) transform.OldAggregatedConcept {
 	c.AggregatedHash = ""
 	return c
+}
+
+func getFromGoldenFile(t *testing.T, fileName string, actual string, update bool) string {
+	t.Helper()
+
+	if update {
+		file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+		if err != nil {
+			t.Fatalf("failed to open golden file %s: %v", fileName, err)
+		}
+		defer file.Close()
+
+		_, err = file.WriteString(actual)
+		if err != nil {
+			t.Fatalf("failed writing to golden file %s: %v", fileName, err)
+		}
+
+		return actual
+	}
+
+	file, err := os.OpenFile(fileName, os.O_RDONLY, 0755)
+	if err != nil {
+		t.Fatalf("failed to open golden file %s: %v", fileName, err)
+	}
+	defer file.Close()
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		t.Fatalf("failed opening golden file %s: %v", fileName, err)
+	}
+
+	return string(content)
 }
