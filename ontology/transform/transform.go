@@ -1,17 +1,19 @@
-package ontology
+package transform
 
 import (
 	"encoding/json"
 	"fmt"
 	"sort"
+
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
 
-func TransformToNewAggregateConcept(old AggregatedConcept) (NewAggregatedConcept, error) {
-	var newSources []NewConcept
+func TransformToNewAggregateConcept(old AggregatedConcept) (ontology.NewAggregatedConcept, error) {
+	var newSources []ontology.NewConcept
 	for _, s := range old.SourceRepresentations {
 		src, err := TransformToNewSourceConcept(s)
 		if err != nil {
-			return NewAggregatedConcept{}, err
+			return ontology.NewAggregatedConcept{}, err
 		}
 		newSources = append(newSources, src)
 	}
@@ -19,11 +21,11 @@ func TransformToNewAggregateConcept(old AggregatedConcept) (NewAggregatedConcept
 	oldMap := map[string]interface{}{}
 	oldBytes, _ := json.Marshal(old)
 	if err := json.Unmarshal(oldBytes, &oldMap); err != nil {
-		return NewAggregatedConcept{}, err
+		return ontology.NewAggregatedConcept{}, err
 	}
 
 	props := map[string]interface{}{}
-	for field, cfg := range GetConfig().Fields {
+	for field, cfg := range ontology.GetConfig().Fields {
 		var v interface{}
 		val, ok := oldMap[field]
 		if !ok {
@@ -33,24 +35,24 @@ func TransformToNewAggregateConcept(old AggregatedConcept) (NewAggregatedConcept
 		switch fieldType {
 		case "string":
 			if v, ok = toString(val); !ok {
-				return NewAggregatedConcept{}, getInvalidPropValueError(field, v)
+				return ontology.NewAggregatedConcept{}, ontology.InvalidPropValueError(field, v)
 			}
 		case "[]string":
 			if v, ok = toStringSlice(val); !ok {
-				return NewAggregatedConcept{}, getInvalidPropValueError(field, v)
+				return ontology.NewAggregatedConcept{}, ontology.InvalidPropValueError(field, v)
 			}
 		case "int":
 			if v, ok = toInt(val); !ok {
-				return NewAggregatedConcept{}, getInvalidPropValueError(field, v)
+				return ontology.NewAggregatedConcept{}, ontology.InvalidPropValueError(field, v)
 			}
 		default:
-			return NewAggregatedConcept{},
-				fmt.Errorf("unsupported field type '%s' for prop '%s': %w", fieldType, field, ErrUnknownProperty)
+			return ontology.NewAggregatedConcept{},
+				fmt.Errorf("unsupported field type '%s' for prop '%s': %w", fieldType, field, ontology.ErrUnknownProperty)
 		}
 		props[field] = v
 	}
 
-	return NewAggregatedConcept{
+	return ontology.NewAggregatedConcept{
 		Properties:            props,
 		PrefUUID:              old.PrefUUID,
 		PrefLabel:             old.PrefLabel,
@@ -67,7 +69,7 @@ func TransformToNewAggregateConcept(old AggregatedConcept) (NewAggregatedConcept
 	}, nil
 }
 
-func TransformToOldAggregateConcept(new NewAggregatedConcept) (AggregatedConcept, error) {
+func TransformToOldAggregateConcept(new ontology.NewAggregatedConcept) (AggregatedConcept, error) {
 	var oldSources []Concept
 	var roles []MembershipRole
 	for _, s := range new.SourceRepresentations {
@@ -114,15 +116,15 @@ func TransformToOldAggregateConcept(new NewAggregatedConcept) (AggregatedConcept
 }
 
 // nolint: gocognit // TODO: simplify this function
-func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
+func TransformToNewSourceConcept(old Concept) (ontology.NewConcept, error) {
 	oldMap := map[string]interface{}{}
 	oldBytes, _ := json.Marshal(old)
 	if err := json.Unmarshal(oldBytes, &oldMap); err != nil {
-		return NewConcept{}, err
+		return ontology.NewConcept{}, err
 	}
 
-	rels := []Relationship{}
-	for rel, relCfg := range GetConfig().Relationships {
+	rels := []ontology.Relationship{}
+	for rel, relCfg := range ontology.GetConfig().Relationships {
 		if _, ok := oldMap[relCfg.ConceptField]; !ok {
 			continue
 		}
@@ -131,7 +133,7 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 
 		if relCfg.OneToOne {
 			uuid := val.(string)
-			rels = append(rels, Relationship{UUID: uuid, Label: rel})
+			rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel})
 		} else {
 			for _, v := range val.([]interface{}) {
 				if len(relCfg.Properties) > 0 {
@@ -154,7 +156,7 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 					}
 					uuid, uuidKey, ok := extractUUIDFunc(relMap)
 
-					reTypeProps := func(props map[string]interface{}, config RelationshipConfig) (map[string]interface{}, error) {
+					reTypeProps := func(props map[string]interface{}, config ontology.RelationshipConfig) (map[string]interface{}, error) {
 						for field, fieldType := range config.Properties {
 							var v interface{}
 							val, ok := props[field]
@@ -166,23 +168,23 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 							switch fieldType {
 							case "date":
 								if v, ok = toString(val); !ok {
-									return nil, getInvalidPropValueError(field, v)
+									return nil, ontology.InvalidPropValueError(field, v)
 								}
 							case "string":
 								if v, ok = toString(val); !ok {
-									return nil, getInvalidPropValueError(field, v)
+									return nil, ontology.InvalidPropValueError(field, v)
 								}
 							case "[]string":
 								if v, ok = toStringSlice(val); !ok {
-									return nil, getInvalidPropValueError(field, v)
+									return nil, ontology.InvalidPropValueError(field, v)
 								}
 							case "int":
 								if v, ok = toInt(val); !ok {
-									return nil, getInvalidPropValueError(field, v)
+									return nil, ontology.InvalidPropValueError(field, v)
 								}
 							default:
 								return nil,
-									fmt.Errorf("unsupported field type '%s' for prop '%s': %w", fieldType, field, ErrUnknownProperty)
+									fmt.Errorf("unsupported field type '%s' for prop '%s': %w", fieldType, field, ontology.ErrUnknownProperty)
 							}
 							props[field] = v
 						}
@@ -193,13 +195,13 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 						delete(relMap, uuidKey)
 						relMap, err := reTypeProps(relMap, relCfg)
 						if err != nil {
-							return NewConcept{}, err
+							return ontology.NewConcept{}, err
 						}
-						rels = append(rels, Relationship{UUID: uuid, Label: rel, Properties: relMap})
+						rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel, Properties: relMap})
 					}
 				} else {
 					uuid := v.(string)
-					rels = append(rels, Relationship{UUID: uuid, Label: rel})
+					rels = append(rels, ontology.Relationship{UUID: uuid, Label: rel})
 				}
 			}
 		}
@@ -213,7 +215,7 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 		return rels[i].Label < rels[j].Label
 	})
 
-	return NewConcept{
+	return ontology.NewConcept{
 		Relationships:     rels,
 		UUID:              old.UUID,
 		PrefLabel:         old.PrefLabel,
@@ -229,18 +231,18 @@ func TransformToNewSourceConcept(old Concept) (NewConcept, error) {
 }
 
 // nolint: gocognit // TODO: simplify this function
-func TransformToOldSourceConcept(new NewConcept) (Concept, error) {
+func TransformToOldSourceConcept(new ontology.NewConcept) (Concept, error) {
 	oldMap := map[string]interface{}{}
 	for _, rel := range new.Relationships {
 		if rel.UUID == "" {
 			continue
 		}
 
-		if _, ok := GetConfig().Relationships[rel.Label]; !ok {
+		if _, ok := ontology.GetConfig().Relationships[rel.Label]; !ok {
 			continue
 		}
 
-		relCfg := GetConfig().Relationships[rel.Label]
+		relCfg := ontology.GetConfig().Relationships[rel.Label]
 		if relCfg.OneToOne {
 			oldMap[relCfg.ConceptField] = rel.UUID
 			continue

@@ -13,6 +13,7 @@ import (
 	"github.com/mitchellh/hashstructure"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 )
 
 const (
@@ -99,9 +100,9 @@ type equivalenceResult struct {
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
 	if err != nil {
-		return ontology.AggregatedConcept{}, exists, err
+		return transform.AggregatedConcept{}, exists, err
 	}
-	aggregatedConcept, err := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
+	aggregatedConcept, err := transform.TransformToOldAggregateConcept(newAggregatedConcept)
 	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
 	return aggregatedConcept, exists, err
 }
@@ -142,8 +143,8 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
-	oldAggregatedConcept := thing.(ontology.AggregatedConcept)
-	aggregatedConceptToWrite, err := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
+	oldAggregatedConcept := thing.(transform.AggregatedConcept)
+	aggregatedConceptToWrite, err := transform.TransformToNewAggregateConcept(oldAggregatedConcept)
 	if err != nil {
 		return ConceptChanges{}, err
 	}
@@ -895,7 +896,7 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 
 //DecodeJSON - decode json
 func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
-	sub := ontology.AggregatedConcept{}
+	sub := transform.AggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
