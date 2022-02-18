@@ -2282,14 +2282,12 @@ func TestSetCanonicalProps(t *testing.T) {
 		{
 			name: "Concept with non-empty valid values should return valid props",
 			concept: ontology.NewAggregatedConcept{
-				PrefLabel:            "prefLabel value",
-				AggregatedHash:       "aggregateHash value",
-				InceptionDate:        "inceptionDate value",
-				TerminationDate:      "terminationDate value",
-				InceptionDateEpoch:   1,
-				TerminationDateEpoch: 2,
-				FigiCode:             "figiCode value",
-				IsDeprecated:         true,
+				PrefLabel:       "prefLabel value",
+				AggregatedHash:  "aggregateHash value",
+				InceptionDate:   "inceptionDate value",
+				TerminationDate: "terminationDate value",
+				FigiCode:        "figiCode value",
+				IsDeprecated:    true,
 				Properties: map[string]interface{}{
 					"strapline":              "strapline value",
 					"descriptionXML":         "descriptionXML value",
@@ -2324,8 +2322,6 @@ func TestSetCanonicalProps(t *testing.T) {
 				"aggregateHash":          "aggregateHash value",
 				"inceptionDate":          "inceptionDate value",
 				"terminationDate":        "terminationDate value",
-				"inceptionDateEpoch":     int64(1),
-				"terminationDateEpoch":   int64(2),
 				"figiCode":               "figiCode value",
 				"isDeprecated":           true,
 				"strapline":              "strapline value",
@@ -2420,7 +2416,7 @@ func TestPopulateConceptQueries(t *testing.T) {
 		},
 		{
 			name:           "Aggregate concept with HAS_MEMBER, HAS_ORGANISATION & HAS_ROLE relationships",
-			conceptFile:    "updated-membership.json",
+			conceptFile:    "membership-with-roles-and-org.json",
 			goldenFileName: "testdata/concept-queries-membership-rels.golden",
 		},
 		{
@@ -2473,70 +2469,6 @@ func cypherBatchToString(queryBatch []*cmneo4j.Query) string {
 	}
 
 	return strings.Join(queries, "\n==============================================================================\n")
-}
-
-func TestProcessMembershipRoles(t *testing.T) {
-	defer cleanDB(t)
-	oldAggregatedConcept := getAggregatedConcept(t, "membership.json")
-	aggregateConcept, err := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
-	assert.NoError(t, err)
-	processMembershipRoles(&aggregateConcept)
-
-	expected := membWithProcessedMembRoles()
-	if !cmp.Equal(expected, aggregateConcept) {
-		t.Errorf("Test %s failed: Concepts were not equal:\n%s", "TestProcessMembershipRoles", cmp.Diff(expected, aggregateConcept))
-	}
-}
-
-func membWithProcessedMembRoles() ontology.NewAggregatedConcept {
-	return ontology.NewAggregatedConcept{
-		Properties: map[string]interface{}{
-			"salutation": "Mr",
-			"birthYear":  2018,
-		},
-		PrefUUID:         "cbadd9a7-5da9-407a-a5ec-e379460991f2",
-		PrefLabel:        "Membership Pref Label",
-		Type:             "Membership",
-		OrganisationUUID: "7f40d291-b3cb-47c4-9bce-18413e9350cf",
-		PersonUUID:       "35946807-0205-4fc1-8516-bb1ae141659b",
-		InceptionDate:    "2016-01-01",
-		TerminationDate:  "2017-02-02",
-		SourceRepresentations: []ontology.NewConcept{
-			{
-				Relationships: []ontology.Relationship{
-					{
-						UUID:  "35946807-0205-4fc1-8516-bb1ae141659b",
-						Label: "HAS_MEMBER",
-					},
-					{
-						UUID:  "7f40d291-b3cb-47c4-9bce-18413e9350cf",
-						Label: "HAS_ORGANISATION",
-					},
-				},
-				UUID:            "cbadd9a7-5da9-407a-a5ec-e379460991f2",
-				PrefLabel:       "Membership Pref Label",
-				Type:            "Membership",
-				Authority:       "Smartlogic",
-				AuthorityValue:  "746464",
-				InceptionDate:   "2016-01-01",
-				TerminationDate: "2017-02-02",
-				MembershipRoles: []ontology.MembershipRole{
-					{
-						RoleUUID:             "f807193d-337b-412f-b32c-afa14b385819",
-						InceptionDate:        "2016-01-01",
-						TerminationDate:      "2017-02-02",
-						InceptionDateEpoch:   1451606400,
-						TerminationDateEpoch: 1485993600,
-					},
-					{
-						RoleUUID:           "fe94adc6-ca44-438f-ad8f-0188d4a74987",
-						InceptionDate:      "2011-06-27",
-						InceptionDateEpoch: 1309132800,
-					},
-				},
-			},
-		},
-	}
 }
 
 func readConceptAndCompare(t *testing.T, payload ontology.AggregatedConcept, testName string, ignoredFields ...string) {

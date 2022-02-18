@@ -109,6 +109,17 @@ relationships:
     conceptField: "parentOrganisation"
     oneToOne: true
     neoCreate: true
+  HAS_INDUSTRY_CLASSIFICATION:
+    conceptField: "naicsIndustryClassifications"
+    neoCreate: true
+    properties:
+      rank: int
+  HAS_ROLE:
+    conceptField: "membershipRoles"
+    neoCreate: true
+    properties:
+      inceptionDate: date
+      terminationDate: date
 authorities:
   - TME
   - FACTSET

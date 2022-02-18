@@ -27,23 +27,6 @@ var ErrUnexpectedReadResult = errors.New("unexpected read result count")
 
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
-var relationships = map[string]ontology.RelationshipConfig{
-	"HAS_ROLE": {
-		ConceptField: "membershipRoles",
-		Properties: []string{
-			"inceptionDate",
-			"terminationDate",
-			"inceptionDateEpoch",
-			"terminationDateEpoch",
-		},
-	},
-	"HAS_INDUSTRY_CLASSIFICATION": {
-		ConceptField:    "naicsIndustryClassifications",
-		Properties:      []string{"rank"},
-		ToNodeWithLabel: "NAICSIndustryClassification",
-	},
-}
-
 // ConceptService - CypherDriver - CypherDriver
 type ConceptService struct {
 	driver *cmneo4j.Driver
@@ -188,8 +171,6 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		s.log.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Error("Read request for existing concordance resulted in error")
 		return ConceptChanges{}, err
 	}
-
-	processMembershipRoles(&aggregatedConceptToWrite)
 
 	var queryBatch []*cmneo4j.Query
 	var prefUUIDsToBeDeletedQueryBatch []*cmneo4j.Query
@@ -654,7 +635,7 @@ func populateConceptQueries(queryBatch []*cmneo4j.Query, aggregatedConcept ontol
 			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, relIDs, rel.Label, relCfg.NeoCreate)...)
 
 			if len(relCfg.Properties) > 0 {
-				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel)...)
+				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel, relCfg)...)
 			}
 		}
 	}
@@ -714,60 +695,6 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*cmneo4j.Quer
 	relIDs := filterSlice([]string{concept.IssuedBy})
 	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
 
-	for _, naics := range concept.NAICSIndustryClassifications {
-		if naics.UUID != "" {
-			writeNAICS := &cmneo4j.Query{
-				Cypher: `MERGE (org:Thing {uuid: $uuid})
-								MERGE (naicsIC:Thing {uuid: $naicsUUID})
-								MERGE (org)-[:HAS_INDUSTRY_CLASSIFICATION{rank:$rank}]->(naicsIC)`,
-				Params: map[string]interface{}{
-					"naicsUUID": naics.UUID,
-					"rank":      naics.Rank,
-					"uuid":      concept.UUID,
-				},
-			}
-			queryBatch = append(queryBatch, writeNAICS)
-		}
-	}
-
-	for _, membershipRole := range concept.MembershipRoles {
-		params := map[string]interface{}{
-			"inceptionDate":        nil,
-			"inceptionDateEpoch":   nil,
-			"terminationDate":      nil,
-			"terminationDateEpoch": nil,
-			"roleUUID":             membershipRole.RoleUUID,
-			"nodeUUID":             concept.UUID,
-		}
-		if membershipRole.InceptionDate != "" {
-			params["inceptionDate"] = membershipRole.InceptionDate
-		}
-		if membershipRole.InceptionDateEpoch > 0 {
-			params["inceptionDateEpoch"] = membershipRole.InceptionDateEpoch
-		}
-		if membershipRole.TerminationDate != "" {
-			params["terminationDate"] = membershipRole.TerminationDate
-		}
-		if membershipRole.TerminationDateEpoch > 0 {
-			params["terminationDateEpoch"] = membershipRole.TerminationDateEpoch
-		}
-		writeParent := &cmneo4j.Query{
-			Cypher: `MERGE (node:Thing{uuid: $nodeUUID})
-							MERGE (role:Thing{uuid: $roleUUID})
-								ON CREATE SET
-									role.uuid = $roleUUID
-							MERGE (node)-[rel:HAS_ROLE]->(role)
-								ON CREATE SET
-									rel.inceptionDate = $inceptionDate,
-									rel.inceptionDateEpoch = $inceptionDateEpoch,
-									rel.terminationDate = $terminationDate,
-									rel.terminationDateEpoch = $terminationDateEpoch
-							`,
-			Params: params,
-		}
-		queryBatch = append(queryBatch, writeParent)
-	}
-
 	queryBatch = append(queryBatch, createConceptQuery)
 	return queryBatch
 }
@@ -806,7 +733,24 @@ func createRelQueries(conceptID string, relationshipIDs []string, relationshipTy
 	return queryBatch
 }
 
-func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*cmneo4j.Query {
+func setRelPropsQueries(conceptID string, rel ontology.Relationship, cfg ontology.RelationshipConfig) []*cmneo4j.Query {
+	props := map[string]interface{}{}
+	for label, t := range cfg.Properties {
+		val := rel.Properties[label]
+		props[label] = val
+		if val != nil && t == ontology.PropertyTypeDate {
+			str, ok := rel.Properties[label].(string)
+			if !ok {
+				continue
+			}
+			unixTime := getEpoch(str)
+			// in the old times we skipped unix timestamps with valuse less or equal 0
+			if unixTime <= 0 {
+				continue
+			}
+			props[label+"Epoch"] = unixTime
+		}
+	}
 	var queryBatch []*cmneo4j.Query
 	setRelProps := &cmneo4j.Query{
 		Cypher: fmt.Sprintf(`
@@ -817,12 +761,28 @@ func setRelPropsQueries(conceptID string, rel ontology.Relationship) []*cmneo4j.
 		Params: map[string]interface{}{
 			"uuid":      conceptID,
 			"otherUUID": rel.UUID,
-			"relProps":  rel.Properties,
+			"relProps":  props,
 		},
 	}
 
 	queryBatch = append(queryBatch, setRelProps)
 	return queryBatch
+}
+
+func getEpoch(t string) int64 {
+	if t == "" {
+		return 0
+	}
+
+	tt, err := time.Parse(iso8601DateOnly, t)
+	if err != nil {
+		return 0
+	}
+	unixTime := tt.Unix()
+	if unixTime < 0 {
+		return 0
+	}
+	return unixTime
 }
 
 //Create canonical node for any concepts that were removed from a concordance and thus would become lone
@@ -940,12 +900,6 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	if canonical.TerminationDate != "" {
 		nodeProps["terminationDate"] = canonical.TerminationDate
 	}
-	if canonical.InceptionDateEpoch > 0 {
-		nodeProps["inceptionDateEpoch"] = canonical.InceptionDateEpoch
-	}
-	if canonical.TerminationDateEpoch > 0 {
-		nodeProps["terminationDateEpoch"] = canonical.TerminationDateEpoch
-	}
 
 	return nodeProps
 }
@@ -976,41 +930,19 @@ func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }
 
-func processMembershipRoles(c *ontology.NewAggregatedConcept) {
-	for _, s := range c.SourceRepresentations {
-		s.MembershipRoles = cleanMembershipRoles(s.MembershipRoles)
-		for i := range s.MembershipRoles {
-			s.MembershipRoles[i].InceptionDateEpoch = getEpoch(s.MembershipRoles[i].InceptionDate)
-			s.MembershipRoles[i].TerminationDateEpoch = getEpoch(s.MembershipRoles[i].TerminationDate)
-		}
-	}
-}
-
-func getEpoch(t string) int64 {
-	if t == "" {
-		return 0
-	}
-
-	tt, _ := time.Parse(iso8601DateOnly, t)
-	return tt.Unix()
-}
-
 func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	var cleanSources []ontology.NewConcept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewConcept{
-			Relationships:   source.Relationships,
-			UUID:            source.UUID,
-			PrefLabel:       source.PrefLabel,
-			Type:            source.Type,
-			Authority:       source.Authority,
-			AuthorityValue:  source.AuthorityValue,
-			MembershipRoles: source.MembershipRoles,
-			IssuedBy:        source.IssuedBy,
-			FigiCode:        source.FigiCode,
-			IsDeprecated:    source.IsDeprecated,
-			// Organisations
-			NAICSIndustryClassifications: source.NAICSIndustryClassifications,
+			Relationships:  source.Relationships,
+			UUID:           source.UUID,
+			PrefLabel:      source.PrefLabel,
+			Type:           source.Type,
+			Authority:      source.Authority,
+			AuthorityValue: source.AuthorityValue,
+			IssuedBy:       source.IssuedBy,
+			FigiCode:       source.FigiCode,
+			IsDeprecated:   source.IsDeprecated,
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}
@@ -1028,15 +960,31 @@ func stringInArr(searchFor string, values []string) bool {
 }
 
 func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
+	var inceptionDate string
+	var terminationDate string
+	for _, r := range source.Relationships {
+		if r.Label != "HAS_ROLE" {
+			continue
+		}
+		if v, ok := r.Properties["inceptionDate"]; ok {
+			if s, ok := v.(string); ok {
+				inceptionDate = s
+			}
+		}
+		if v, ok := r.Properties["terminationDate"]; ok {
+			if s, ok := v.(string); ok {
+				terminationDate = s
+			}
+		}
+		break
+	}
 	return ontology.NewAggregatedConcept{
-		AggregatedHash:       source.Hash,
-		InceptionDate:        source.InceptionDate,
-		InceptionDateEpoch:   source.InceptionDateEpoch,
-		IssuedBy:             source.IssuedBy,
-		PrefLabel:            source.PrefLabel,
-		TerminationDate:      source.TerminationDate,
-		TerminationDateEpoch: source.TerminationDateEpoch,
-		Type:                 source.Type,
-		IsDeprecated:         source.IsDeprecated,
+		AggregatedHash:  source.Hash,
+		InceptionDate:   inceptionDate,
+		IssuedBy:        source.IssuedBy,
+		PrefLabel:       source.PrefLabel,
+		TerminationDate: terminationDate,
+		Type:            source.Type,
+		IsDeprecated:    source.IsDeprecated,
 	}
 }

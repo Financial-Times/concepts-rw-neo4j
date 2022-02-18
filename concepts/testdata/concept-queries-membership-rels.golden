@@ -4,31 +4,14 @@ Statement: MERGE (n:Thing {prefUUID: $prefUUID})
 Paremeters: {
   "allprops": {
     "aggregateHash": "",
-    "inceptionDate": "2011-06-27",
+    "birthYear": 2018,
+    "inceptionDate": "2016-01-01",
     "prefLabel": "Membership Pref Label",
-    "prefUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+    "prefUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2",
+    "salutation": "Mr",
+    "terminationDate": "2017-02-02"
   },
   "prefUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
-}
-==============================================================================
-Statement: MERGE (node:Thing{uuid: $nodeUUID})
-							MERGE (role:Thing{uuid: $roleUUID})
-								ON CREATE SET
-									role.uuid = $roleUUID
-							MERGE (node)-[rel:HAS_ROLE]->(role)
-								ON CREATE SET
-									rel.inceptionDate = $inceptionDate,
-									rel.inceptionDateEpoch = $inceptionDateEpoch,
-									rel.terminationDate = $terminationDate,
-									rel.terminationDateEpoch = $terminationDateEpoch
-							,
-Paremeters: {
-  "inceptionDate": "2011-06-27",
-  "inceptionDateEpoch": null,
-  "nodeUUID": "cbadd9a7-5da9-407a-a5ec-e379460991f2",
-  "roleUUID": "fe94adc6-ca44-438f-ad8f-0188d4a74987",
-  "terminationDate": null,
-  "terminationDateEpoch": null
 }
 ==============================================================================
 Statement: MERGE (n:Thing {uuid: $uuid})
@@ -57,7 +40,7 @@ Statement:
 		MERGE (thing)-[:HAS_MEMBER]->(other)
 	,
 Paremeters: {
-  "id": "69a8e241-2bfb-4aed-a441-8489d813c5f7",
+  "id": "35946807-0205-4fc1-8516-bb1ae141659b",
   "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 }
 ==============================================================================
@@ -67,6 +50,56 @@ Statement:
 		MERGE (thing)-[:HAS_ORGANISATION]->(other)
 	,
 Paremeters: {
-  "id": "7ccf2673-2ec0-4b42-b69e-9a2460b945c6",
+  "id": "7f40d291-b3cb-47c4-9bce-18413e9350cf",
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
+		MERGE (thing)-[:HAS_ROLE]->(other)
+	,
+Paremeters: {
+  "id": "f807193d-337b-412f-b32c-afa14b385819",
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: 
+			MATCH (t:Thing {uuid: $uuid})
+			MATCH (other:Thing {uuid: $otherUUID})
+			MATCH (t)-[rel:HAS_ROLE]->(other)
+			set rel=$relProps,
+Paremeters: {
+  "otherUUID": "f807193d-337b-412f-b32c-afa14b385819",
+  "relProps": {
+    "inceptionDate": "2016-01-01",
+    "inceptionDateEpoch": 1451606400,
+    "terminationDate": "2017-02-02",
+    "terminationDateEpoch": 1485993600
+  },
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: 
+		MERGE (thing:Thing {uuid: $uuid})
+		MERGE (other:Thing {uuid: $id})
+		MERGE (thing)-[:HAS_ROLE]->(other)
+	,
+Paremeters: {
+  "id": "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+  "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
+}
+==============================================================================
+Statement: 
+			MATCH (t:Thing {uuid: $uuid})
+			MATCH (other:Thing {uuid: $otherUUID})
+			MATCH (t)-[rel:HAS_ROLE]->(other)
+			set rel=$relProps,
+Paremeters: {
+  "otherUUID": "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+  "relProps": {
+    "inceptionDate": "1968-01-01",
+    "terminationDate": "1968-01-01"
+  },
   "uuid": "cbadd9a7-5da9-407a-a5ec-e379460991f2"
 }

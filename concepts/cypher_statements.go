@@ -92,10 +92,6 @@ func getOptionalMatchesForRead() []string {
 		relOptionalMatches = append(relOptionalMatches, getOptionalMatchForRead(relLabel, relCfg))
 	}
 
-	for relLabel, relCfg := range relationships {
-		relOptionalMatches = append(relOptionalMatches, getOptionalMatchForRead(relLabel, relCfg))
-	}
-
 	sort.Strings(relOptionalMatches)
 	return relOptionalMatches
 }
@@ -106,10 +102,6 @@ func getWithMatchedForRead() []string {
 		withMatched = append(withMatched, getMatchedForRead(relLabel, relCfg)...)
 	}
 
-	for relLabel, relCfg := range relationships {
-		withMatched = append(withMatched, getMatchedForRead(relLabel, relCfg)...)
-	}
-
 	sort.Strings(withMatched)
 	return withMatched
 }
@@ -117,10 +109,6 @@ func getWithMatchedForRead() []string {
 func getSourceRelsForRead() []string {
 	var sourceRels []string
 	for relLabel, relCfg := range ontology.GetConfig().Relationships {
-		sourceRels = append(sourceRels, getSourceRelForRead(relLabel, relCfg))
-	}
-
-	for relLabel, relCfg := range relationships {
 		sourceRels = append(sourceRels, getSourceRelForRead(relLabel, relCfg))
 	}
 
@@ -144,10 +132,6 @@ func getOptionalMatchesForDelete() []string {
 		relOptionalMatches = append(relOptionalMatches, getOptionalMatchForDelete(relLabel))
 	}
 
-	for relLabel := range relationships {
-		relOptionalMatches = append(relOptionalMatches, getOptionalMatchForDelete(relLabel))
-	}
-
 	sort.Strings(relOptionalMatches)
 	return relOptionalMatches
 }
@@ -155,12 +139,6 @@ func getOptionalMatchesForDelete() []string {
 func getRelNamesForDelete() []string {
 	var relNames []string
 	for relLabel := range ontology.GetConfig().Relationships {
-		r := toCamelCase(relLabel)
-		relName := r + "Rel"
-		relNames = append(relNames, relName)
-	}
-
-	for relLabel := range relationships {
 		r := toCamelCase(relLabel)
 		relName := r + "Rel"
 		relNames = append(relNames, relName)
@@ -219,10 +197,14 @@ func getSourceRelForRead(relLabel string, relCfg ontology.RelationshipConfig) st
 		return fmt.Sprintf("%s: collect(DISTINCT %s.uuid)", relCfg.ConceptField, nodeName)
 	} else {
 		var relProps []string
-		for _, relProp := range relCfg.Properties {
+		for relProp, propType := range relCfg.Properties {
 			relProps = append(relProps, fmt.Sprintf("%s: %s.%s", relProp, relName, relProp))
+			if propType == ontology.PropertyTypeDate {
+				relProps = append(relProps, fmt.Sprintf("%sEpoch: %s.%sEpoch", relProp, relName, relProp))
+			}
 		}
-
+		// the sort is not needed for the normal functionality, but is useful when testing
+		sort.Strings(relProps)
 		uuidField := "UUID"
 		if relLabel == "HAS_ROLE" {
 			uuidField = "membershipRoleUUID"

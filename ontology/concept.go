@@ -142,8 +142,6 @@ type NewAggregatedConcept struct {
 	SourceRepresentations []NewConcept           `json:"sourceRepresentations,omitempty"`
 	InceptionDate         string                 `json:"inceptionDate,omitempty"`
 	TerminationDate       string                 `json:"terminationDate,omitempty"`
-	InceptionDateEpoch    int64                  `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch  int64                  `json:"terminationDateEpoch,omitempty"`
 	FigiCode              string                 `json:"figiCode,omitempty"`
 	IssuedBy              string                 `json:"issuedBy,omitempty"`
 	IsDeprecated          bool                   `json:"isDeprecated,omitempty"`
@@ -181,24 +179,18 @@ func (c NewAggregatedConcept) GetCanonicalAuthority() string {
 
 // NewConcept - could be any concept genre, subject etc
 type NewConcept struct {
-	Relationships        []Relationship   `json:"relationships"`
-	UUID                 string           `json:"uuid,omitempty"`
-	PrefLabel            string           `json:"prefLabel,omitempty"`
-	Type                 string           `json:"type,omitempty"`
-	Authority            string           `json:"authority,omitempty"`
-	AuthorityValue       string           `json:"authorityValue,omitempty"`
-	LastModifiedEpoch    int              `json:"lastModifiedEpoch,omitempty"`
-	Hash                 string           `json:"hash,omitempty"`
-	MembershipRoles      []MembershipRole `json:"membershipRoles,omitempty"`
-	InceptionDate        string           `json:"inceptionDate,omitempty"`
-	TerminationDate      string           `json:"terminationDate,omitempty"`
-	InceptionDateEpoch   int64            `json:"inceptionDateEpoch,omitempty"`
-	TerminationDateEpoch int64            `json:"terminationDateEpoch,omitempty"`
-	FigiCode             string           `json:"figiCode,omitempty"`
-	IssuedBy             string           `json:"issuedBy,omitempty"`
+	Relationships     []Relationship `json:"relationships"`
+	UUID              string         `json:"uuid,omitempty"`
+	PrefLabel         string         `json:"prefLabel,omitempty"`
+	Type              string         `json:"type,omitempty"`
+	Authority         string         `json:"authority,omitempty"`
+	AuthorityValue    string         `json:"authorityValue,omitempty"`
+	LastModifiedEpoch int            `json:"lastModifiedEpoch,omitempty"`
+	Hash              string         `json:"hash,omitempty"`
+	FigiCode          string         `json:"figiCode,omitempty"`
+	IssuedBy          string         `json:"issuedBy,omitempty"`
 	// Organisations
-	NAICSIndustryClassifications []NAICSIndustryClassification `json:"naicsIndustryClassifications,omitempty"`
-	IsDeprecated                 bool                          `json:"isDeprecated,omitempty"`
+	IsDeprecated bool `json:"isDeprecated,omitempty"`
 }
 
 var ErrEmptyAuthority = errors.New("invalid request, no sourceRepresentation.authority has been supplied")
