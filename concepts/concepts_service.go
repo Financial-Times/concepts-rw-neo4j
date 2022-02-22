@@ -630,13 +630,7 @@ func populateConceptQueries(queryBatch []*cmneo4j.Query, aggregatedConcept ontol
 			if !ok {
 				continue
 			}
-
-			relIDs := filterSlice([]string{rel.UUID})
-			queryBatch = append(queryBatch, createRelQueries(sourceConcept.UUID, relIDs, rel.Label, relCfg.NeoCreate)...)
-
-			if len(relCfg.Properties) > 0 {
-				queryBatch = append(queryBatch, setRelPropsQueries(sourceConcept.UUID, rel, relCfg)...)
-			}
+			queryBatch = append(queryBatch, createRelQuery(sourceConcept.UUID, rel, relCfg))
 		}
 	}
 
@@ -692,48 +686,61 @@ func createNodeQueries(concept ontology.NewConcept, uuid string) []*cmneo4j.Quer
 		},
 	}
 
-	relIDs := filterSlice([]string{concept.IssuedBy})
-	queryBatch = append(queryBatch, createRelQueries(concept.UUID, relIDs, "ISSUED_BY", true)...)
+	if concept.IssuedBy != "" {
+		// Issued By needs a specific handling. That is why it is not in the config
+		// But we still want to use createRelQuery, so we create dummy relationship and config
+		issuedByCfg := ontology.RelationshipConfig{
+			ConceptField: "issuedBy",
+			OneToOne:     true,
+			NeoCreate:    true,
+		}
+		issuedByRel := ontology.Relationship{
+			UUID:       concept.IssuedBy,
+			Label:      "ISSUED_BY",
+			Properties: nil,
+		}
+		queryBatch = append(queryBatch, createRelQuery(concept.UUID, issuedByRel, issuedByCfg))
+	}
 
 	queryBatch = append(queryBatch, createConceptQuery)
 	return queryBatch
 }
 
 // createRelQueries creates relationships Cypher queries for concepts
-func createRelQueries(conceptID string, relationshipIDs []string, relationshipType string, shouldCreate bool) []*cmneo4j.Query {
+func createRelQuery(sourceUUID string, rel ontology.Relationship, cfg ontology.RelationshipConfig) *cmneo4j.Query {
 	const createMissing = `
 		MERGE (thing:Thing {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (thing)-[:%s]->(other)
+		MERGE (thing)-[rel:%s]->(other)
 	`
 
 	const matchExisting = `
 		MATCH (concept:Concept {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (concept)-[:%s]->(other)	
+		MERGE (concept)-[rel:%s]->(other)	
 	`
 
 	cypherStatement := matchExisting
-	if shouldCreate {
+	if cfg.NeoCreate {
 		cypherStatement = createMissing
 	}
 
-	var queryBatch []*cmneo4j.Query
-	for _, id := range relationshipIDs {
-		addRelationshipQuery := &cmneo4j.Query{
-			Cypher: fmt.Sprintf(cypherStatement, relationshipType),
-			Params: map[string]interface{}{
-				"uuid": conceptID,
-				"id":   id,
-			},
-		}
-		queryBatch = append(queryBatch, addRelationshipQuery)
+	params := map[string]interface{}{
+		"uuid": sourceUUID,
+		"id":   rel.UUID,
+	}
+	if cfg.Properties != nil {
+		cypherStatement += `	SET rel=$relProps`
+		params["relProps"] = setupRelProps(rel, cfg)
 	}
 
-	return queryBatch
+	return &cmneo4j.Query{
+		Cypher: fmt.Sprintf(cypherStatement, rel.Label),
+		Params: params,
+	}
 }
 
-func setRelPropsQueries(conceptID string, rel ontology.Relationship, cfg ontology.RelationshipConfig) []*cmneo4j.Query {
+func setupRelProps(rel ontology.Relationship, cfg ontology.RelationshipConfig) map[string]interface{} {
 	props := map[string]interface{}{}
 	for label, t := range cfg.Properties {
 		val := rel.Properties[label]
@@ -751,22 +758,7 @@ func setRelPropsQueries(conceptID string, rel ontology.Relationship, cfg ontolog
 			props[label+"Epoch"] = unixTime
 		}
 	}
-	var queryBatch []*cmneo4j.Query
-	setRelProps := &cmneo4j.Query{
-		Cypher: fmt.Sprintf(`
-			MATCH (t:Thing {uuid: $uuid})
-			MATCH (other:Thing {uuid: $otherUUID})
-			MATCH (t)-[rel:%s]->(other)
-			set rel=$relProps`, rel.Label),
-		Params: map[string]interface{}{
-			"uuid":      conceptID,
-			"otherUUID": rel.UUID,
-			"relProps":  props,
-		},
-	}
-
-	queryBatch = append(queryBatch, setRelProps)
-	return queryBatch
+	return props
 }
 
 func getEpoch(t string) int64 {

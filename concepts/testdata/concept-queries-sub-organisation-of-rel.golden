@@ -55,7 +55,7 @@ Paremeters: {
 Statement: 
 		MERGE (thing:Thing {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (thing)-[:SUB_ORGANISATION_OF]->(other)
+		MERGE (thing)-[rel:SUB_ORGANISATION_OF]->(other)
 	,
 Paremeters: {
   "id": "c001ee9c-94c5-11e8-8f42-da24cd01f044",

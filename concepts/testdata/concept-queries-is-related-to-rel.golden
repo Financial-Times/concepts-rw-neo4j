@@ -33,7 +33,7 @@ Paremeters: {
 Statement: 
 		MATCH (concept:Concept {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (concept)-[:IS_RELATED_TO]->(other)	
+		MERGE (concept)-[rel:IS_RELATED_TO]->(other)	
 	,
 Paremeters: {
   "id": "b5d7c6b5-db7d-4bce-9d6a-f62195571f92",
@@ -43,7 +43,7 @@ Paremeters: {
 Statement: 
 		MATCH (concept:Concept {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (concept)-[:IS_RELATED_TO]->(other)	
+		MERGE (concept)-[rel:IS_RELATED_TO]->(other)	
 	,
 Paremeters: {
   "id": "f7e3fe2d-7496-4d42-b19f-378094efd263",

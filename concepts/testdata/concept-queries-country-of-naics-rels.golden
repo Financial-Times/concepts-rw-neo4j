@@ -52,20 +52,10 @@ Paremeters: {
 Statement: 
 		MERGE (thing:Thing {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (thing)-[:HAS_INDUSTRY_CLASSIFICATION]->(other)
-	,
+		MERGE (thing)-[rel:HAS_INDUSTRY_CLASSIFICATION]->(other)
+		SET rel=$relProps,
 Paremeters: {
   "id": "38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
-  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
-}
-==============================================================================
-Statement: 
-			MATCH (t:Thing {uuid: $uuid})
-			MATCH (other:Thing {uuid: $otherUUID})
-			MATCH (t)-[rel:HAS_INDUSTRY_CLASSIFICATION]->(other)
-			set rel=$relProps,
-Paremeters: {
-  "otherUUID": "38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
   "relProps": {
     "rank": 2
   },
@@ -75,7 +65,7 @@ Paremeters: {
 Statement: 
 		MERGE (thing:Thing {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (thing)-[:COUNTRY_OF_INCORPORATION]->(other)
+		MERGE (thing)-[rel:COUNTRY_OF_INCORPORATION]->(other)
 	,
 Paremeters: {
   "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
@@ -85,7 +75,7 @@ Paremeters: {
 Statement: 
 		MERGE (thing:Thing {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (thing)-[:COUNTRY_OF_OPERATIONS]->(other)
+		MERGE (thing)-[rel:COUNTRY_OF_OPERATIONS]->(other)
 	,
 Paremeters: {
   "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
@@ -95,7 +85,7 @@ Paremeters: {
 Statement: 
 		MERGE (thing:Thing {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (thing)-[:COUNTRY_OF_RISK]->(other)
+		MERGE (thing)-[rel:COUNTRY_OF_RISK]->(other)
 	,
 Paremeters: {
   "id": "3e2eb1c1-7ecd-4600-8cbb-c02ba53ced4b",
@@ -105,20 +95,10 @@ Paremeters: {
 Statement: 
 		MERGE (thing:Thing {uuid: $uuid})
 		MERGE (other:Thing {uuid: $id})
-		MERGE (thing)-[:HAS_INDUSTRY_CLASSIFICATION]->(other)
-	,
+		MERGE (thing)-[rel:HAS_INDUSTRY_CLASSIFICATION]->(other)
+		SET rel=$relProps,
 Paremeters: {
   "id": "49da878c-67ce-4343-9a09-a4a767e584a2",
-  "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
-}
-==============================================================================
-Statement: 
-			MATCH (t:Thing {uuid: $uuid})
-			MATCH (other:Thing {uuid: $otherUUID})
-			MATCH (t)-[rel:HAS_INDUSTRY_CLASSIFICATION]->(other)
-			set rel=$relProps,
-Paremeters: {
-  "otherUUID": "49da878c-67ce-4343-9a09-a4a767e584a2",
   "relProps": {
     "rank": 1
   },
