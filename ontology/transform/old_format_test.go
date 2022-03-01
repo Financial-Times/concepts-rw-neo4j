@@ -1,4 +1,4 @@
-package ontology
+package transform
 
 import (
 	"sort"
@@ -8,7 +8,7 @@ import (
 )
 
 func TestTransformAggregateConceptProperties(t *testing.T) {
-	expected := AggregatedConcept{
+	expected := OldAggregatedConcept{
 		PrefUUID:               "prefUUID value",
 		PrefLabel:              "prefLabel value",
 		Type:                   "type value",
@@ -43,11 +43,11 @@ func TestTransformAggregateConceptProperties(t *testing.T) {
 		IndustryIdentifier:     "industryIdentifier value",
 	}
 
-	newAggregateConcept, err := TransformToNewAggregateConcept(expected)
+	newAggregateConcept, err := ToNewAggregateConcept(expected)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := TransformToOldAggregateConcept(newAggregateConcept)
+	got, err := ToOldAggregateConcept(newAggregateConcept)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestTransformAggregateConceptProperties(t *testing.T) {
 }
 
 func TestTransformSourceConceptRelationships(t *testing.T) {
-	expected := Concept{
+	expected := OldConcept{
 		ParentUUIDs:                []string{"2ef39c2a-da9c-4263-8209-ebfd490d3101"},
 		BroaderUUIDs:               []string{"f7e3fe2d-7496-4d42-b19f-378094efd263", "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"},
 		RelatedUUIDs:               []string{"f7e3fe2d-7496-4d42-b19f-378094efd263", "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"},
@@ -91,11 +91,11 @@ func TestTransformSourceConceptRelationships(t *testing.T) {
 		},
 	}
 
-	newSourceConcept, err := TransformToNewSourceConcept(expected)
+	newSourceConcept, err := ToNewSourceConcept(expected)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := TransformToOldSourceConcept(newSourceConcept)
+	got, err := ToOldSourceConcept(newSourceConcept)
 	if err != nil {
 		t.Fatal(err)
 	}

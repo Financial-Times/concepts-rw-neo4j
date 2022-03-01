@@ -1,0 +1,59 @@
+{  
+    "prefUUID":"c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+    "prefLabel":"Strix Group Plc",
+    "type":"PublicCompany",
+    "aliases":[  
+        "Strix Group Plc",
+        "STRIX GROUP PLC",
+        "Strix Group",
+        "Castletown Thermostats",
+        "Steam Plc"
+    ],
+    "emailAddress":"info@strix.com",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"c28fa0b4-4245-11e8-842f-0ed5f89f718b",
+            "prefLabel":"Strix Group Plc",
+            "type":"PublicCompany",
+            "authority":"FACTSET",
+            "authorityValue":"B000BB-S",
+            "aliases":[  
+                "Strix Group Plc",
+                "STRIX GROUP PLC",
+                "Strix Group",
+                "Castletown Thermostats",
+                "Steam Plc"
+            ],
+            "emailAddress":"info@strix.com",
+            "properName":"Strix Group Plc",
+            "shortName":"Strix Group",
+            "tradeNames":[  
+                "STRIX GROUP PLC"
+            ],
+            "formerNames":[  
+                "Castletown Thermostats",
+                "Steam Plc"
+            ],
+            "countryCode":"GB",
+            "countryOfIncorporation":"IM",
+            "postalCode":"IM9 2RG",
+            "yearFounded":1951,
+            "leiCode":"213800KZEW5W6BZMNT62",
+            "parentOrganisation":"c001ee9c-94c5-11e8-8f42-da24cd01f044"
+        }
+    ],
+    "properName":"Strix Group Plc",
+    "shortName":"Strix Group",
+    "tradeNames":[  
+        "STRIX GROUPPLC"
+    ],
+    "formerNames":[  
+        "Castletown Thermostats",
+        "Steam Plc"
+    ],
+    "countryCode":"GB",
+    "countryOfIncorporation":"IM",
+    "postalCode":"IM9 2RG",
+    "yearFounded":1951,
+    "leiCode":"213800KZEW5W6BZMNT62"
+}

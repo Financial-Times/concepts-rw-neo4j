@@ -1,64 +1,12 @@
-package concepts
+package neo4j
 
 import (
 	"testing"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
-
-func TestFilterSlice(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    []string
-		expected []string
-	}{
-		{
-			name:     "nil should return nil",
-			input:    nil,
-			expected: nil,
-		},
-		{
-			name:     "empty slice should return nil",
-			input:    []string{},
-			expected: nil,
-		},
-		{
-			name:     "one element empty string slice should return nil",
-			input:    []string{""},
-			expected: nil,
-		},
-		{
-			name:     "one element non-empty string slice should return itself",
-			input:    []string{"non-empty-string"},
-			expected: []string{"non-empty-string"},
-		},
-		{
-			name:     "multiple empty strings slice should return nil",
-			input:    []string{"", "", "", "", ""},
-			expected: nil,
-		},
-		{
-			name:     "multiple non-empty strings slice should return itself",
-			input:    []string{"multiple", "non-empty", "strings", "slice"},
-			expected: []string{"multiple", "non-empty", "strings", "slice"},
-		},
-		{
-			name:     "multiple strings slice should return slice with non-empty strings",
-			input:    []string{"multiple", "", "strings", "", "slice"},
-			expected: []string{"multiple", "strings", "slice"},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := filterSlice(test.input)
-			if !cmp.Equal(test.expected, got) {
-				t.Error(cmp.Diff(test.expected, got))
-			}
-		})
-	}
-}
 
 func TestFilterRelationships(t *testing.T) {
 	tests := []struct {
@@ -116,13 +64,13 @@ func TestFilterRelationships(t *testing.T) {
 func TestToOntologyNewAggregateConcept(t *testing.T) {
 	tests := []struct {
 		name        string
-		neoConcept  neoAggregatedConcept
+		neoConcept  NeoAggregatedConcept
 		ontologyCfg ontology.Config
 		expected    ontology.NewAggregatedConcept
 	}{
 		{
 			name: "string props",
-			neoConcept: neoAggregatedConcept{
+			neoConcept: NeoAggregatedConcept{
 				Types:        []string{"Brand"},
 				EmailAddress: "test@example.com",
 				ImageURL:     "image url",
@@ -143,7 +91,7 @@ func TestToOntologyNewAggregateConcept(t *testing.T) {
 		},
 		{
 			name: "slice of strings props",
-			neoConcept: neoAggregatedConcept{
+			neoConcept: NeoAggregatedConcept{
 				Types:       []string{"Brand"},
 				Aliases:     []string{"alias1", "alias2"},
 				TradeNames:  []string{"trade name 1", "trade name 2"},
@@ -167,7 +115,7 @@ func TestToOntologyNewAggregateConcept(t *testing.T) {
 		},
 		{
 			name: "int props",
-			neoConcept: neoAggregatedConcept{
+			neoConcept: NeoAggregatedConcept{
 				Types:       []string{"Brand"},
 				YearFounded: 1,
 				BirthYear:   2,
@@ -201,13 +149,13 @@ func TestToOntologyNewAggregateConcept(t *testing.T) {
 func TestТоOntologyNewConcept(t *testing.T) {
 	tests := []struct {
 		name            string
-		neoConcept      neoConcept
+		neoConcept      NeoConcept
 		ontologyRelsCfg map[string]ontology.RelationshipConfig
 		expected        ontology.NewConcept
 	}{
 		{
 			name: "simple one-to-one relationship",
-			neoConcept: neoConcept{
+			neoConcept: NeoConcept{
 				Types:              []string{"Brand"},
 				ParentOrganisation: "c001ee9c-94c5-11e8-8f42-da24cd01f044",
 			},
@@ -229,7 +177,7 @@ func TestТоOntologyNewConcept(t *testing.T) {
 		},
 		{
 			name: "simple one-to-many relationship",
-			neoConcept: neoConcept{
+			neoConcept: NeoConcept{
 				Types:         []string{"Brand"},
 				HasFocusUUIDs: []string{"2e7429bd-7a84-41cb-a619-2c702893e359", "740c604b-8d97-443e-be70-33de6f1d6e67", "c28fa0b4-4245-11e8-842f-0ed5f89f718b"},
 			},

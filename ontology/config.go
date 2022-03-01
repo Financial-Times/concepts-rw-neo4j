@@ -39,7 +39,7 @@ func (cfg Config) ValidateProperties(props map[string]interface{}) error {
 		}
 
 		if !cfg.IsPropValueValid(propName, propVal) {
-			return getInvalidPropValueError(propName, propVal)
+			return InvalidPropValueError(propName, propVal)
 		}
 	}
 
@@ -84,7 +84,7 @@ func (cfg Config) IsPropValueValid(propName string, val interface{}) bool {
 	}
 }
 
-func getInvalidPropValueError(name string, val interface{}) error {
+func InvalidPropValueError(name string, val interface{}) error {
 	return fmt.Errorf("propName=%s, value=%v: %w", name, val, ErrInvalidPropertyValue)
 }
 

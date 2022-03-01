@@ -1,4 +1,4 @@
-package concepts
+package neo4j
 
 import (
 	"flag"
@@ -19,12 +19,12 @@ func TestGenerateCypherStatements(t *testing.T) {
 	}{
 		{
 			name:           "read statement",
-			statementFunc:  getReadStatement,
+			statementFunc:  GetReadStatement,
 			goldenFileName: "testdata/cypher-read-statement.golden",
 		},
 		{
 			name:           "delete statement",
-			statementFunc:  getDeleteStatement,
+			statementFunc:  GetDeleteStatement,
 			goldenFileName: "testdata/cypher-delete-statement.golden",
 		},
 	}
@@ -37,6 +37,14 @@ func TestGenerateCypherStatements(t *testing.T) {
 				t.Errorf("Got unexpected Cypher statement:\n%s", cmp.Diff(expectedStatement, statement))
 			}
 		})
+	}
+}
+
+func TestGetLabelsToRemove(t *testing.T) {
+	expected := "Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification"
+	got := GetLabelsToRemove()
+	if expected != got {
+		t.Fatalf("expected '%s', but got '%s'", expected, got)
 	}
 }
 

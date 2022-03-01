@@ -1,0 +1,46 @@
+{  
+    "prefUUID":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+    "prefLabel":"Concept PrefLabel",
+    "type":"Section",
+    "aliases":[  
+        "oneLabel",
+        "secondLabel",
+        "anotherOne",
+        "whyNot"
+    ],
+    "strapline":"Some strapline",
+    "descriptionXML":"Some description",
+    "_imageUrl":"Some image url",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"4c41f314-4548-4fb6-ac48-4618fcbfa84c",
+            "prefLabel":"Another Concept PrefLabel",
+            "type":"Section",
+            "authority":"Smartlogic",
+            "authorityValue":"4c41f314-4548-4fb6-ac48-4618fcbfa84c",
+            "aliases":[  
+                "anotheroneLabel",
+                "anothersecondLabel"
+            ],
+            "parentUUIDs":[  
+                "2ef39c2a-da9c-4263-8209-ebfd490d3101"
+            ],
+            "strapline":"Some strapline",
+            "descriptionXML":"Some description",
+            "_imageUrl":"Some image url"
+        },
+        {  
+            "uuid":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
+            "prefLabel":"Concept PrefLabel",
+            "type":"Section",
+            "authority":"TME",
+            "authorityValue":"1234",
+            "aliases":[  
+                "oneLabel",
+                "secondLabel",
+                "anotherOne",
+                "whyNot"
+            ]
+        }
+    ]
+}
