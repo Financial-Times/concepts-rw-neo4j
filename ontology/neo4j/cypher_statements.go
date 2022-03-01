@@ -1,4 +1,4 @@
-package concepts
+package neo4j
 
 import (
 	"fmt"
@@ -8,7 +8,10 @@ import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
 
-func getReadStatement() string {
+// GetReadStatement returns a string containing Neo4j query that will read any relevant information for specific Concept.
+// The returned data is in NeoAggregatedConcept format
+// TODO: Rework this function to return a cmneo4j.Query
+func GetReadStatement() string {
 	statementTemplate := `
 		MATCH (canonical:Thing {prefUUID:$uuid})<-[:EQUIVALENT_TO]-(source:Thing)
 		OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
@@ -70,7 +73,9 @@ func getReadStatement() string {
 		strings.Join(getCanonicalPropsForRead(), ",\n"))
 }
 
-func getDeleteStatement() string {
+// GetDeleteStatement returns a string containing Neo4j query that will strip down any valuable information from a concept node
+// TODO: Rework this function to return a cmneo4j.Query
+func GetDeleteStatement() string {
 	statementTemplate := `
 		MATCH (t:Thing {uuid:$id})
 		OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
@@ -82,8 +87,22 @@ func getDeleteStatement() string {
 
 	return fmt.Sprintf(statementTemplate,
 		strings.Join(getOptionalMatchesForDelete(), "\n"),
-		getLabelsToRemove(),
+		GetLabelsToRemove(),
 		strings.Join(getRelNamesForDelete(), ", "))
+}
+
+// GetLabelsToRemove return a string containing all allowed Concept labels in a format understood by Neo4j
+// TODO: Simplify this. There is no need for exposing this function.
+// Also the functionality is just `strings.Join`. No need for this complexity
+func GetLabelsToRemove() string {
+	var labelsToRemove string
+	for i, conceptType := range conceptLabels {
+		labelsToRemove += conceptType
+		if i+1 < len(conceptLabels) {
+			labelsToRemove += ":"
+		}
+	}
+	return labelsToRemove
 }
 
 func getOptionalMatchesForRead() []string {
