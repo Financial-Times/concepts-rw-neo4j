@@ -102,15 +102,7 @@ func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, e
 }
 
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
-	var neoAggregateConcept neo4j.NeoAggregatedConcept
-	query := &cmneo4j.Query{
-		Cypher: neo4j.GetReadStatement(),
-		Params: map[string]interface{}{
-			"uuid": uuid,
-		},
-		Result: &neoAggregateConcept,
-	}
-
+	query, neoAggregateConcept := neo4j.GetReadQuery(uuid)
 	err := s.driver.Read(query)
 	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
 		s.log.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")

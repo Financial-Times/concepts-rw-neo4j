@@ -1,4 +1,4 @@
-
+Statement: 
 		MATCH (canonical:Thing {prefUUID:$uuid})<-[:EQUIVALENT_TO]-(source:Thing)
 		OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
 		OPTIONAL MATCH (source)-[:COUNTRY_OF_INCORPORATION]->(countryOfIncorporationNode:Thing)
@@ -114,4 +114,7 @@ canonical.shortName as shortName,
 canonical.strapline as strapline,
 canonical.tradeNames as tradeNames,
 canonical.twitterHandle as twitterHandle,
-canonical.yearFounded as yearFounded
+canonical.yearFounded as yearFounded,
+Paremeters: {
+  "uuid": "uuid"
+}
