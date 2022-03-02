@@ -5,13 +5,27 @@ import (
 	"sort"
 	"strings"
 
+	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
+
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
 
-// GetReadStatement returns a string containing Neo4j query that will read any relevant information for specific Concept.
+// GetReadQuery constructs a neo4j query that, when executed,
+// will read all data for concept uuid and serialise it in the returned NeoAggregatedConcept object
+func GetReadQuery(uuid string) (*cmneo4j.Query, *NeoAggregatedConcept) {
+	var result NeoAggregatedConcept
+	return &cmneo4j.Query{
+		Cypher: getReadStatement(),
+		Params: map[string]interface{}{
+			"uuid": uuid,
+		},
+		Result: &result,
+	}, &result
+}
+
+// getReadStatement returns a string containing Neo4j query that will read any relevant information for specific Concept.
 // The returned data is in NeoAggregatedConcept format
-// TODO: Rework this function to return a cmneo4j.Query
-func GetReadStatement() string {
+func getReadStatement() string {
 	statementTemplate := `
 		MATCH (canonical:Thing {prefUUID:$uuid})<-[:EQUIVALENT_TO]-(source:Thing)
 		OPTIONAL MATCH (source)-[:ISSUED_BY]->(issuer:Thing)
