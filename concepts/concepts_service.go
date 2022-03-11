@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
-	logger "github.com/Financial-Times/go-logger/v2"
+	"github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/mitchellh/hashstructure"
 
@@ -154,7 +154,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	}
 
 	var queryBatch []*cmneo4j.Query
-	var prefUUIDsToBeDeletedQueryBatch []*cmneo4j.Query
+	var prefUUIDsToBeDeleted []string
 	var updatedUUIDList []string
 	updateRecord := ConceptChanges{}
 	if exists {
@@ -190,7 +190,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 		//Handle scenarios for transferring source id from an existing concordance to this concordance
 		if len(conceptsToTransferConcordance) > 0 {
-			prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(conceptsToTransferConcordance, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
+			prefUUIDsToBeDeleted, err = s.handleTransferConcordance(conceptsToTransferConcordance, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
 			if err != nil {
 				return updateRecord, err
 			}
@@ -232,7 +232,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			}
 		}
 	} else {
-		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(requestSourceData, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
+		prefUUIDsToBeDeleted, err = s.handleTransferConcordance(requestSourceData, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
 		if err != nil {
 			return updateRecord, err
 		}
@@ -246,7 +246,9 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		}
 	}
 
-	queryBatch = append(queryBatch, prefUUIDsToBeDeletedQueryBatch...)
+	for _, uuid := range prefUUIDsToBeDeleted {
+		queryBatch = append(queryBatch, removeLoneCanonicalNode(uuid))
+	}
 
 	aggregatedConceptToWrite.AggregatedHash = hashAsString
 	writeQueries := neo4j.WriteCanonicalConceptQueries(aggregatedConceptToWrite)
@@ -386,15 +388,15 @@ func (s *ConceptService) formatError(field, uuid, transID string) string {
 
 // Handle new source nodes that have been added to current concordance
 // nolint:gocognit
-func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]*cmneo4j.Query, error) {
-	var deleteLonePrefUUIDQueries []*cmneo4j.Query
+func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]string, error) {
+	var canonicalUUIDsToRemove []string
 	for updatedSourceID := range conceptData {
 		equivQuery, result := readCanonicalStats(updatedSourceID)
 
 		err := s.driver.Read(equivQuery)
 		if err != nil && !errors.Is(err, cmneo4j.ErrNoResultsFound) {
 			s.log.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error("Requests for source nodes canonical information resulted in error")
-			return deleteLonePrefUUIDQueries, err
+			return nil, err
 		}
 
 		//source node does not currently exist in neo4j, nothing to tidy up
@@ -430,14 +432,14 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 			//this scenario should never happen
 			err = fmt.Errorf("Multiple source concepts found with matching uuid: %s", updatedSourceID)
 			s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error(err.Error())
-			return deleteLonePrefUUIDQueries, err
+			return nil, err
 		}
 
 		entityEquivalence := (*result)[0]
 		conceptType, err := mapper.MostSpecificType(entityEquivalence.Types)
 		if err != nil {
 			s.log.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Errorf("could not return most specific type from source node: %v", entityEquivalence.Types)
-			return deleteLonePrefUUIDQueries, err
+			return nil, err
 		}
 
 		s.log.WithField("UUID", updatedSourceID).Debug("Existing prefUUID is " + entityEquivalence.PrefUUID + " equivalence count is " + strconv.Itoa(entityEquivalence.Equivalence))
@@ -448,7 +450,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 			// Source exists in neo4j but is not concorded. It can be transferred without issue but its prefNode should be deleted
 			if updatedSourceID == entityEquivalence.PrefUUID {
 				s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Pref uuid node for source %s will need to be deleted as its source will be removed", updatedSourceID)
-				deleteLonePrefUUIDQueries = append(deleteLonePrefUUIDQueries, removeLoneCanonicalNode(entityEquivalence.PrefUUID))
+				canonicalUUIDsToRemove = append(canonicalUUIDsToRemove, entityEquivalence.PrefUUID)
 				//concordance added
 				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
 					ConceptType:   conceptType,
@@ -466,7 +468,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := fmt.Errorf("This source id: %s the only concordance to a non-matching node with prefUuid: %s", updatedSourceID, entityEquivalence.PrefUUID)
 				s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingDodgyData").Error(err)
-				return deleteLonePrefUUIDQueries, err
+				return nil, err
 			}
 		} else {
 			if updatedSourceID == entityEquivalence.PrefUUID {
@@ -476,7 +478,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 						s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transferred to the new concordance", updatedSourceID)
 						// just delete the lone prefUUID node because the other concordances to
 						// this node should already be in the new sourceRepresentations (aggregate-concept-transformer responsability)
-						deleteLonePrefUUIDQueries = append(deleteLonePrefUUIDQueries, removeLoneCanonicalNode(entityEquivalence.PrefUUID))
+						canonicalUUIDsToRemove = append(canonicalUUIDsToRemove, entityEquivalence.PrefUUID)
 						updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
 							ConceptType:   conceptType,
 							ConceptUUID:   updatedSourceID,
@@ -493,7 +495,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 					// Source is prefUUID for a different concordance
 					err := fmt.Errorf("Cannot currently process this record as it will break an existing concordance with prefUuid: %s", updatedSourceID)
 					s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingInvalidConcordance").Error(err)
-					return deleteLonePrefUUIDQueries, err
+					return nil, err
 				}
 			} else {
 				// Source was concorded to different concordance. Data on existing concordance is now out of date
@@ -526,7 +528,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 			}
 		}
 	}
-	return deleteLonePrefUUIDQueries, nil
+	return canonicalUUIDsToRemove, nil
 }
 
 type equivalenceResult struct {
