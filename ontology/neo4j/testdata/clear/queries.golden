@@ -1,0 +1,58 @@
+Statement: 
+		MATCH (t:Thing {uuid:$id})
+		OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
+		OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
+		OPTIONAL MATCH (t)-[countryOfIncorporationRel:COUNTRY_OF_INCORPORATION]->(countryOfIncorporationNode)
+OPTIONAL MATCH (t)-[countryOfOperationsRel:COUNTRY_OF_OPERATIONS]->(countryOfOperationsNode)
+OPTIONAL MATCH (t)-[countryOfRiskRel:COUNTRY_OF_RISK]->(countryOfRiskNode)
+OPTIONAL MATCH (t)-[hasBroaderRel:HAS_BROADER]->(hasBroaderNode)
+OPTIONAL MATCH (t)-[hasFocusRel:HAS_FOCUS]->(hasFocusNode)
+OPTIONAL MATCH (t)-[hasIndustryClassificationRel:HAS_INDUSTRY_CLASSIFICATION]->(hasIndustryClassificationNode)
+OPTIONAL MATCH (t)-[hasMemberRel:HAS_MEMBER]->(hasMemberNode)
+OPTIONAL MATCH (t)-[hasOrganisationRel:HAS_ORGANISATION]->(hasOrganisationNode)
+OPTIONAL MATCH (t)-[hasParentRel:HAS_PARENT]->(hasParentNode)
+OPTIONAL MATCH (t)-[hasRoleRel:HAS_ROLE]->(hasRoleNode)
+OPTIONAL MATCH (t)-[impliedByRel:IMPLIED_BY]->(impliedByNode)
+OPTIONAL MATCH (t)-[isRelatedToRel:IS_RELATED_TO]->(isRelatedToNode)
+OPTIONAL MATCH (t)-[subOrganisationOfRel:SUB_ORGANISATION_OF]->(subOrganisationOfNode)
+OPTIONAL MATCH (t)-[supersededByRel:SUPERSEDED_BY]->(supersededByNode)
+		REMOVE t:Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification
+		SET t={uuid:$id}
+		DELETE eq, issuerRel, countryOfIncorporationRel, countryOfOperationsRel, countryOfRiskRel, hasBroaderRel, hasFocusRel, hasIndustryClassificationRel, hasMemberRel, hasOrganisationRel, hasParentRel, hasRoleRel, impliedByRel, isRelatedToRel, subOrganisationOfRel, supersededByRel,
+Paremeters: {
+  "id": "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
+}
+==============================================================================
+Statement: 
+		MATCH (t:Thing {uuid:$id})
+		OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
+		OPTIONAL MATCH (t)-[issuerRel:ISSUED_BY]->(issuer)
+		OPTIONAL MATCH (t)-[countryOfIncorporationRel:COUNTRY_OF_INCORPORATION]->(countryOfIncorporationNode)
+OPTIONAL MATCH (t)-[countryOfOperationsRel:COUNTRY_OF_OPERATIONS]->(countryOfOperationsNode)
+OPTIONAL MATCH (t)-[countryOfRiskRel:COUNTRY_OF_RISK]->(countryOfRiskNode)
+OPTIONAL MATCH (t)-[hasBroaderRel:HAS_BROADER]->(hasBroaderNode)
+OPTIONAL MATCH (t)-[hasFocusRel:HAS_FOCUS]->(hasFocusNode)
+OPTIONAL MATCH (t)-[hasIndustryClassificationRel:HAS_INDUSTRY_CLASSIFICATION]->(hasIndustryClassificationNode)
+OPTIONAL MATCH (t)-[hasMemberRel:HAS_MEMBER]->(hasMemberNode)
+OPTIONAL MATCH (t)-[hasOrganisationRel:HAS_ORGANISATION]->(hasOrganisationNode)
+OPTIONAL MATCH (t)-[hasParentRel:HAS_PARENT]->(hasParentNode)
+OPTIONAL MATCH (t)-[hasRoleRel:HAS_ROLE]->(hasRoleNode)
+OPTIONAL MATCH (t)-[impliedByRel:IMPLIED_BY]->(impliedByNode)
+OPTIONAL MATCH (t)-[isRelatedToRel:IS_RELATED_TO]->(isRelatedToNode)
+OPTIONAL MATCH (t)-[subOrganisationOfRel:SUB_ORGANISATION_OF]->(subOrganisationOfNode)
+OPTIONAL MATCH (t)-[supersededByRel:SUPERSEDED_BY]->(supersededByNode)
+		REMOVE t:Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification
+		SET t={uuid:$id}
+		DELETE eq, issuerRel, countryOfIncorporationRel, countryOfOperationsRel, countryOfRiskRel, hasBroaderRel, hasFocusRel, hasIndustryClassificationRel, hasMemberRel, hasOrganisationRel, hasParentRel, hasRoleRel, impliedByRel, isRelatedToRel, subOrganisationOfRel, supersededByRel,
+Paremeters: {
+  "id": "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
+}
+==============================================================================
+Statement: MATCH (t:Thing {prefUUID:$acUUID})
+			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
+			REMOVE t:Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification
+			SET t={prefUUID:$acUUID}
+			DELETE rel,
+Paremeters: {
+  "acUUID": "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
+}

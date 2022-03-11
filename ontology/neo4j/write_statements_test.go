@@ -82,12 +82,8 @@ func TestPopulateConceptQueries(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var concept ontology.NewAggregatedConcept
-			var err error
 			if test.conceptFile != "" {
-				concept, err = transform.ToNewAggregateConcept(getAggregatedConcept(t, test.conceptFile))
-				if err != nil {
-					t.Fatal(err)
-				}
+				concept = getAggregatedConcept(t, test.conceptFile)
 			}
 			queries := WriteCanonicalConceptQueries(concept)
 			got := cypherBatchToString(queries)
@@ -330,11 +326,16 @@ func helperLoadBytes(t *testing.T, name string) []byte {
 
 // A lone concept should always have matching pref labels and uuid at the src system level and the top level - We are
 // currently missing validation around this
-func getAggregatedConcept(t *testing.T, name string) transform.OldAggregatedConcept {
+func getAggregatedConcept(t *testing.T, name string) ontology.NewAggregatedConcept {
+	t.Helper()
 	ac := transform.OldAggregatedConcept{}
 	err := json.Unmarshal(helperLoadBytes(t, name), &ac)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return ac
+	result, err := transform.ToNewAggregateConcept(ac)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return result
 }
