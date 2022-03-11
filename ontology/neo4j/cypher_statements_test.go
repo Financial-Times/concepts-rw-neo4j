@@ -12,34 +12,19 @@ import (
 
 var update = flag.Bool("update", false, "update the golden files for tests")
 
-func TestGenerateCypherStatements(t *testing.T) {
-	tests := []struct {
-		name           string
-		statementFunc  func() string
-		goldenFileName string
-	}{
-		{
-			name:           "delete statement",
-			statementFunc:  GetDeleteStatement,
-			goldenFileName: "testdata/cypher-delete-statement.golden",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			statement := test.statementFunc()
-			expectedStatement := getFromGoldenFile(t, test.goldenFileName, statement, *update)
-			if !cmp.Equal(expectedStatement, statement) {
-				t.Errorf("Got unexpected Cypher statement:\n%s", cmp.Diff(expectedStatement, statement))
-			}
-		})
-	}
-}
-
 func TestGetReadQuery(t *testing.T) {
 	goldenFileName := "testdata/read/cypher-statement.golden"
 	queries, _ := GetReadQuery("uuid")
 	if diff := compareQueriesWithGoldenFile(t, goldenFileName, []*cmneo4j.Query{queries}); diff != "" {
+		t.Errorf("Got unexpected Cypher statement:\n%s", diff)
+	}
+}
+
+func TestClearExistingConcept(t *testing.T) {
+	goldenFileName := "testdata/clear/queries.golden"
+	concept := getAggregatedConcept(t, "clear/concept.json")
+	queries := ClearExistingConcept(concept)
+	if diff := compareQueriesWithGoldenFile(t, goldenFileName, queries); diff != "" {
 		t.Errorf("Got unexpected Cypher statement:\n%s", diff)
 	}
 }

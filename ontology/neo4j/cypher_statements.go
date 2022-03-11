@@ -23,6 +23,41 @@ func GetReadQuery(uuid string) (*cmneo4j.Query, *NeoAggregatedConcept) {
 	}, &result
 }
 
+// ClearExistingConcept will generate a set of neo4j queries
+// that will find and "clean up" every source and canonical node for provided Canonical Concept.
+// Executing the queries will leave the nodes in the database, but with no concept relationships.
+// The nodes are left only with uuid/prefUUID property and `Thing` label.
+func ClearExistingConcept(ac ontology.NewAggregatedConcept) []*cmneo4j.Query {
+	acUUID := ac.PrefUUID
+	var queryBatch []*cmneo4j.Query
+	for _, sr := range ac.SourceRepresentations {
+		deletePreviousSourceLabelsAndPropertiesQuery := &cmneo4j.Query{
+			Cypher: getDeleteStatement(),
+			Params: map[string]interface{}{
+				"id": sr.UUID,
+			},
+		}
+		queryBatch = append(queryBatch, deletePreviousSourceLabelsAndPropertiesQuery)
+	}
+
+	// cleanUP all the previous Equivalent to relationships
+	// It is safe to use Sprintf because getLabelsToRemove() doesn't come from the request
+	// nolint:gosec
+	deletePreviousCanonicalLabelsAndPropertiesQuery := &cmneo4j.Query{
+		Cypher: fmt.Sprintf(`MATCH (t:Thing {prefUUID:$acUUID})
+			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
+			REMOVE t:%s
+			SET t={prefUUID:$acUUID}
+			DELETE rel`, GetLabelsToRemove()),
+		Params: map[string]interface{}{
+			"acUUID": acUUID,
+		},
+	}
+	queryBatch = append(queryBatch, deletePreviousCanonicalLabelsAndPropertiesQuery)
+
+	return queryBatch
+}
+
 // getReadStatement returns a string containing Neo4j query that will read any relevant information for specific Concept.
 // The returned data is in NeoAggregatedConcept format
 func getReadStatement() string {
@@ -87,9 +122,8 @@ func getReadStatement() string {
 		strings.Join(getCanonicalPropsForRead(), ",\n"))
 }
 
-// GetDeleteStatement returns a string containing Neo4j query that will strip down any valuable information from a concept node
-// TODO: Rework this function to return a cmneo4j.Query
-func GetDeleteStatement() string {
+// getDeleteStatement returns a string containing Neo4j query that will strip down any valuable information from a concept node
+func getDeleteStatement() string {
 	statementTemplate := `
 		MATCH (t:Thing {uuid:$id})
 		OPTIONAL MATCH (t)-[eq:EQUIVALENT_TO]->(a:Thing)
