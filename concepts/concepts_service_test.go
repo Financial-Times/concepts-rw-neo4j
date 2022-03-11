@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
-	logger "github.com/Financial-Times/go-logger/v2"
+	"github.com/Financial-Times/go-logger/v2"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/neo4j"
@@ -1890,13 +1890,12 @@ func TestTransferConcordance(t *testing.T) {
 	statement := `MERGE (a:Thing{prefUUID:"1"}) MERGE (b:Thing{uuid:"1"}) MERGE (c:Thing{uuid:"2"}) MERGE (d:Thing{uuid:"3"}) MERGE (w:Thing{prefUUID:"4"}) MERGE (y:Thing{uuid:"5"}) MERGE (j:Thing{prefUUID:"6"}) MERGE (k:Thing{uuid:"6"}) MERGE (c)-[:EQUIVALENT_TO]->(a)<-[:EQUIVALENT_TO]-(b) MERGE (w)<-[:EQUIVALENT_TO]-(d) MERGE (j)<-[:EQUIVALENT_TO]-(k)`
 	err := driver.Write(&cmneo4j.Query{Cypher: statement})
 	assert.NoError(t, err, "Unexpected error on Write to the db")
-	var emptyQuery []*cmneo4j.Query
 	var updatedConcept ConceptChanges
 
 	type testStruct struct {
 		testName         string
 		updatedSourceIds map[string]string
-		returnResult     bool
+		expectedResult   []string
 		returnedError    error
 	}
 
@@ -1934,8 +1933,8 @@ func TestTransferConcordance(t *testing.T) {
 		testName: "nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted",
 		updatedSourceIds: map[string]string{
 			"6": "Brand"},
-		returnResult:  true,
-		returnedError: nil,
+		expectedResult: []string{"6"},
+		returnedError:  nil,
 	}
 
 	scenarios := []testStruct{
@@ -1950,11 +1949,11 @@ func TestTransferConcordance(t *testing.T) {
 	for _, scenario := range scenarios {
 		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", ontology.NewAggregatedConcept{}, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
-		if scenario.returnResult == true {
-			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		if scenario.expectedResult != nil {
+			assert.Equal(t, scenario.expectedResult, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 			break
 		}
-		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		assert.Empty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 	}
 
 	defer deleteSourceNodes(t, "1", "2", "3", "5", "6")
@@ -1984,13 +1983,13 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	MERGE (ml)-[:EQUIVALENT_TO]->(mlCanonical)<-[:EQUIVALENT_TO]-(tme)`
 	err := driver.Write(&cmneo4j.Query{Cypher: statement})
 	assert.NoError(t, err, "Unexpected error on Write to the db")
-	var emptyQuery []*cmneo4j.Query
+
 	var updatedConcept ConceptChanges
 
 	type testStruct struct {
 		testName          string
 		updatedSourceIds  map[string]string
-		returnResult      bool
+		expectedResult    []string
 		returnedError     error
 		targetConcordance transform.OldAggregatedConcept
 	}
@@ -1998,8 +1997,8 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		testName: "mergeManagedLocationCanonicalWithTwoSources",
 		updatedSourceIds: map[string]string{
 			"2": "Brand"},
-		returnedError: nil,
-		returnResult:  true,
+		returnedError:  nil,
+		expectedResult: []string{"2"},
 		targetConcordance: transform.OldAggregatedConcept{
 			PrefUUID: "1",
 			SourceRepresentations: []transform.OldConcept{
@@ -2014,8 +2013,8 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		updatedSourceIds: map[string]string{
 			"3": "Brand",
 			"2": "Brand"},
-		returnedError: nil,
-		returnResult:  true,
+		returnedError:  nil,
+		expectedResult: []string{"2"},
 		targetConcordance: transform.OldAggregatedConcept{
 			PrefUUID: "1",
 			SourceRepresentations: []transform.OldConcept{
@@ -2030,7 +2029,8 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		testName: "mergeJustASourceConcordance",
 		updatedSourceIds: map[string]string{
 			"4": "Brand"},
-		returnedError: nil,
+		returnedError:  nil,
+		expectedResult: nil,
 	}
 
 	scenarios := []testStruct{
@@ -2044,11 +2044,11 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		assert.NoError(t, err)
 		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", newConcordance, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
-		if scenario.returnResult == true {
-			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		if scenario.expectedResult != nil {
+			assert.Equal(t, scenario.expectedResult, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 			continue
 		}
-		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		assert.Empty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 	}
 
 	defer deleteSourceNodes(t, "1", "2", "3", "5")
