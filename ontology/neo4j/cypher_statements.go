@@ -48,7 +48,7 @@ func ClearExistingConcept(ac ontology.NewAggregatedConcept) []*cmneo4j.Query {
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
 			REMOVE t:%s
 			SET t={prefUUID:$acUUID}
-			DELETE rel`, GetLabelsToRemove()),
+			DELETE rel`, getLabelsToRemove()),
 		Params: map[string]interface{}{
 			"acUUID": acUUID,
 		},
@@ -135,22 +135,14 @@ func getDeleteStatement() string {
 
 	return fmt.Sprintf(statementTemplate,
 		strings.Join(getOptionalMatchesForDelete(), "\n"),
-		GetLabelsToRemove(),
+		getLabelsToRemove(),
 		strings.Join(getRelNamesForDelete(), ", "))
 }
 
-// GetLabelsToRemove return a string containing all allowed Concept labels in a format understood by Neo4j
-// TODO: Simplify this. There is no need for exposing this function.
-// Also the functionality is just `strings.Join`. No need for this complexity
-func GetLabelsToRemove() string {
-	var labelsToRemove string
-	for i, conceptType := range conceptLabels {
-		labelsToRemove += conceptType
-		if i+1 < len(conceptLabels) {
-			labelsToRemove += ":"
-		}
-	}
-	return labelsToRemove
+// getLabelsToRemove return a string containing all allowed Concept labels in a format understood by Neo4j
+func getLabelsToRemove() string {
+	conceptLabels := ontology.GetConfig().GetConceptTypes()
+	return strings.Join(conceptLabels, ":")
 }
 
 func getOptionalMatchesForRead() []string {
