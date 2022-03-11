@@ -27,6 +27,7 @@ type Config struct {
 	Fields        map[string]FieldConfig        `yaml:"fields"`
 	Relationships map[string]RelationshipConfig `yaml:"relationships"`
 	Authorities   []string                      `yaml:"authorities"`
+	ConceptTypes  []string                      `yaml:"conceptTypes"`
 }
 
 var ErrUnknownProperty = errors.New("unknown concept property")
@@ -107,4 +108,8 @@ func init() {
 
 func GetConfig() Config {
 	return config
+}
+
+func (cfg Config) GetConceptTypes() []string {
+	return cfg.ConceptTypes
 }
