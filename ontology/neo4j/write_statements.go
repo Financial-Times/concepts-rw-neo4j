@@ -10,6 +10,126 @@ import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 )
 
+// WriteCanonicalConceptQueries generate a list of neo4j queries that will write a canonical concept.
+// When executed, the queries will create a concept node for every source concept and a single canonical node for the aggregated concept.
+func WriteCanonicalConceptQueries(aggregatedConcept ontology.NewAggregatedConcept) []*cmneo4j.Query {
+	var result []*cmneo4j.Query
+	result = append(result, createCanonicalNodeQueries(aggregatedConcept, aggregatedConcept.PrefUUID)...)
+
+	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
+		result = append(result, WriteSourceQueries(sourceConcept)...)
+		result = append(result, createEquivalentToQueries(sourceConcept, aggregatedConcept)...)
+
+		for _, rel := range sourceConcept.Relationships {
+			relCfg, ok := ontology.GetConfig().Relationships[rel.Label]
+			if !ok {
+				continue
+			}
+
+			result = append(result, createRelQuery(sourceConcept.UUID, rel, relCfg))
+		}
+	}
+
+	return result
+}
+
+// WriteSourceQueries generates a set of neo4j queries that will create a single concept node
+// When executed, the queries will create a single concept node with the approptiate properties and relations.
+// To keep the model structure consistent avoid using this function. Use WriteCanonicalConceptQueries in stead.
+func WriteSourceQueries(concept ontology.NewConcept) []*cmneo4j.Query {
+	var queryBatch []*cmneo4j.Query
+	var createConceptQuery *cmneo4j.Query
+
+	allProps := setProps(concept)
+	createConceptQuery = &cmneo4j.Query{
+		Cypher: fmt.Sprintf(`MERGE (n:Thing {uuid: $uuid})
+											set n=$allprops
+											set n :%s`, getAllLabels(concept.Type)),
+		Params: map[string]interface{}{
+			"uuid":     concept.UUID,
+			"allprops": allProps,
+		},
+	}
+
+	if concept.IssuedBy != "" {
+		// Issued By needs a specific handling. That is why it is not in the config
+		// But we still want to use createRelQuery, so we create dummy relationship and config
+		issuedByCfg := ontology.RelationshipConfig{
+			ConceptField: "issuedBy",
+			OneToOne:     true,
+			NeoCreate:    true,
+		}
+		issuedByRel := ontology.Relationship{
+			UUID:       concept.IssuedBy,
+			Label:      "ISSUED_BY",
+			Properties: nil,
+		}
+		queryBatch = append(queryBatch, createRelQuery(concept.UUID, issuedByRel, issuedByCfg))
+	}
+
+	queryBatch = append(queryBatch, createConceptQuery)
+	return queryBatch
+}
+
+// WriteCanonicalForUnconcordedConcept generates a neo4j query that will create canonical node for the provided source concept
+// The queries will not change the source concept.
+// TODO: authors thoughts
+// First. If we start storing all the concept properties in the source nodes sourceToCanonical can be substituted with CreateAggregateConcept
+// This will ensure that we keep the data consistent. As of now we are required to republish those concepts.
+// Second. The logic of this function can be expressed with other functions within this library.
+// sourceToCanonical, setCanonicalProps, createCanonicalNodeQueries and createEquivalentToQueries.
+// We don't do it because it change the functionality from one to multiple queries, which has implications down the line.
+// Specifically how concurrency resource locks are acquired in Neo4j. If we want we can change it down the line.
+func WriteCanonicalForUnconcordedConcept(concept ontology.NewConcept) *cmneo4j.Query {
+	canonical := sourceToCanonical(concept)
+	allProps := setCanonicalProps(canonical, concept.UUID)
+	createCanonicalNodeQuery := &cmneo4j.Query{
+		Cypher: fmt.Sprintf(`
+					MATCH (t:Thing{uuid:$prefUUID})
+					MERGE (n:Thing {prefUUID: $prefUUID})
+					MERGE (n)<-[:EQUIVALENT_TO]-(t)
+					set n=$allprops
+					set n :%s`, getAllLabels(canonical.Type)),
+		Params: map[string]interface{}{
+			"prefUUID": concept.UUID,
+			"allprops": allProps,
+		},
+	}
+	return createCanonicalNodeQuery
+}
+
+// sourceToCanonical creates Aggregates Concept from single source concept
+// TODO: This needs to use the aggregation code from aggy when it is extracted
+func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
+	var inceptionDate string
+	var terminationDate string
+	for _, r := range source.Relationships {
+		if r.Label != "HAS_ROLE" {
+			continue
+		}
+		if v, ok := r.Properties["inceptionDate"]; ok {
+			if s, ok := v.(string); ok {
+				inceptionDate = s
+			}
+		}
+		if v, ok := r.Properties["terminationDate"]; ok {
+			if s, ok := v.(string); ok {
+				terminationDate = s
+			}
+		}
+		break
+	}
+	return ontology.NewAggregatedConcept{
+		AggregatedHash:  source.Hash,
+		InceptionDate:   inceptionDate,
+		IssuedBy:        source.IssuedBy,
+		PrefLabel:       source.PrefLabel,
+		TerminationDate: terminationDate,
+		Type:            source.Type,
+		IsDeprecated:    source.IsDeprecated,
+	}
+}
+
 func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConcept ontology.NewAggregatedConcept) []*cmneo4j.Query {
 	var queryBatch []*cmneo4j.Query
 	equivQuery := &cmneo4j.Query{
@@ -38,41 +158,6 @@ func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUI
 			"prefUUID": prefUUID,
 			"allprops": allProps,
 		},
-	}
-
-	queryBatch = append(queryBatch, createConceptQuery)
-	return queryBatch
-}
-
-func WriteSourceQueries(concept ontology.NewConcept, uuid string) []*cmneo4j.Query {
-	var queryBatch []*cmneo4j.Query
-	var createConceptQuery *cmneo4j.Query
-
-	allProps := setProps(concept, uuid)
-	createConceptQuery = &cmneo4j.Query{
-		Cypher: fmt.Sprintf(`MERGE (n:Thing {uuid: $uuid})
-											set n=$allprops
-											set n :%s`, getAllLabels(concept.Type)),
-		Params: map[string]interface{}{
-			"uuid":     uuid,
-			"allprops": allProps,
-		},
-	}
-
-	if concept.IssuedBy != "" {
-		// Issued By needs a specific handling. That is why it is not in the config
-		// But we still want to use createRelQuery, so we create dummy relationship and config
-		issuedByCfg := ontology.RelationshipConfig{
-			ConceptField: "issuedBy",
-			OneToOne:     true,
-			NeoCreate:    true,
-		}
-		issuedByRel := ontology.Relationship{
-			UUID:       concept.IssuedBy,
-			Label:      "ISSUED_BY",
-			Properties: nil,
-		}
-		queryBatch = append(queryBatch, createRelQuery(concept.UUID, issuedByRel, issuedByCfg))
 	}
 
 	queryBatch = append(queryBatch, createConceptQuery)
@@ -164,7 +249,7 @@ func getAllLabels(conceptType string) string {
 
 //This function dictates which properties will be actually
 //written in neo for source nodes.
-func setProps(source ontology.NewConcept, uuid string) map[string]interface{} {
+func setProps(source ontology.NewConcept) map[string]interface{} {
 	nodeProps := map[string]interface{}{}
 	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
 
@@ -180,7 +265,7 @@ func setProps(source ontology.NewConcept, uuid string) map[string]interface{} {
 		nodeProps["isDeprecated"] = true
 	}
 
-	nodeProps["uuid"] = uuid
+	nodeProps["uuid"] = source.UUID
 	nodeProps["authority"] = source.Authority
 	nodeProps["authorityValue"] = source.AuthorityValue
 
@@ -230,61 +315,6 @@ func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string)
 	return nodeProps
 }
 
-// SourceToCanonical creates Aggregates Concept from single source concept
-// Used in concepts-rw-neo4j when we unconcord a concept and need to recreate a single canonical node.
-// TODO: This is needs to used the aggregation code from aggy when it is extracted
-func SourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
-	var inceptionDate string
-	var terminationDate string
-	for _, r := range source.Relationships {
-		if r.Label != "HAS_ROLE" {
-			continue
-		}
-		if v, ok := r.Properties["inceptionDate"]; ok {
-			if s, ok := v.(string); ok {
-				inceptionDate = s
-			}
-		}
-		if v, ok := r.Properties["terminationDate"]; ok {
-			if s, ok := v.(string); ok {
-				terminationDate = s
-			}
-		}
-		break
-	}
-	return ontology.NewAggregatedConcept{
-		AggregatedHash:  source.Hash,
-		InceptionDate:   inceptionDate,
-		IssuedBy:        source.IssuedBy,
-		PrefLabel:       source.PrefLabel,
-		TerminationDate: terminationDate,
-		Type:            source.Type,
-		IsDeprecated:    source.IsDeprecated,
-	}
-}
-
-// WriteCanonicalConceptQueries generate a list of neo4j queries that need to be executed in order to write a specific concept.
-func WriteCanonicalConceptQueries(aggregatedConcept ontology.NewAggregatedConcept) []*cmneo4j.Query {
-	var result []*cmneo4j.Query
-	result = append(result, createCanonicalNodeQueries(aggregatedConcept, aggregatedConcept.PrefUUID)...)
-
-	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
-		result = append(result, WriteSourceQueries(sourceConcept, sourceConcept.UUID)...)
-		result = append(result, createEquivalentToQueries(sourceConcept, aggregatedConcept)...)
-
-		for _, rel := range sourceConcept.Relationships {
-			relCfg, ok := ontology.GetConfig().Relationships[rel.Label]
-			if !ok {
-				continue
-			}
-
-			result = append(result, createRelQuery(sourceConcept.UUID, rel, relCfg))
-		}
-	}
-
-	return result
-}
-
 func filterSlice(a []string) []string {
 	r := []string{}
 	for _, str := range a {
@@ -297,22 +327,4 @@ func filterSlice(a []string) []string {
 	}
 
 	return r
-}
-
-//Create canonical node for any concepts that were removed from a concordance and thus would become lone
-func WriteCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *cmneo4j.Query {
-	allProps := setCanonicalProps(canonical, prefUUID)
-	createCanonicalNodeQuery := &cmneo4j.Query{
-		Cypher: fmt.Sprintf(`
-					MATCH (t:Thing{uuid:$prefUUID})
-					MERGE (n:Thing {prefUUID: $prefUUID})
-					MERGE (n)<-[:EQUIVALENT_TO]-(t)
-					set n=$allprops
-					set n :%s`, getAllLabels(canonical.Type)),
-		Params: map[string]interface{}{
-			"prefUUID": prefUUID,
-			"allprops": allProps,
-		},
-	}
-	return createCanonicalNodeQuery
 }

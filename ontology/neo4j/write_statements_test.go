@@ -96,6 +96,16 @@ func TestPopulateConceptQueries(t *testing.T) {
 	}
 }
 
+func TestWriteUnconcordedConcept(t *testing.T) {
+	concept := getSourceConcept(t, "WriteCanonicalForUnconcordedConcept/concept.json")
+	query := WriteCanonicalForUnconcordedConcept(concept)
+	got := cypherBatchToString([]*cmneo4j.Query{query})
+	expected := getFromGoldenFile(t, "testdata/WriteCanonicalForUnconcordedConcept/query.golden", got, *update)
+	if !cmp.Equal(expected, got) {
+		t.Errorf("Got unexpected Cypher query batch:\n%s", cmp.Diff(expected, got))
+	}
+}
+
 func TestFilterSlice(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -334,6 +344,20 @@ func getAggregatedConcept(t *testing.T, name string) ontology.NewAggregatedConce
 		t.Fatal(err)
 	}
 	result, err := transform.ToNewAggregateConcept(ac)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return result
+}
+
+func getSourceConcept(t *testing.T, name string) ontology.NewConcept {
+	t.Helper()
+	ac := transform.OldConcept{}
+	err := json.Unmarshal(helperLoadBytes(t, name), &ac)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := transform.ToNewSourceConcept(ac)
 	if err != nil {
 		t.Fatal(err)
 	}
