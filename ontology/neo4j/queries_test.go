@@ -38,7 +38,7 @@ func TestClearExistingConcept(t *testing.T) {
 }
 
 func TestGetLabelsToRemove(t *testing.T) {
-	expected := "Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification"
+	expected := "Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:AlphavilleSeries:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification"
 	got := getLabelsToRemove()
 	if expected != got {
 		t.Fatalf("expected '%s', but got '%s'", expected, got)

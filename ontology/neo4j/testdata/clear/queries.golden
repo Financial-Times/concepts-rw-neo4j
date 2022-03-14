@@ -16,7 +16,7 @@ OPTIONAL MATCH (t)-[impliedByRel:IMPLIED_BY]->(impliedByNode)
 OPTIONAL MATCH (t)-[isRelatedToRel:IS_RELATED_TO]->(isRelatedToNode)
 OPTIONAL MATCH (t)-[subOrganisationOfRel:SUB_ORGANISATION_OF]->(subOrganisationOfNode)
 OPTIONAL MATCH (t)-[supersededByRel:SUPERSEDED_BY]->(supersededByNode)
-		REMOVE t:Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification
+		REMOVE t:Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:AlphavilleSeries:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification
 		SET t={uuid:$id}
 		DELETE eq, issuerRel, countryOfIncorporationRel, countryOfOperationsRel, countryOfRiskRel, hasBroaderRel, hasFocusRel, hasIndustryClassificationRel, hasMemberRel, hasOrganisationRel, hasParentRel, hasRoleRel, impliedByRel, isRelatedToRel, subOrganisationOfRel, supersededByRel,
 Paremeters: {
@@ -41,7 +41,7 @@ OPTIONAL MATCH (t)-[impliedByRel:IMPLIED_BY]->(impliedByNode)
 OPTIONAL MATCH (t)-[isRelatedToRel:IS_RELATED_TO]->(isRelatedToNode)
 OPTIONAL MATCH (t)-[subOrganisationOfRel:SUB_ORGANISATION_OF]->(subOrganisationOfNode)
 OPTIONAL MATCH (t)-[supersededByRel:SUPERSEDED_BY]->(supersededByNode)
-		REMOVE t:Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification
+		REMOVE t:Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:AlphavilleSeries:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification
 		SET t={uuid:$id}
 		DELETE eq, issuerRel, countryOfIncorporationRel, countryOfOperationsRel, countryOfRiskRel, hasBroaderRel, hasFocusRel, hasIndustryClassificationRel, hasMemberRel, hasOrganisationRel, hasParentRel, hasRoleRel, impliedByRel, isRelatedToRel, subOrganisationOfRel, supersededByRel,
 Paremeters: {
@@ -50,7 +50,7 @@ Paremeters: {
 ==============================================================================
 Statement: MATCH (t:Thing {prefUUID:$acUUID})
 			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
-			REMOVE t:Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification
+			REMOVE t:Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:AlphavilleSeries:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification
 			SET t={prefUUID:$acUUID}
 			DELETE rel,
 Paremeters: {

@@ -142,6 +142,7 @@ conceptTypes:
   - Location
   - Genre
   - Brand
+  - AlphavilleSeries
   - Person
   - Organisation
   - MembershipRole
