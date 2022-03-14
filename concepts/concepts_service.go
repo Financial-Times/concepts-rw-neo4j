@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	"github.com/Financial-Times/go-logger/v2"
@@ -355,57 +356,24 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 }
 
 func (s *ConceptService) validateObject(aggConcept ontology.NewAggregatedConcept, transID string) error {
-
-	constraintMap := map[string]bool{
-		"Thing": true,
-	}
-	for _, ct := range ontology.GetConfig().GetConceptTypes() {
-		constraintMap[ct] = true
+	err := aggConcept.Validate()
+	if err == nil {
+		return nil
 	}
 
-	if aggConcept.PrefLabel == "" {
-		return requestError{s.formatError("prefLabel", aggConcept.PrefUUID, transID)}
-	}
-
-	if _, ok := constraintMap[aggConcept.Type]; !ok {
-		return requestError{s.formatError("type", aggConcept.PrefUUID, transID)}
-	}
-
-	if aggConcept.SourceRepresentations == nil {
-		return requestError{s.formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
-	}
-
-	if err := ontology.GetConfig().ValidateProperties(aggConcept.Properties); err != nil {
+	var propErr *ontology.ValidationPropertyErr
+	if !errors.As(err, &propErr) {
 		return requestError{err.Error()}
 	}
 
-	for _, sourceConcept := range aggConcept.SourceRepresentations {
-		if err := sourceConcept.Validate(); err != nil {
-			if errors.Is(err, ontology.ErrUnknownAuthority) {
-				s.log.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", sourceConcept.Authority)
-			} else {
-				s.log.WithError(err).WithTransactionID(transID).WithUUID(sourceConcept.UUID).Error("Validation of payload failed")
-			}
-
-			return requestError{err.Error()}
-		}
-
-		if sourceConcept.Type == "" {
-			return requestError{s.formatError("sourceRepresentation.type", sourceConcept.UUID, transID)}
-		}
-
-		if _, ok := constraintMap[sourceConcept.Type]; !ok {
-			return requestError{s.formatError("type", aggConcept.PrefUUID, transID)}
-		}
+	if strings.HasSuffix(propErr.Property, "authority") && propErr.Reason == ontology.UnknownPropertyErrReason {
+		s.log.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", propErr.Value)
+		return requestError{"unknown authority"}
 	}
 
-	return nil
-}
-
-func (s *ConceptService) formatError(field, uuid, transID string) string {
-	err := errors.New("invalid request, no " + field + " has been supplied")
-	s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Validation of payload failed")
-	return err.Error()
+	err = errors.New("invalid request, no " + propErr.Property + " has been supplied")
+	s.log.WithError(err).WithTransactionID(transID).WithUUID(propErr.ConceptUUID).Error("Validation of payload failed")
+	return requestError{err.Error()}
 }
 
 // Handle new source nodes that have been added to current concordance

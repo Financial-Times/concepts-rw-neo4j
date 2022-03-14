@@ -1,8 +1,6 @@
 package ontology
 
-import (
-	"errors"
-)
+import "errors"
 
 type Relationship struct {
 	UUID       string                 `json:"uuid"`
@@ -56,6 +54,43 @@ func (c NewAggregatedConcept) GetCanonicalAuthority() string {
 	return ""
 }
 
+func (c NewAggregatedConcept) Validate() error {
+	constraintMap := map[string]bool{
+		"Thing": true,
+	}
+	for _, ct := range GetConfig().GetConceptTypes() {
+		constraintMap[ct] = true
+	}
+
+	if c.PrefLabel == "" {
+		return newValidationPropertyErr(c.PrefUUID, "prefLabel", EmptyPropertyErrReason, nil)
+	}
+
+	if _, ok := constraintMap[c.Type]; !ok {
+		return newValidationPropertyErr(c.PrefUUID, "type", UnknownPropertyErrReason, c.Type)
+	}
+
+	if c.SourceRepresentations == nil {
+		return newValidationPropertyErr(c.PrefUUID, "sourceRepresentation", EmptyPropertyErrReason, nil)
+	}
+
+	if err := GetConfig().ValidateProperties(c.Properties); err != nil {
+		return err
+	}
+
+	for _, sourceConcept := range c.SourceRepresentations {
+		if err := sourceConcept.Validate(); err != nil {
+			var propErr *ValidationPropertyErr
+			if errors.As(err, &propErr) {
+				propErr.Property = "sourceRepresentation." + propErr.Property
+				return propErr
+			}
+			return err
+		}
+	}
+	return nil
+}
+
 // NewConcept - could be any concept genre, subject etc
 type NewConcept struct {
 	Relationships     []Relationship `json:"relationships"`
@@ -72,21 +107,33 @@ type NewConcept struct {
 	IsDeprecated bool `json:"isDeprecated,omitempty"`
 }
 
-var ErrEmptyAuthority = errors.New("invalid request, no sourceRepresentation.authority has been supplied")
-var ErrUnknownAuthority = errors.New("unknown authority")
-var ErrEmptyAuthorityValue = errors.New("invalid request, no sourceRepresentation.authorityValue has been supplied")
-
 func (c NewConcept) Validate() error {
+
+	constraintMap := map[string]bool{
+		"Thing": true,
+	}
+	for _, ct := range GetConfig().GetConceptTypes() {
+		constraintMap[ct] = true
+	}
+
+	if c.Type == "" {
+		return newValidationPropertyErr(c.UUID, "type", EmptyPropertyErrReason, nil)
+	}
+
+	if _, ok := constraintMap[c.Type]; !ok {
+		return newValidationPropertyErr(c.UUID, "type", UnknownPropertyErrReason, c.Type)
+	}
+
 	if c.Authority == "" {
-		return ErrEmptyAuthority
+		return newValidationPropertyErr(c.UUID, "authority", EmptyPropertyErrReason, nil)
 	}
 
 	if !stringInArr(c.Authority, GetConfig().Authorities) {
-		return ErrUnknownAuthority
+		return newValidationPropertyErr(c.UUID, "authority", UnknownPropertyErrReason, c.Authority)
 	}
 
 	if c.AuthorityValue == "" {
-		return ErrEmptyAuthorityValue
+		return newValidationPropertyErr(c.UUID, "authorityValue", EmptyPropertyErrReason, c.Authority)
 	}
 
 	return nil
