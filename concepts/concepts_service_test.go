@@ -1075,8 +1075,9 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 
 	oldConcept := getConcept(t, "old-membership.json")
 	newConcept, err := transform.ToNewSourceConcept(oldConcept)
+	newConcept.UUID = membershipUUID
 	assert.NoError(t, err)
-	queries := neo4j.WriteSourceQueries(newConcept, membershipUUID)
+	queries := neo4j.WriteSourceQueries(newConcept)
 	err = driver.Write(queries...)
 	assert.NoError(t, err, "Failed to write source")
 

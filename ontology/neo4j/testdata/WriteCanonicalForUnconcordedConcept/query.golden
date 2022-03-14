@@ -1,0 +1,14 @@
+Statement: 
+					MATCH (t:Thing{uuid:$prefUUID})
+					MERGE (n:Thing {prefUUID: $prefUUID})
+					MERGE (n)<-[:EQUIVALENT_TO]-(t)
+					set n=$allprops
+					set n :Section:Classification:Concept:Thing,
+Paremeters: {
+  "allprops": {
+    "aggregateHash": "",
+    "prefLabel": "Another Concept PrefLabel",
+    "prefUUID": "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
+  },
+  "prefUUID": "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
+}
