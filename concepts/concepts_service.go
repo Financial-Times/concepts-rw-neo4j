@@ -10,6 +10,7 @@ import (
 	"github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/mitchellh/hashstructure"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/neo4j"
@@ -159,6 +160,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	var queryBatch []*cmneo4j.Query
 	var prefUUIDsToBeDeleted []string
 	var updatedUUIDList []string
+	var orphanConcepts []ontology.NewConcept
 	updateRecord := ConceptChanges{}
 	if exists {
 		if existingAggregateConcept.AggregatedHash == "" {
@@ -200,9 +202,6 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 		}
 
-		clearDownQuery := neo4j.ClearExistingConcept(aggregatedConceptToWrite)
-		queryBatch = append(queryBatch, clearDownQuery...)
-
 		for idToUnconcord := range conceptsToUnconcord {
 			for _, concept := range existingAggregateConcept.SourceRepresentations {
 				if idToUnconcord == concept.UUID {
@@ -210,11 +209,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					//set this to 0 as otherwise it is empty
 					//TODO fix this up at some point to do it properly?
 					concept.Hash = "0"
-
-					canonical := neo4j.SourceToCanonical(concept)
-					unconcordQuery := neo4j.WriteCanonicalNodeForUnconcordedConcepts(canonical, concept.UUID)
-					s.log.WithTransactionID(transID).WithUUID(concept.UUID).Warn("Creating prefUUID node for unconcorded concept")
-					queryBatch = append(queryBatch, unconcordQuery)
+					orphanConcepts = append(orphanConcepts, concept)
 
 					//We will need to send a notification of ids that have been removed from current concordance
 					updatedUUIDList = append(updatedUUIDList, idToUnconcord)
@@ -240,22 +235,11 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			return updateRecord, err
 		}
 
-		clearDownQuery := neo4j.ClearExistingConcept(aggregatedConceptToWrite)
-		queryBatch = append(queryBatch, clearDownQuery...)
-
 		//Concept is new, send notification of all source ids
 		for _, source := range aggregatedConceptToWrite.SourceRepresentations {
 			updatedUUIDList = append(updatedUUIDList, source.UUID)
 		}
 	}
-
-	for _, uuid := range prefUUIDsToBeDeleted {
-		queryBatch = append(queryBatch, removeLoneCanonicalNode(uuid))
-	}
-
-	aggregatedConceptToWrite.AggregatedHash = hashAsString
-	writeQueries := neo4j.WriteCanonicalConceptQueries(aggregatedConceptToWrite)
-	queryBatch = append(queryBatch, writeQueries...)
 
 	updateRecord.UpdatedIds = updatedUUIDList
 	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
@@ -268,10 +252,27 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		},
 	})
 
-	s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
-	for _, query := range queryBatch {
-		s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
+	// for the new concept we remove all previous concept to concept relations and all properties for the source concepts.
+	// as well as the source node to canonical node relationship.
+	clearDownQuery := neo4j.ClearExistingConcept(aggregatedConceptToWrite)
+	queryBatch = append(queryBatch, clearDownQuery...)
+
+	// for source concepts that were unconcorded we recreate the canonical node
+	for _, concept := range orphanConcepts {
+		canonical := neo4j.SourceToCanonical(concept)
+		unconcordQuery := neo4j.WriteCanonicalNodeForUnconcordedConcepts(canonical, concept.UUID)
+		s.log.WithTransactionID(transID).WithUUID(concept.UUID).Warn("Creating prefUUID node for unconcorded concept")
+		queryBatch = append(queryBatch, unconcordQuery)
 	}
+
+	// for source concepts that were concorded we remove the undesired canonical node
+	for _, uuid := range prefUUIDsToBeDeleted {
+		queryBatch = append(queryBatch, removeLoneCanonicalNode(uuid))
+	}
+
+	aggregatedConceptToWrite.AggregatedHash = hashAsString
+	writeQueries := neo4j.WriteCanonicalConceptQueries(aggregatedConceptToWrite)
+	queryBatch = append(queryBatch, writeQueries...)
 
 	// check that the issuer is not already related to a different org
 	if aggregatedConceptToWrite.IssuedBy != "" {
@@ -296,41 +297,46 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			return updateRecord, err
 		}
 
-		if len(fiRes) > 0 {
-			for _, fi := range fiRes {
-				fiUUID, ok := fi["fiUUID"]
-				if !ok {
-					continue
-				}
+		for _, fi := range fiRes {
+			fiUUID, ok := fi["fiUUID"]
+			if !ok {
+				continue
+			}
 
-				if fiUUID == aggregatedConceptToWrite.PrefUUID {
-					continue
-				}
+			if fiUUID == aggregatedConceptToWrite.PrefUUID {
+				continue
+			}
 
-				msg := fmt.Sprintf(
-					"Issuer for %s was changed from %s to %s",
-					aggregatedConceptToWrite.IssuedBy,
-					fiUUID,
-					aggregatedConceptToWrite.PrefUUID,
-				)
-				s.log.WithTransactionID(transID).
-					WithUUID(aggregatedConceptToWrite.PrefUUID).
-					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
+			msg := fmt.Sprintf(
+				"Issuer for %s was changed from %s to %s",
+				aggregatedConceptToWrite.IssuedBy,
+				fiUUID,
+				aggregatedConceptToWrite.PrefUUID,
+			)
+			s.log.WithTransactionID(transID).
+				WithUUID(aggregatedConceptToWrite.PrefUUID).
+				WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
 
-				deleteIssuerRelations := &cmneo4j.Query{
-					Cypher: `
+			deleteIssuerRelations := &cmneo4j.Query{
+				Cypher: `
 					MATCH (issuer:Thing {uuid: $issuerUUID})
 					MATCH (fi:Thing {uuid: $fiUUID})
 					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(fi)
 					DELETE issuerRel
 				`,
-					Params: map[string]interface{}{
-						"issuerUUID": aggregatedConceptToWrite.IssuedBy,
-						"fiUUID":     fiUUID,
-					},
-				}
-				queryBatch = append(queryBatch, deleteIssuerRelations)
+				Params: map[string]interface{}{
+					"issuerUUID": aggregatedConceptToWrite.IssuedBy,
+					"fiUUID":     fiUUID,
+				},
 			}
+			queryBatch = append(queryBatch, deleteIssuerRelations)
+		}
+	}
+
+	s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
+	if s.log.IsLevelEnabled(logrus.DebugLevel) {
+		for _, query := range queryBatch {
+			s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
 		}
 	}
 
