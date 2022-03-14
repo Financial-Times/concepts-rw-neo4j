@@ -83,6 +83,12 @@ func (s *ConceptService) Initialise() error {
 		return err
 	}
 
+	constraintMap := map[string]string{
+		"Thing": "uuid",
+	}
+	for _, conceptType := range ontology.GetConfig().GetConceptTypes() {
+		constraintMap[conceptType] = "uuid"
+	}
 	err = s.driver.EnsureConstraints(constraintMap)
 	if err != nil && !errors.Is(err, cmneo4j.ErrNeo4jVersionNotSupported) {
 		s.log.WithError(err).Error("Could not run db constraints")
@@ -349,6 +355,14 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 }
 
 func (s *ConceptService) validateObject(aggConcept ontology.NewAggregatedConcept, transID string) error {
+
+	constraintMap := map[string]bool{
+		"Thing": true,
+	}
+	for _, ct := range ontology.GetConfig().GetConceptTypes() {
+		constraintMap[ct] = true
+	}
+
 	if aggConcept.PrefLabel == "" {
 		return requestError{s.formatError("prefLabel", aggConcept.PrefUUID, transID)}
 	}

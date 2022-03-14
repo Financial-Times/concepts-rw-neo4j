@@ -22,28 +22,3 @@ type ConcordanceEvent struct {
 	OldID string `json:"oldID"`
 	NewID string `json:"newID"`
 }
-
-// Map of all the possible node types so we can ensure they all have
-// constraints on the uuid
-var constraintMap = map[string]string{
-	"Thing":                       "uuid",
-	"Concept":                     "uuid",
-	"Classification":              "uuid",
-	"Section":                     "uuid",
-	"Subject":                     "uuid",
-	"SpecialReport":               "uuid",
-	"Location":                    "uuid",
-	"Topic":                       "uuid",
-	"Genre":                       "uuid",
-	"Brand":                       "uuid",
-	"AlphavilleSeries":            "uuid",
-	"PublicCompany":               "uuid",
-	"Person":                      "uuid",
-	"Organisation":                "uuid",
-	"MembershipRole":              "uuid",
-	"BoardRole":                   "uuid",
-	"Membership":                  "uuid",
-	"FinancialInstrument":         "uuid",
-	"IndustryClassification":      "uuid",
-	"NAICSIndustryClassification": "uuid",
-}
