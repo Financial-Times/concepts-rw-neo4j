@@ -20,6 +20,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/hashstructure"
+	"github.com/sirupsen/logrus"
+	logTest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
@@ -2057,10 +2059,20 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 }
 
 func TestValidateObject(t *testing.T) {
+	cacheOut := conceptsDriver.log.Logger.Out
+	cacheLevel := conceptsDriver.log.Logger.Level
+
+	conceptsDriver.log.SetLevel(logrus.DebugLevel)
+	conceptsDriver.log.Logger.Out = ioutil.Discard
+	defer func() {
+		conceptsDriver.log.Logger.Out = cacheOut
+		conceptsDriver.log.SetLevel(cacheLevel)
+	}()
 	tests := []struct {
 		name          string
 		aggConcept    transform.OldAggregatedConcept
 		returnedError string
+		expectedLogs  []map[string]interface{}
 	}{
 		{
 			name: "aggregate concept without prefLabel should be invalid",
@@ -2069,7 +2081,7 @@ func TestValidateObject(t *testing.T) {
 				Type:     "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Type:           "Brand",
 						AuthorityValue: "123456-UPP",
@@ -2077,6 +2089,15 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no prefLabel has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no prefLabel has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           basicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "aggregate concept without type should be invalid",
@@ -2085,7 +2106,7 @@ func TestValidateObject(t *testing.T) {
 				PrefLabel: "The Best Label",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Type:           "Brand",
 						AuthorityValue: "123456-UPP",
@@ -2093,6 +2114,15 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no type has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no type has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           basicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "aggregate concept without source representations should be invalid",
@@ -2102,6 +2132,15 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 			},
 			returnedError: "invalid request, no sourceRepresentation has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no sourceRepresentation has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           basicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "source representation without prefLabel should be valid",
@@ -2111,7 +2150,7 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						Type:           "Brand",
 						AuthorityValue: "123456-UPP",
 						Authority:      "UPP",
@@ -2127,7 +2166,7 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Authority:      "UPP",
 						AuthorityValue: "123456-UPP",
@@ -2135,6 +2174,15 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no sourceRepresentation.type has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no sourceRepresentation.type has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           anotherBasicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "source representation without authorityValue should be invalid",
@@ -2144,7 +2192,7 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:      basicConceptUUID,
+						UUID:      anotherBasicConceptUUID,
 						PrefLabel: "The Best Label",
 						Type:      "Brand",
 						Authority: "UPP",
@@ -2152,6 +2200,15 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no sourceRepresentation.authorityValue has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no sourceRepresentation.authorityValue has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           anotherBasicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "source representation without authority should be invalid",
@@ -2161,7 +2218,7 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Type:           "Brand",
 						AuthorityValue: "123456-UPP",
@@ -2169,6 +2226,41 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no sourceRepresentation.authority has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no sourceRepresentation.authority has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           anotherBasicConceptUUID,
+				},
+			},
+		},
+		{
+			name: "source representation with unknown authority should be invalid",
+			aggConcept: transform.OldAggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []transform.OldConcept{
+					{
+						UUID:           anotherBasicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						Authority:      "Invalid",
+						AuthorityValue: "123456-UPP",
+					},
+				},
+			},
+			returnedError: "unknown authority",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.DebugLevel,
+					"msg":            "Unknown authority supplied in the request: Invalid",
+					"transaction_id": "transaction_id",
+					"uuid":           basicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "valid concept",
@@ -2181,7 +2273,7 @@ func TestValidateObject(t *testing.T) {
 				YearFounded: 2000,
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Type:           "Brand",
 						Authority:      "UPP",
@@ -2194,17 +2286,59 @@ func TestValidateObject(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			hook := new(logTest.Hook)
+			conceptsDriver.log.AddHook(hook)
+
 			newAggConcept, err := transform.ToNewAggregateConcept(test.aggConcept)
 			assert.NoError(t, err)
 			err = conceptsDriver.validateObject(newAggConcept, "transaction_id")
 			if err != nil {
 				assert.NotEmpty(t, test.returnedError, "test.returnedError should not be empty when there is an error")
 				assert.Contains(t, err.Error(), test.returnedError, test.name)
+				assertValidLogs(t, hook, test.expectedLogs)
 			} else {
 				assert.Empty(t, test.returnedError, "test.returnedError should be empty when there is no error")
 				assert.NoError(t, err, test.name)
 			}
 		})
+	}
+}
+
+func assertValidLogs(t *testing.T, hook *logTest.Hook, expectedLogs []map[string]interface{}) {
+	t.Helper()
+	entries := hook.AllEntries()
+	if len(entries) != len(expectedLogs) {
+		t.Fatalf("missing logs. expected %d, but logged %d", len(entries), len(expectedLogs))
+	}
+
+	opts := cmp.Options{
+		cmp.Comparer(func(l, r error) bool {
+			return l.Error() == r.Error()
+		}),
+	}
+	for idx, entry := range entries {
+		expectedLog := expectedLogs[idx]
+		for key, expected := range expectedLog {
+			var got interface{}
+			var ok bool
+			switch key {
+			case "level":
+				got = entry.Level
+				ok = true
+			case "msg":
+				got = entry.Message
+				ok = true
+			default:
+				got, ok = entry.Data[key]
+			}
+
+			if !ok {
+				t.Fatalf("expected log entry %d to have key %s", idx, key)
+			}
+			if !cmp.Equal(expected, got, opts...) {
+				t.Fatalf("mismatch log_%d: field '%s': %s", idx, key, cmp.Diff(expected, got, opts...))
+			}
+		}
 	}
 }
 
