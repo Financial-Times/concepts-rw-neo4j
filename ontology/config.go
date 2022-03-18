@@ -2,7 +2,6 @@ package ontology
 
 import (
 	"embed"
-	"errors"
 	"fmt"
 
 	"gopkg.in/yaml.v2"
@@ -27,10 +26,8 @@ type Config struct {
 	Fields        map[string]FieldConfig        `yaml:"fields"`
 	Relationships map[string]RelationshipConfig `yaml:"relationships"`
 	Authorities   []string                      `yaml:"authorities"`
+	ConceptTypes  []string                      `yaml:"conceptTypes"`
 }
-
-var ErrUnknownProperty = errors.New("unknown concept property")
-var ErrInvalidPropertyValue = errors.New("invalid property value")
 
 func (cfg Config) ValidateProperties(props map[string]interface{}) error {
 	for propName, propVal := range props {
@@ -107,4 +104,8 @@ func init() {
 
 func GetConfig() Config {
 	return config
+}
+
+func (cfg Config) GetConceptTypes() []string {
+	return cfg.ConceptTypes
 }

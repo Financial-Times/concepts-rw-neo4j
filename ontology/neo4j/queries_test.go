@@ -2,8 +2,10 @@ package neo4j
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -15,6 +17,33 @@ import (
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
 )
+
+var update = flag.Bool("update", false, "update the golden files for tests")
+
+func TestGetReadQuery(t *testing.T) {
+	goldenFileName := "testdata/read/cypher-statement.golden"
+	queries, _ := GetReadQuery("uuid")
+	if diff := compareQueriesWithGoldenFile(t, goldenFileName, []*cmneo4j.Query{queries}); diff != "" {
+		t.Errorf("Got unexpected Cypher statement:\n%s", diff)
+	}
+}
+
+func TestClearExistingConcept(t *testing.T) {
+	goldenFileName := "testdata/clear/queries.golden"
+	concept := getAggregatedConcept(t, "clear/concept.json")
+	queries := ClearExistingConcept(concept)
+	if diff := compareQueriesWithGoldenFile(t, goldenFileName, queries); diff != "" {
+		t.Errorf("Got unexpected Cypher statement:\n%s", diff)
+	}
+}
+
+func TestGetLabelsToRemove(t *testing.T) {
+	expected := "Concept:Classification:Section:Subject:SpecialReport:Topic:Location:Genre:Brand:AlphavilleSeries:Person:Organisation:MembershipRole:Membership:BoardRole:FinancialInstrument:Company:PublicCompany:IndustryClassification:NAICSIndustryClassification"
+	got := getLabelsToRemove()
+	if expected != got {
+		t.Fatalf("expected '%s', but got '%s'", expected, got)
+	}
+}
 
 func TestPopulateConceptQueries(t *testing.T) {
 	tests := []struct {
@@ -82,12 +111,8 @@ func TestPopulateConceptQueries(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var concept ontology.NewAggregatedConcept
-			var err error
 			if test.conceptFile != "" {
-				concept, err = transform.ToNewAggregateConcept(getAggregatedConcept(t, test.conceptFile))
-				if err != nil {
-					t.Fatal(err)
-				}
+				concept = getAggregatedConcept(t, test.conceptFile)
 			}
 			queries := WriteCanonicalConceptQueries(concept)
 			got := cypherBatchToString(queries)
@@ -97,6 +122,16 @@ func TestPopulateConceptQueries(t *testing.T) {
 				t.Errorf("Got unexpected Cypher query batch:\n%s", cmp.Diff(expectedStatement, got))
 			}
 		})
+	}
+}
+
+func TestWriteUnconcordedConcept(t *testing.T) {
+	concept := getSourceConcept(t, "WriteCanonicalForUnconcordedConcept/concept.json")
+	query := WriteCanonicalForUnconcordedConcept(concept)
+	got := cypherBatchToString([]*cmneo4j.Query{query})
+	expected := getFromGoldenFile(t, "testdata/WriteCanonicalForUnconcordedConcept/query.golden", got, *update)
+	if !cmp.Equal(expected, got) {
+		t.Errorf("Got unexpected Cypher query batch:\n%s", cmp.Diff(expected, got))
 	}
 }
 
@@ -330,11 +365,75 @@ func helperLoadBytes(t *testing.T, name string) []byte {
 
 // A lone concept should always have matching pref labels and uuid at the src system level and the top level - We are
 // currently missing validation around this
-func getAggregatedConcept(t *testing.T, name string) transform.OldAggregatedConcept {
+func getAggregatedConcept(t *testing.T, name string) ontology.NewAggregatedConcept {
+	t.Helper()
 	ac := transform.OldAggregatedConcept{}
 	err := json.Unmarshal(helperLoadBytes(t, name), &ac)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return ac
+	result, err := transform.ToNewAggregateConcept(ac)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return result
+}
+
+func getSourceConcept(t *testing.T, name string) ontology.NewConcept {
+	t.Helper()
+	ac := transform.OldConcept{}
+	err := json.Unmarshal(helperLoadBytes(t, name), &ac)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := transform.ToNewSourceConcept(ac)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return result
+}
+
+// compareQueriesWithGoldenFile reads query data from a golden file and compares it as string with the actual queries
+// It returns the differences it found as a string in `cmp` format.
+// Otherwise, it returns an empty string.
+func compareQueriesWithGoldenFile(t *testing.T, filename string, queries []*cmneo4j.Query) string {
+	t.Helper()
+	statement := cypherBatchToString(queries)
+	expectedStatement := getFromGoldenFile(t, filename, statement, *update)
+	if cmp.Equal(expectedStatement, statement) {
+		return ""
+	}
+	return cmp.Diff(expectedStatement, statement)
+}
+
+func getFromGoldenFile(t *testing.T, fileName string, actual string, update bool) string {
+	t.Helper()
+
+	if update {
+		file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+		if err != nil {
+			t.Fatalf("failed to open golden file %s: %v", fileName, err)
+		}
+		defer file.Close()
+
+		_, err = file.WriteString(actual)
+		if err != nil {
+			t.Fatalf("failed writing to golden file %s: %v", fileName, err)
+		}
+
+		return actual
+	}
+
+	file, err := os.OpenFile(fileName, os.O_RDONLY, 0755)
+	if err != nil {
+		t.Fatalf("failed to open golden file %s: %v", fileName, err)
+	}
+	defer file.Close()
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		t.Fatalf("failed opening golden file %s: %v", fileName, err)
+	}
+
+	return string(content)
 }

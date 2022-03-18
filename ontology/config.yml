@@ -132,3 +132,24 @@ authorities:
   - Wikidata
   - DBPedia
   - NAICS
+conceptTypes:
+  - Concept
+  - Classification
+  - Section
+  - Subject
+  - SpecialReport
+  - Topic
+  - Location
+  - Genre
+  - Brand
+  - AlphavilleSeries
+  - Person
+  - Organisation
+  - MembershipRole
+  - Membership
+  - BoardRole
+  - FinancialInstrument
+  - Company
+  - PublicCompany
+  - IndustryClassification
+  - NAICSIndustryClassification

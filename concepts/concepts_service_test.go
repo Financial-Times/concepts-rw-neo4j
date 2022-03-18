@@ -20,10 +20,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/hashstructure"
+	"github.com/sirupsen/logrus"
+	logTest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
-	logger "github.com/Financial-Times/go-logger/v2"
+	"github.com/Financial-Times/go-logger/v2"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
 	"github.com/Financial-Times/concepts-rw-neo4j/ontology/neo4j"
@@ -1075,8 +1077,9 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 
 	oldConcept := getConcept(t, "old-membership.json")
 	newConcept, err := transform.ToNewSourceConcept(oldConcept)
+	newConcept.UUID = membershipUUID
 	assert.NoError(t, err)
-	queries := neo4j.WriteSourceQueries(newConcept, membershipUUID)
+	queries := neo4j.WriteSourceQueries(newConcept)
 	err = driver.Write(queries...)
 	assert.NoError(t, err, "Failed to write source")
 
@@ -1890,13 +1893,12 @@ func TestTransferConcordance(t *testing.T) {
 	statement := `MERGE (a:Thing{prefUUID:"1"}) MERGE (b:Thing{uuid:"1"}) MERGE (c:Thing{uuid:"2"}) MERGE (d:Thing{uuid:"3"}) MERGE (w:Thing{prefUUID:"4"}) MERGE (y:Thing{uuid:"5"}) MERGE (j:Thing{prefUUID:"6"}) MERGE (k:Thing{uuid:"6"}) MERGE (c)-[:EQUIVALENT_TO]->(a)<-[:EQUIVALENT_TO]-(b) MERGE (w)<-[:EQUIVALENT_TO]-(d) MERGE (j)<-[:EQUIVALENT_TO]-(k)`
 	err := driver.Write(&cmneo4j.Query{Cypher: statement})
 	assert.NoError(t, err, "Unexpected error on Write to the db")
-	var emptyQuery []*cmneo4j.Query
 	var updatedConcept ConceptChanges
 
 	type testStruct struct {
 		testName         string
 		updatedSourceIds map[string]string
-		returnResult     bool
+		expectedResult   []string
 		returnedError    error
 	}
 
@@ -1934,8 +1936,8 @@ func TestTransferConcordance(t *testing.T) {
 		testName: "nodeHasConcordanceToItselfPrefNodeNeedsToBeDeleted",
 		updatedSourceIds: map[string]string{
 			"6": "Brand"},
-		returnResult:  true,
-		returnedError: nil,
+		expectedResult: []string{"6"},
+		returnedError:  nil,
 	}
 
 	scenarios := []testStruct{
@@ -1950,11 +1952,11 @@ func TestTransferConcordance(t *testing.T) {
 	for _, scenario := range scenarios {
 		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", ontology.NewAggregatedConcept{}, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
-		if scenario.returnResult == true {
-			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		if scenario.expectedResult != nil {
+			assert.Equal(t, scenario.expectedResult, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 			break
 		}
-		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		assert.Empty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 	}
 
 	defer deleteSourceNodes(t, "1", "2", "3", "5", "6")
@@ -1984,13 +1986,13 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	MERGE (ml)-[:EQUIVALENT_TO]->(mlCanonical)<-[:EQUIVALENT_TO]-(tme)`
 	err := driver.Write(&cmneo4j.Query{Cypher: statement})
 	assert.NoError(t, err, "Unexpected error on Write to the db")
-	var emptyQuery []*cmneo4j.Query
+
 	var updatedConcept ConceptChanges
 
 	type testStruct struct {
 		testName          string
 		updatedSourceIds  map[string]string
-		returnResult      bool
+		expectedResult    []string
 		returnedError     error
 		targetConcordance transform.OldAggregatedConcept
 	}
@@ -1998,8 +2000,8 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		testName: "mergeManagedLocationCanonicalWithTwoSources",
 		updatedSourceIds: map[string]string{
 			"2": "Brand"},
-		returnedError: nil,
-		returnResult:  true,
+		returnedError:  nil,
+		expectedResult: []string{"2"},
 		targetConcordance: transform.OldAggregatedConcept{
 			PrefUUID: "1",
 			SourceRepresentations: []transform.OldConcept{
@@ -2014,8 +2016,8 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		updatedSourceIds: map[string]string{
 			"3": "Brand",
 			"2": "Brand"},
-		returnedError: nil,
-		returnResult:  true,
+		returnedError:  nil,
+		expectedResult: []string{"2"},
 		targetConcordance: transform.OldAggregatedConcept{
 			PrefUUID: "1",
 			SourceRepresentations: []transform.OldConcept{
@@ -2030,7 +2032,8 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		testName: "mergeJustASourceConcordance",
 		updatedSourceIds: map[string]string{
 			"4": "Brand"},
-		returnedError: nil,
+		returnedError:  nil,
+		expectedResult: nil,
 	}
 
 	scenarios := []testStruct{
@@ -2044,11 +2047,11 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		assert.NoError(t, err)
 		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", newConcordance, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
-		if scenario.returnResult == true {
-			assert.NotEqual(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		if scenario.expectedResult != nil {
+			assert.Equal(t, scenario.expectedResult, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 			continue
 		}
-		assert.Equal(t, emptyQuery, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
+		assert.Empty(t, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
 	}
 
 	defer deleteSourceNodes(t, "1", "2", "3", "5")
@@ -2056,10 +2059,20 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 }
 
 func TestValidateObject(t *testing.T) {
+	cacheOut := conceptsDriver.log.Logger.Out
+	cacheLevel := conceptsDriver.log.Logger.Level
+
+	conceptsDriver.log.SetLevel(logrus.DebugLevel)
+	conceptsDriver.log.Logger.Out = ioutil.Discard
+	defer func() {
+		conceptsDriver.log.Logger.Out = cacheOut
+		conceptsDriver.log.SetLevel(cacheLevel)
+	}()
 	tests := []struct {
 		name          string
 		aggConcept    transform.OldAggregatedConcept
 		returnedError string
+		expectedLogs  []map[string]interface{}
 	}{
 		{
 			name: "aggregate concept without prefLabel should be invalid",
@@ -2068,7 +2081,7 @@ func TestValidateObject(t *testing.T) {
 				Type:     "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Type:           "Brand",
 						AuthorityValue: "123456-UPP",
@@ -2076,6 +2089,15 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no prefLabel has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no prefLabel has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           basicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "aggregate concept without type should be invalid",
@@ -2084,7 +2106,7 @@ func TestValidateObject(t *testing.T) {
 				PrefLabel: "The Best Label",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Type:           "Brand",
 						AuthorityValue: "123456-UPP",
@@ -2092,6 +2114,15 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no type has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no type has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           basicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "aggregate concept without source representations should be invalid",
@@ -2101,6 +2132,15 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 			},
 			returnedError: "invalid request, no sourceRepresentation has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no sourceRepresentation has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           basicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "source representation without prefLabel should be valid",
@@ -2110,7 +2150,7 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						Type:           "Brand",
 						AuthorityValue: "123456-UPP",
 						Authority:      "UPP",
@@ -2126,7 +2166,7 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Authority:      "UPP",
 						AuthorityValue: "123456-UPP",
@@ -2134,6 +2174,15 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no sourceRepresentation.type has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no sourceRepresentation.type has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           anotherBasicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "source representation without authorityValue should be invalid",
@@ -2143,7 +2192,7 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:      basicConceptUUID,
+						UUID:      anotherBasicConceptUUID,
 						PrefLabel: "The Best Label",
 						Type:      "Brand",
 						Authority: "UPP",
@@ -2151,6 +2200,15 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no sourceRepresentation.authorityValue has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no sourceRepresentation.authorityValue has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           anotherBasicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "source representation without authority should be invalid",
@@ -2160,7 +2218,7 @@ func TestValidateObject(t *testing.T) {
 				Type:      "Brand",
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Type:           "Brand",
 						AuthorityValue: "123456-UPP",
@@ -2168,6 +2226,41 @@ func TestValidateObject(t *testing.T) {
 				},
 			},
 			returnedError: "invalid request, no sourceRepresentation.authority has been supplied",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.ErrorLevel,
+					"msg":            "Validation of payload failed",
+					"error":          errors.New("invalid request, no sourceRepresentation.authority has been supplied"),
+					"transaction_id": "transaction_id",
+					"uuid":           anotherBasicConceptUUID,
+				},
+			},
+		},
+		{
+			name: "source representation with unknown authority should be invalid",
+			aggConcept: transform.OldAggregatedConcept{
+				PrefUUID:  basicConceptUUID,
+				PrefLabel: "The Best Label",
+				Type:      "Brand",
+				SourceRepresentations: []transform.OldConcept{
+					{
+						UUID:           anotherBasicConceptUUID,
+						PrefLabel:      "The Best Label",
+						Type:           "Brand",
+						Authority:      "Invalid",
+						AuthorityValue: "123456-UPP",
+					},
+				},
+			},
+			returnedError: "unknown authority",
+			expectedLogs: []map[string]interface{}{
+				{
+					"level":          logrus.DebugLevel,
+					"msg":            "Unknown authority supplied in the request: Invalid",
+					"transaction_id": "transaction_id",
+					"uuid":           basicConceptUUID,
+				},
+			},
 		},
 		{
 			name: "valid concept",
@@ -2180,7 +2273,7 @@ func TestValidateObject(t *testing.T) {
 				YearFounded: 2000,
 				SourceRepresentations: []transform.OldConcept{
 					{
-						UUID:           basicConceptUUID,
+						UUID:           anotherBasicConceptUUID,
 						PrefLabel:      "The Best Label",
 						Type:           "Brand",
 						Authority:      "UPP",
@@ -2193,17 +2286,59 @@ func TestValidateObject(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			hook := new(logTest.Hook)
+			conceptsDriver.log.AddHook(hook)
+
 			newAggConcept, err := transform.ToNewAggregateConcept(test.aggConcept)
 			assert.NoError(t, err)
 			err = conceptsDriver.validateObject(newAggConcept, "transaction_id")
 			if err != nil {
 				assert.NotEmpty(t, test.returnedError, "test.returnedError should not be empty when there is an error")
 				assert.Contains(t, err.Error(), test.returnedError, test.name)
+				assertValidLogs(t, hook, test.expectedLogs)
 			} else {
 				assert.Empty(t, test.returnedError, "test.returnedError should be empty when there is no error")
 				assert.NoError(t, err, test.name)
 			}
 		})
+	}
+}
+
+func assertValidLogs(t *testing.T, hook *logTest.Hook, expectedLogs []map[string]interface{}) {
+	t.Helper()
+	entries := hook.AllEntries()
+	if len(entries) != len(expectedLogs) {
+		t.Fatalf("missing logs. expected %d, but logged %d", len(entries), len(expectedLogs))
+	}
+
+	opts := cmp.Options{
+		cmp.Comparer(func(l, r error) bool {
+			return l.Error() == r.Error()
+		}),
+	}
+	for idx, entry := range entries {
+		expectedLog := expectedLogs[idx]
+		for key, expected := range expectedLog {
+			var got interface{}
+			var ok bool
+			switch key {
+			case "level":
+				got = entry.Level
+				ok = true
+			case "msg":
+				got = entry.Message
+				ok = true
+			default:
+				got, ok = entry.Data[key]
+			}
+
+			if !ok {
+				t.Fatalf("expected log entry %d to have key %s", idx, key)
+			}
+			if !cmp.Equal(expected, got, opts...) {
+				t.Fatalf("mismatch log_%d: field '%s': %s", idx, key, cmp.Diff(expected, got, opts...))
+			}
+		}
 	}
 }
 
