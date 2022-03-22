@@ -27,9 +27,9 @@ import (
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	"github.com/Financial-Times/go-logger/v2"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology/neo4j"
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
+	ontology "github.com/Financial-Times/cm-graph-ontology"
+	"github.com/Financial-Times/cm-graph-ontology/neo4j"
+	"github.com/Financial-Times/cm-graph-ontology/transform"
 )
 
 //all uuids to be cleaned from DB

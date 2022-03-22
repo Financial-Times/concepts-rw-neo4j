@@ -13,9 +13,9 @@ import (
 	"github.com/mitchellh/hashstructure"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology/neo4j"
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
+	ontology "github.com/Financial-Times/cm-graph-ontology"
+	"github.com/Financial-Times/cm-graph-ontology/neo4j"
+	"github.com/Financial-Times/cm-graph-ontology/transform"
 )
 
 const (

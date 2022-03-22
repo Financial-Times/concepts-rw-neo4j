@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
+	"github.com/Financial-Times/cm-graph-ontology/transform"
 
 	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"

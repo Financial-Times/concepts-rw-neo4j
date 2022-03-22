@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology/transform"
+	"github.com/Financial-Times/cm-graph-ontology/transform"
 
 	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
