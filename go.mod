@@ -3,7 +3,7 @@ module github.com/Financial-Times/concepts-rw-neo4j
 go 1.16
 
 require (
-	github.com/Financial-Times/cm-graph-ontology v0.0.0-20220318083441-0d68b6181052
+	github.com/Financial-Times/cm-graph-ontology v0.0.1
 	github.com/Financial-Times/cm-neo4j-driver v1.1.0
 	github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7
 	github.com/Financial-Times/go-logger/v2 v2.0.1
