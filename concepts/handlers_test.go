@@ -8,7 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
+	"github.com/Financial-Times/cm-graph-ontology/transform"
+
 	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 
@@ -33,7 +34,7 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
@@ -48,7 +49,7 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/Dummy/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
@@ -63,7 +64,7 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/financial-instruments/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "FinancialInstrument"}, knownUUID, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "FinancialInstrument"}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
@@ -78,7 +79,7 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/FinancialInstrument/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "FinancialInstrument"}, knownUUID, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "FinancialInstrument"}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
@@ -105,7 +106,7 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999"), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
@@ -120,7 +121,7 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
 					return nil, errors.New("TEST failing to WRITE")
@@ -135,7 +136,7 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
 					return nil, rwapi.ConstraintOrTransactionError{}
@@ -150,7 +151,7 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, knownUUID, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
 					return ConceptChanges{}, nil
@@ -188,7 +189,7 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
 				},
 			},
 			statusCode:  http.StatusOK,
@@ -200,7 +201,7 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/Dummy/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
 				},
 			},
 			statusCode:  http.StatusBadRequest,
@@ -212,7 +213,7 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/locations/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
 				},
 			},
 			statusCode:  http.StatusOK,
@@ -224,7 +225,7 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/Location/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
 				},
 			},
 			statusCode:  http.StatusBadRequest,
@@ -260,7 +261,7 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.AggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
 				},
 			},
 			statusCode:  http.StatusBadRequest,

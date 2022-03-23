@@ -5,18 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"time"
+	"strings"
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
-	logger "github.com/Financial-Times/go-logger/v2"
+	"github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/mitchellh/hashstructure"
+	"github.com/sirupsen/logrus"
 
-	"github.com/Financial-Times/concepts-rw-neo4j/ontology"
+	ontology "github.com/Financial-Times/cm-graph-ontology"
+	"github.com/Financial-Times/cm-graph-ontology/neo4j"
+	"github.com/Financial-Times/cm-graph-ontology/transform"
 )
 
 const (
-	iso8601DateOnly = "2006-01-02"
 	//Event types
 	UpdatedEvent = "CONCEPT_UPDATED"
 	AddedEvent   = "CONCORDANCE_ADDED"
@@ -79,6 +81,12 @@ func (s *ConceptService) Initialise() error {
 		return err
 	}
 
+	constraintMap := map[string]string{
+		"Thing": "uuid",
+	}
+	for _, conceptType := range ontology.GetConfig().GetConceptTypes() {
+		constraintMap[conceptType] = "uuid"
+	}
 	err = s.driver.EnsureConstraints(constraintMap)
 	if err != nil {
 		s.log.WithError(err).Error("Could not run db constraints")
@@ -88,34 +96,18 @@ func (s *ConceptService) Initialise() error {
 	return nil
 }
 
-type equivalenceResult struct {
-	SourceUUID  string   `json:"sourceUuid"`
-	PrefUUID    string   `json:"prefUuid"`
-	Types       []string `json:"types"`
-	Equivalence int      `json:"count"`
-	Authority   string   `json:"authority"`
-}
-
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
 	if err != nil {
-		return ontology.AggregatedConcept{}, exists, err
+		return transform.OldAggregatedConcept{}, exists, err
 	}
-	aggregatedConcept, err := ontology.TransformToOldAggregateConcept(newAggregatedConcept)
+	aggregatedConcept, err := transform.ToOldAggregateConcept(newAggregatedConcept)
 	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
 	return aggregatedConcept, exists, err
 }
 
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
-	var neoAggregateConcept neoAggregatedConcept
-	query := &cmneo4j.Query{
-		Cypher: getReadStatement(),
-		Params: map[string]interface{}{
-			"uuid": uuid,
-		},
-		Result: &neoAggregateConcept,
-	}
-
+	query, neoAggregateConcept := neo4j.GetReadQuery(uuid)
 	err := s.driver.Read(query)
 	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
 		s.log.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
@@ -142,8 +134,8 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
-	oldAggregatedConcept := thing.(ontology.AggregatedConcept)
-	aggregatedConceptToWrite, err := ontology.TransformToNewAggregateConcept(oldAggregatedConcept)
+	oldAggregatedConcept := thing.(transform.OldAggregatedConcept)
+	aggregatedConceptToWrite, err := transform.ToNewAggregateConcept(oldAggregatedConcept)
 	if err != nil {
 		return ConceptChanges{}, err
 	}
@@ -170,8 +162,9 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	}
 
 	var queryBatch []*cmneo4j.Query
-	var prefUUIDsToBeDeletedQueryBatch []*cmneo4j.Query
+	var prefUUIDsToBeDeleted []string
 	var updatedUUIDList []string
+	var orphanConcepts []ontology.NewConcept
 	updateRecord := ConceptChanges{}
 	if exists {
 		if existingAggregateConcept.AggregatedHash == "" {
@@ -206,16 +199,11 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 		//Handle scenarios for transferring source id from an existing concordance to this concordance
 		if len(conceptsToTransferConcordance) > 0 {
-			prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(conceptsToTransferConcordance, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
+			prefUUIDsToBeDeleted, err = s.handleTransferConcordance(conceptsToTransferConcordance, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
 			if err != nil {
 				return updateRecord, err
 			}
 
-		}
-
-		clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
-		for _, query := range clearDownQuery {
-			queryBatch = append(queryBatch, query)
 		}
 
 		for idToUnconcord := range conceptsToUnconcord {
@@ -225,10 +213,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					//set this to 0 as otherwise it is empty
 					//TODO fix this up at some point to do it properly?
 					concept.Hash = "0"
-
-					canonical := sourceToCanonical(concept)
-					unconcordQuery := s.writeCanonicalNodeForUnconcordedConcepts(canonical, concept.UUID)
-					queryBatch = append(queryBatch, unconcordQuery)
+					orphanConcepts = append(orphanConcepts, concept)
 
 					//We will need to send a notification of ids that have been removed from current concordance
 					updatedUUIDList = append(updatedUUIDList, idToUnconcord)
@@ -249,14 +234,9 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			}
 		}
 	} else {
-		prefUUIDsToBeDeletedQueryBatch, err = s.handleTransferConcordance(requestSourceData, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
+		prefUUIDsToBeDeleted, err = s.handleTransferConcordance(requestSourceData, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
 		if err != nil {
 			return updateRecord, err
-		}
-
-		clearDownQuery := s.clearDownExistingNodes(aggregatedConceptToWrite)
-		for _, query := range clearDownQuery {
-			queryBatch = append(queryBatch, query)
 		}
 
 		//Concept is new, send notification of all source ids
@@ -264,12 +244,6 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			updatedUUIDList = append(updatedUUIDList, source.UUID)
 		}
 	}
-
-	for _, query := range prefUUIDsToBeDeletedQueryBatch {
-		queryBatch = append(queryBatch, query)
-	}
-	aggregatedConceptToWrite.AggregatedHash = hashAsString
-	queryBatch = populateConceptQueries(queryBatch, aggregatedConceptToWrite)
 
 	updateRecord.UpdatedIds = updatedUUIDList
 	updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
@@ -282,10 +256,26 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 		},
 	})
 
-	s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
-	for _, query := range queryBatch {
-		s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
+	// for the new concept we remove all previous concept to concept relations and all properties for the source concepts.
+	// as well as the source node to canonical node relationship.
+	clearDownQuery := neo4j.ClearExistingConcept(aggregatedConceptToWrite)
+	queryBatch = append(queryBatch, clearDownQuery...)
+
+	// for source concepts that were unconcorded we recreate the canonical node
+	for _, concept := range orphanConcepts {
+		unconcordQuery := neo4j.WriteCanonicalForUnconcordedConcept(concept)
+		s.log.WithTransactionID(transID).WithUUID(concept.UUID).Warn("Creating prefUUID node for unconcorded concept")
+		queryBatch = append(queryBatch, unconcordQuery)
 	}
+
+	// for source concepts that were concorded we remove the undesired canonical node
+	for _, uuid := range prefUUIDsToBeDeleted {
+		queryBatch = append(queryBatch, removeLoneCanonicalNode(uuid))
+	}
+
+	aggregatedConceptToWrite.AggregatedHash = hashAsString
+	writeQueries := neo4j.WriteCanonicalConceptQueries(aggregatedConceptToWrite)
+	queryBatch = append(queryBatch, writeQueries...)
 
 	// check that the issuer is not already related to a different org
 	if aggregatedConceptToWrite.IssuedBy != "" {
@@ -310,41 +300,46 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 			return updateRecord, err
 		}
 
-		if len(fiRes) > 0 {
-			for _, fi := range fiRes {
-				fiUUID, ok := fi["fiUUID"]
-				if !ok {
-					continue
-				}
+		for _, fi := range fiRes {
+			fiUUID, ok := fi["fiUUID"]
+			if !ok {
+				continue
+			}
 
-				if fiUUID == aggregatedConceptToWrite.PrefUUID {
-					continue
-				}
+			if fiUUID == aggregatedConceptToWrite.PrefUUID {
+				continue
+			}
 
-				msg := fmt.Sprintf(
-					"Issuer for %s was changed from %s to %s",
-					aggregatedConceptToWrite.IssuedBy,
-					fiUUID,
-					aggregatedConceptToWrite.PrefUUID,
-				)
-				s.log.WithTransactionID(transID).
-					WithUUID(aggregatedConceptToWrite.PrefUUID).
-					WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
+			msg := fmt.Sprintf(
+				"Issuer for %s was changed from %s to %s",
+				aggregatedConceptToWrite.IssuedBy,
+				fiUUID,
+				aggregatedConceptToWrite.PrefUUID,
+			)
+			s.log.WithTransactionID(transID).
+				WithUUID(aggregatedConceptToWrite.PrefUUID).
+				WithField("alert_tag", "ConceptLoadingLedToDifferentIssuer").Info(msg)
 
-				deleteIssuerRelations := &cmneo4j.Query{
-					Cypher: `
+			deleteIssuerRelations := &cmneo4j.Query{
+				Cypher: `
 					MATCH (issuer:Thing {uuid: $issuerUUID})
 					MATCH (fi:Thing {uuid: $fiUUID})
 					MATCH (issuer)<-[issuerRel:ISSUED_BY]-(fi)
 					DELETE issuerRel
 				`,
-					Params: map[string]interface{}{
-						"issuerUUID": aggregatedConceptToWrite.IssuedBy,
-						"fiUUID":     fiUUID,
-					},
-				}
-				queryBatch = append(queryBatch, deleteIssuerRelations)
+				Params: map[string]interface{}{
+					"issuerUUID": aggregatedConceptToWrite.IssuedBy,
+					"fiUUID":     fiUUID,
+				},
 			}
+			queryBatch = append(queryBatch, deleteIssuerRelations)
+		}
+	}
+
+	s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug("Executing " + strconv.Itoa(len(queryBatch)) + " queries")
+	if s.log.IsLevelEnabled(logrus.DebugLevel) {
+		for _, query := range queryBatch {
+			s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Debug(fmt.Sprintf("Query: %v", query))
 		}
 	}
 
@@ -358,89 +353,41 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 }
 
 func (s *ConceptService) validateObject(aggConcept ontology.NewAggregatedConcept, transID string) error {
-	if aggConcept.PrefLabel == "" {
-		return requestError{s.formatError("prefLabel", aggConcept.PrefUUID, transID)}
+	err := aggConcept.Validate()
+	if err == nil {
+		return nil
 	}
 
-	if _, ok := constraintMap[aggConcept.Type]; !ok {
-		return requestError{s.formatError("type", aggConcept.PrefUUID, transID)}
-	}
-
-	if aggConcept.SourceRepresentations == nil {
-		return requestError{s.formatError("sourceRepresentation", aggConcept.PrefUUID, transID)}
-	}
-
-	if err := ontology.GetConfig().ValidateProperties(aggConcept.Properties); err != nil {
+	var propErr *ontology.ValidationPropertyErr
+	if !errors.As(err, &propErr) {
 		return requestError{err.Error()}
 	}
 
-	for _, sourceConcept := range aggConcept.SourceRepresentations {
-		if err := sourceConcept.Validate(); err != nil {
-			if errors.Is(err, ontology.ErrUnknownAuthority) {
-				s.log.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", sourceConcept.Authority)
-			} else {
-				s.log.WithError(err).WithTransactionID(transID).WithUUID(sourceConcept.UUID).Error("Validation of payload failed")
-			}
-
-			return requestError{err.Error()}
-		}
-
-		if sourceConcept.Type == "" {
-			return requestError{s.formatError("sourceRepresentation.type", sourceConcept.UUID, transID)}
-		}
-
-		if _, ok := constraintMap[sourceConcept.Type]; !ok {
-			return requestError{s.formatError("type", aggConcept.PrefUUID, transID)}
-		}
+	if strings.HasSuffix(propErr.Property, "authority") && propErr.Reason == ontology.UnknownPropertyErrReason {
+		s.log.WithTransactionID(transID).WithUUID(aggConcept.PrefUUID).Debugf("Unknown authority supplied in the request: %s", propErr.Value)
+		return requestError{"unknown authority"}
 	}
 
-	return nil
-}
-
-func (s *ConceptService) formatError(field, uuid, transID string) string {
-	err := errors.New("invalid request, no " + field + " has been supplied")
-	s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Validation of payload failed")
-	return err.Error()
-}
-
-func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, secondMapConcepts map[string]string) map[string]string {
-	//Loop through both lists to find id which is present in first list but not in the second
-	filteredMap := make(map[string]string)
-
-	for conceptID := range firstMapConcepts {
-		if _, ok := secondMapConcepts[conceptID]; !ok {
-			filteredMap[conceptID] = firstMapConcepts[conceptID]
-		}
-	}
-	return filteredMap
+	err = errors.New("invalid request, no " + propErr.Property + " has been supplied")
+	s.log.WithError(err).WithTransactionID(transID).WithUUID(propErr.ConceptUUID).Error("Validation of payload failed")
+	return requestError{err.Error()}
 }
 
 // Handle new source nodes that have been added to current concordance
 // nolint:gocognit
-func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]*cmneo4j.Query, error) {
-	var deleteLonePrefUUIDQueries []*cmneo4j.Query
+func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]string, error) {
+	var canonicalUUIDsToRemove []string
 	for updatedSourceID := range conceptData {
-		var result []equivalenceResult
-		equivQuery := &cmneo4j.Query{
-			Cypher: `
-					MATCH (t:Thing {uuid:$id})
-					OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c)
-					OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing)
-					RETURN t.uuid as sourceUuid, labels(t) as types, c.prefUUID as prefUuid, t.authority as authority, COUNT(DISTINCT eq) as count`,
-			Params: map[string]interface{}{
-				"id": updatedSourceID,
-			},
-			Result: &result,
-		}
+		equivQuery, result := readCanonicalStats(updatedSourceID)
 
 		err := s.driver.Read(equivQuery)
 		if err != nil && !errors.Is(err, cmneo4j.ErrNoResultsFound) {
 			s.log.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error("Requests for source nodes canonical information resulted in error")
-			return deleteLonePrefUUIDQueries, err
+			return nil, err
 		}
 
 		//source node does not currently exist in neo4j, nothing to tidy up
-		if len(result) == 0 {
+		if len(*result) == 0 {
 			s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Info("No existing concordance record found")
 			if updatedSourceID != newAggregatedConcept.PrefUUID {
 				//concept does not exist, need update event
@@ -468,18 +415,18 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 				})
 			}
 			continue
-		} else if len(result) > 1 {
+		} else if len(*result) > 1 {
 			//this scenario should never happen
 			err = fmt.Errorf("Multiple source concepts found with matching uuid: %s", updatedSourceID)
 			s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Error(err.Error())
-			return deleteLonePrefUUIDQueries, err
+			return nil, err
 		}
 
-		entityEquivalence := result[0]
+		entityEquivalence := (*result)[0]
 		conceptType, err := mapper.MostSpecificType(entityEquivalence.Types)
 		if err != nil {
 			s.log.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Errorf("could not return most specific type from source node: %v", entityEquivalence.Types)
-			return deleteLonePrefUUIDQueries, err
+			return nil, err
 		}
 
 		s.log.WithField("UUID", updatedSourceID).Debug("Existing prefUUID is " + entityEquivalence.PrefUUID + " equivalence count is " + strconv.Itoa(entityEquivalence.Equivalence))
@@ -490,7 +437,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 			// Source exists in neo4j but is not concorded. It can be transferred without issue but its prefNode should be deleted
 			if updatedSourceID == entityEquivalence.PrefUUID {
 				s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Pref uuid node for source %s will need to be deleted as its source will be removed", updatedSourceID)
-				deleteLonePrefUUIDQueries = append(deleteLonePrefUUIDQueries, deleteLonePrefUUID(entityEquivalence.PrefUUID))
+				canonicalUUIDsToRemove = append(canonicalUUIDsToRemove, entityEquivalence.PrefUUID)
 				//concordance added
 				updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
 					ConceptType:   conceptType,
@@ -508,7 +455,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 				// Source is only source concorded to non-matching prefUUID; scenario should NEVER happen
 				err := fmt.Errorf("This source id: %s the only concordance to a non-matching node with prefUuid: %s", updatedSourceID, entityEquivalence.PrefUUID)
 				s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingDodgyData").Error(err)
-				return deleteLonePrefUUIDQueries, err
+				return nil, err
 			}
 		} else {
 			if updatedSourceID == entityEquivalence.PrefUUID {
@@ -518,7 +465,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 						s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Debugf("Canonical node for main source %s will need to be deleted and all concordances will be transferred to the new concordance", updatedSourceID)
 						// just delete the lone prefUUID node because the other concordances to
 						// this node should already be in the new sourceRepresentations (aggregate-concept-transformer responsability)
-						deleteLonePrefUUIDQueries = append(deleteLonePrefUUIDQueries, deleteLonePrefUUID(entityEquivalence.PrefUUID))
+						canonicalUUIDsToRemove = append(canonicalUUIDsToRemove, entityEquivalence.PrefUUID)
 						updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
 							ConceptType:   conceptType,
 							ConceptUUID:   updatedSourceID,
@@ -535,7 +482,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 					// Source is prefUUID for a different concordance
 					err := fmt.Errorf("Cannot currently process this record as it will break an existing concordance with prefUuid: %s", updatedSourceID)
 					s.log.WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).WithField("alert_tag", "ConceptLoadingInvalidConcordance").Error(err)
-					return deleteLonePrefUUIDQueries, err
+					return nil, err
 				}
 			} else {
 				// Source was concorded to different concordance. Data on existing concordance is now out of date
@@ -568,11 +515,38 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 			}
 		}
 	}
-	return deleteLonePrefUUIDQueries, nil
+	return canonicalUUIDsToRemove, nil
 }
 
-//Clean up canonical nodes of a concept that has become a source of current concept
-func deleteLonePrefUUID(prefUUID string) *cmneo4j.Query {
+type equivalenceResult struct {
+	SourceUUID  string   `json:"sourceUuid"`
+	PrefUUID    string   `json:"prefUuid"`
+	Types       []string `json:"types"`
+	Equivalence int      `json:"count"`
+	Authority   string   `json:"authority"`
+}
+
+// readCanonicalStats will generate a Neo4j query that will read equivalenceResult that contains a count of the concorded source concepts
+// This information is used for determining how to proseed when concording concepts
+func readCanonicalStats(uuid string) (*cmneo4j.Query, *[]equivalenceResult) {
+	var result []equivalenceResult
+	query := &cmneo4j.Query{
+		Cypher: `
+					MATCH (t:Thing {uuid:$id})
+					OPTIONAL MATCH (t)-[:EQUIVALENT_TO]->(c)
+					OPTIONAL MATCH (c)<-[eq:EQUIVALENT_TO]-(x:Thing)
+					RETURN t.uuid as sourceUuid, labels(t) as types, c.prefUUID as prefUuid, t.authority as authority, COUNT(DISTINCT eq) as count`,
+		Params: map[string]interface{}{
+			"id": uuid,
+		},
+		Result: &result,
+	}
+	return query, &result
+}
+
+// removeLoneCanonicalNode will detach and remove the canonical node for specified prefUUID
+// Used when concepts are concorded, and we need to clean up the unnecessary canonical nodes.
+func removeLoneCanonicalNode(prefUUID string) *cmneo4j.Query {
 	equivQuery := &cmneo4j.Query{
 		Cypher: `MATCH (t:Thing {prefUUID:$id}) DETACH DELETE t`,
 		Params: map[string]interface{}{
@@ -580,240 +554,6 @@ func deleteLonePrefUUID(prefUUID string) *cmneo4j.Query {
 		},
 	}
 	return equivQuery
-}
-
-//Clear down current concept node
-func (s *ConceptService) clearDownExistingNodes(ac ontology.NewAggregatedConcept) []*cmneo4j.Query {
-	acUUID := ac.PrefUUID
-	var queryBatch []*cmneo4j.Query
-	for _, sr := range ac.SourceRepresentations {
-		deletePreviousSourceLabelsAndPropertiesQuery := &cmneo4j.Query{
-			Cypher: getDeleteStatement(),
-			Params: map[string]interface{}{
-				"id": sr.UUID,
-			},
-		}
-		queryBatch = append(queryBatch, deletePreviousSourceLabelsAndPropertiesQuery)
-	}
-
-	// cleanUP all the previous Equivalent to relationships
-	// It is safe to use Sprintf because getLabelsToRemove() doesn't come from the request
-	// nolint:gosec
-	deletePreviousCanonicalLabelsAndPropertiesQuery := &cmneo4j.Query{
-		Cypher: fmt.Sprintf(`MATCH (t:Thing {prefUUID:$acUUID})
-			OPTIONAL MATCH (t)<-[rel:EQUIVALENT_TO]-(s)
-			REMOVE t:%s
-			SET t={prefUUID:$acUUID}
-			DELETE rel`, getLabelsToRemove()),
-		Params: map[string]interface{}{
-			"acUUID": acUUID,
-		},
-	}
-	queryBatch = append(queryBatch, deletePreviousCanonicalLabelsAndPropertiesQuery)
-
-	return queryBatch
-}
-
-//Curate all queries to populate concept nodes
-func populateConceptQueries(queryBatch []*cmneo4j.Query, aggregatedConcept ontology.NewAggregatedConcept) []*cmneo4j.Query {
-	queryBatch = append(queryBatch, createCanonicalNodeQueries(aggregatedConcept, aggregatedConcept.PrefUUID)...)
-
-	for _, sourceConcept := range aggregatedConcept.SourceRepresentations {
-		queryBatch = append(queryBatch, createNodeQueries(sourceConcept, sourceConcept.UUID)...)
-		queryBatch = append(queryBatch, createEquivalentToQueries(sourceConcept, aggregatedConcept)...)
-
-		for _, rel := range sourceConcept.Relationships {
-			relCfg, ok := ontology.GetConfig().Relationships[rel.Label]
-			if !ok {
-				continue
-			}
-			queryBatch = append(queryBatch, createRelQuery(sourceConcept.UUID, rel, relCfg))
-		}
-	}
-
-	return queryBatch
-}
-
-func createEquivalentToQueries(sourceConcept ontology.NewConcept, aggregatedConcept ontology.NewAggregatedConcept) []*cmneo4j.Query {
-	var queryBatch []*cmneo4j.Query
-	equivQuery := &cmneo4j.Query{
-		Cypher: `MATCH (t:Thing {uuid:$uuid}), (c:Thing {prefUUID:$prefUUID})
-						MERGE (t)-[:EQUIVALENT_TO]->(c)`,
-		Params: map[string]interface{}{
-			"uuid":     sourceConcept.UUID,
-			"prefUUID": aggregatedConcept.PrefUUID,
-		},
-	}
-
-	queryBatch = append(queryBatch, equivQuery)
-	return queryBatch
-}
-
-func createCanonicalNodeQueries(canonical ontology.NewAggregatedConcept, prefUUID string) []*cmneo4j.Query {
-	var queryBatch []*cmneo4j.Query
-	var createConceptQuery *cmneo4j.Query
-
-	allProps := setCanonicalProps(canonical, prefUUID)
-	createConceptQuery = &cmneo4j.Query{
-		Cypher: fmt.Sprintf(`MERGE (n:Thing {prefUUID: $prefUUID})
-								set n=$allprops
-								set n :%s`, getAllLabels(canonical.Type)),
-		Params: map[string]interface{}{
-			"prefUUID": prefUUID,
-			"allprops": allProps,
-		},
-	}
-
-	queryBatch = append(queryBatch, createConceptQuery)
-	return queryBatch
-}
-
-func createNodeQueries(concept ontology.NewConcept, uuid string) []*cmneo4j.Query {
-	var queryBatch []*cmneo4j.Query
-	var createConceptQuery *cmneo4j.Query
-
-	allProps := setProps(concept, uuid)
-	createConceptQuery = &cmneo4j.Query{
-		Cypher: fmt.Sprintf(`MERGE (n:Thing {uuid: $uuid})
-											set n=$allprops
-											set n :%s`, getAllLabels(concept.Type)),
-		Params: map[string]interface{}{
-			"uuid":     uuid,
-			"allprops": allProps,
-		},
-	}
-
-	if concept.IssuedBy != "" {
-		// Issued By needs a specific handling. That is why it is not in the config
-		// But we still want to use createRelQuery, so we create dummy relationship and config
-		issuedByCfg := ontology.RelationshipConfig{
-			ConceptField: "issuedBy",
-			OneToOne:     true,
-			NeoCreate:    true,
-		}
-		issuedByRel := ontology.Relationship{
-			UUID:       concept.IssuedBy,
-			Label:      "ISSUED_BY",
-			Properties: nil,
-		}
-		queryBatch = append(queryBatch, createRelQuery(concept.UUID, issuedByRel, issuedByCfg))
-	}
-
-	queryBatch = append(queryBatch, createConceptQuery)
-	return queryBatch
-}
-
-// createRelQueries creates relationships Cypher queries for concepts
-func createRelQuery(sourceUUID string, rel ontology.Relationship, cfg ontology.RelationshipConfig) *cmneo4j.Query {
-	const createMissing = `
-		MERGE (thing:Thing {uuid: $uuid})
-		MERGE (other:Thing {uuid: $id})
-		MERGE (thing)-[rel:%s]->(other)
-	`
-
-	const matchExisting = `
-		MATCH (concept:Concept {uuid: $uuid})
-		MERGE (other:Thing {uuid: $id})
-		MERGE (concept)-[rel:%s]->(other)	
-	`
-
-	cypherStatement := matchExisting
-	if cfg.NeoCreate {
-		cypherStatement = createMissing
-	}
-
-	params := map[string]interface{}{
-		"uuid": sourceUUID,
-		"id":   rel.UUID,
-	}
-	if cfg.Properties != nil {
-		cypherStatement += `	SET rel=$relProps`
-		params["relProps"] = setupRelProps(rel, cfg)
-	}
-
-	return &cmneo4j.Query{
-		Cypher: fmt.Sprintf(cypherStatement, rel.Label),
-		Params: params,
-	}
-}
-
-func setupRelProps(rel ontology.Relationship, cfg ontology.RelationshipConfig) map[string]interface{} {
-	props := map[string]interface{}{}
-	for label, t := range cfg.Properties {
-		val := rel.Properties[label]
-		props[label] = val
-		if val != nil && t == ontology.PropertyTypeDate {
-			str, ok := rel.Properties[label].(string)
-			if !ok {
-				continue
-			}
-			unixTime := getEpoch(str)
-			// in the old times we skipped unix timestamps with valuse less or equal 0
-			if unixTime <= 0 {
-				continue
-			}
-			props[label+"Epoch"] = unixTime
-		}
-	}
-	return props
-}
-
-func getEpoch(t string) int64 {
-	if t == "" {
-		return 0
-	}
-
-	tt, err := time.Parse(iso8601DateOnly, t)
-	if err != nil {
-		return 0
-	}
-	unixTime := tt.Unix()
-	if unixTime < 0 {
-		return 0
-	}
-	return unixTime
-}
-
-//Create canonical node for any concepts that were removed from a concordance and thus would become lone
-func (s *ConceptService) writeCanonicalNodeForUnconcordedConcepts(canonical ontology.NewAggregatedConcept, prefUUID string) *cmneo4j.Query {
-	allProps := setCanonicalProps(canonical, prefUUID)
-	s.log.WithField("UUID", prefUUID).Warn("Creating prefUUID node for unconcorded concept")
-	createCanonicalNodeQuery := &cmneo4j.Query{
-		Cypher: fmt.Sprintf(`
-					MATCH (t:Thing{uuid:$prefUUID})
-					MERGE (n:Thing {prefUUID: $prefUUID})
-					MERGE (n)<-[:EQUIVALENT_TO]-(t)
-					set n=$allprops
-					set n :%s`, getAllLabels(canonical.Type)),
-		Params: map[string]interface{}{
-			"prefUUID": prefUUID,
-			"allprops": allProps,
-		},
-	}
-	return createCanonicalNodeQuery
-}
-
-//return all concept labels
-func getAllLabels(conceptType string) string {
-	labels := conceptType
-	parentType := mapper.ParentType(conceptType)
-	for parentType != "" {
-		labels += ":" + parentType
-		parentType = mapper.ParentType(parentType)
-	}
-	return labels
-}
-
-//return existing labels
-func getLabelsToRemove() string {
-	var labelsToRemove string
-	for i, conceptType := range conceptLabels {
-		labelsToRemove += conceptType
-		if i+1 < len(conceptLabels) {
-			labelsToRemove += ":"
-		}
-	}
-	return labelsToRemove
 }
 
 //extract uuids of the source concepts
@@ -825,77 +565,21 @@ func getSourceData(sourceConcepts []ontology.NewConcept) map[string]string {
 	return conceptData
 }
 
-//This function dictates which properties will be actually
-//written in neo for source nodes.
-func setProps(source ontology.NewConcept, uuid string) map[string]interface{} {
-	nodeProps := map[string]interface{}{}
-	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
+func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, secondMapConcepts map[string]string) map[string]string {
+	//Loop through both lists to find id which is present in first list but not in the second
+	filteredMap := make(map[string]string)
 
-	if source.PrefLabel != "" {
-		nodeProps["prefLabel"] = source.PrefLabel
-	}
-
-	if source.FigiCode != "" {
-		nodeProps["figiCode"] = source.FigiCode
-	}
-
-	if source.IsDeprecated {
-		nodeProps["isDeprecated"] = true
-	}
-
-	nodeProps["uuid"] = uuid
-	nodeProps["authority"] = source.Authority
-	nodeProps["authorityValue"] = source.AuthorityValue
-
-	return nodeProps
-}
-
-//This function dictates which properties will be actually
-//written in neo for canonical nodes.
-func setCanonicalProps(canonical ontology.NewAggregatedConcept, prefUUID string) map[string]interface{} {
-	nodeProps := map[string]interface{}{}
-
-	ontologyCfg := ontology.GetConfig()
-	for field, propCfg := range ontologyCfg.Fields {
-		if val, ok := canonical.GetPropertyValue(field); ok {
-			if !ontologyCfg.IsPropValueValid(field, val) {
-				continue
-			}
-
-			nodeProps[propCfg.NeoProp] = val
+	for conceptID := range firstMapConcepts {
+		if _, ok := secondMapConcepts[conceptID]; !ok {
+			filteredMap[conceptID] = firstMapConcepts[conceptID]
 		}
 	}
-
-	nodeProps["lastModifiedEpoch"] = time.Now().Unix()
-
-	if canonical.PrefLabel != "" {
-		nodeProps["prefLabel"] = canonical.PrefLabel
-	}
-
-	if canonical.FigiCode != "" {
-		nodeProps["figiCode"] = canonical.FigiCode
-	}
-
-	if canonical.IsDeprecated {
-		nodeProps["isDeprecated"] = true
-	}
-
-	nodeProps["prefUUID"] = prefUUID
-	nodeProps["aggregateHash"] = canonical.AggregatedHash
-
-	if canonical.InceptionDate != "" {
-		nodeProps["inceptionDate"] = canonical.InceptionDate
-	}
-	if canonical.TerminationDate != "" {
-		nodeProps["terminationDate"] = canonical.TerminationDate
-	}
-
-	return nodeProps
+	return filteredMap
 }
 
 //DecodeJSON - decode json
 func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
-	sub := ontology.AggregatedConcept{}
+	sub := transform.OldAggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
@@ -919,6 +603,8 @@ func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }
 
+// cleanSourceProperties removes all properties from source concepts that are not stored in source nodes
+// TODO: investigate why are we doing this.
 func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	var cleanSources []ontology.NewConcept
 	for _, source := range c.SourceRepresentations {
@@ -946,34 +632,4 @@ func stringInArr(searchFor string, values []string) bool {
 		}
 	}
 	return false
-}
-
-func sourceToCanonical(source ontology.NewConcept) ontology.NewAggregatedConcept {
-	var inceptionDate string
-	var terminationDate string
-	for _, r := range source.Relationships {
-		if r.Label != "HAS_ROLE" {
-			continue
-		}
-		if v, ok := r.Properties["inceptionDate"]; ok {
-			if s, ok := v.(string); ok {
-				inceptionDate = s
-			}
-		}
-		if v, ok := r.Properties["terminationDate"]; ok {
-			if s, ok := v.(string); ok {
-				terminationDate = s
-			}
-		}
-		break
-	}
-	return ontology.NewAggregatedConcept{
-		AggregatedHash:  source.Hash,
-		InceptionDate:   inceptionDate,
-		IssuedBy:        source.IssuedBy,
-		PrefLabel:       source.PrefLabel,
-		TerminationDate: terminationDate,
-		Type:            source.Type,
-		IsDeprecated:    source.IsDeprecated,
-	}
 }
