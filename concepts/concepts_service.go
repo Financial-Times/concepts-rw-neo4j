@@ -25,7 +25,12 @@ const (
 	RemovedEvent = "CONCORDANCE_REMOVED"
 )
 
-var ErrUnexpectedReadResult = errors.New("unexpected read result count")
+var (
+	ErrUnexpectedReadResult = errors.New("unexpected read result count")
+	ErrNotFound             = errors.New("concept was not found")
+	ErrDeleteSource         = errors.New("cannot delete source concept different than the canonical")
+	ErrDeleteRelated        = errors.New("cannot delete concept related with another thing")
+)
 
 var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
@@ -39,6 +44,7 @@ type ConceptService struct {
 type ConceptServicer interface {
 	Write(thing interface{}, transID string) (updatedIds interface{}, err error)
 	Read(uuid string, transID string) (thing interface{}, found bool, err error)
+	Delete(uuid string, transID string) error
 	DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error)
 	Check() error
 	Initialise() error
@@ -371,6 +377,74 @@ func (s *ConceptService) validateObject(aggConcept ontology.NewAggregatedConcept
 	err = errors.New("invalid request, no " + propErr.Property + " has been supplied")
 	s.log.WithError(err).WithTransactionID(transID).WithUUID(propErr.ConceptUUID).Error("Validation of payload failed")
 	return requestError{err.Error()}
+}
+
+func (s *ConceptService) Delete(uuid string, transID string) error {
+	logEntry := s.log.WithUUID(uuid).WithTransactionID(transID)
+
+	query, result := readConceptRelations(uuid)
+	err := s.driver.Read(query)
+	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
+		return ErrNotFound
+	}
+	if err != nil {
+		logEntry.WithError(err).Error("could not find concept to delete")
+		return err
+	}
+
+	// One of the source concepts has incoming relationships
+	if result.Incoming > 0 {
+		return ErrDeleteRelated
+	}
+
+	// Trying to delete a source concept not a canonical.
+	if result.UUID != result.PrefUUID {
+		return ErrDeleteSource
+	}
+
+	// Delete the canonical and all source concepts
+	query = &cmneo4j.Query{
+		Cypher: `
+			MATCH (canonical:Concept{prefUUID:$uuid})<-[:EQUIVALENT_TO]-(concept:Concept)
+			DETACH DELETE concept, canonical`,
+		Params: map[string]interface{}{
+			"uuid": uuid,
+		},
+	}
+	err = s.driver.Write(query)
+	if err != nil {
+		logEntry.WithError(err).Error("could not delete concept")
+		return err
+	}
+
+	return nil
+}
+
+type relationsResult struct {
+	Concordances int    `json:"concordances"`
+	Incoming     int    `json:"incoming"`
+	UUID         string `json:"uuid"`
+	PrefUUID     string `json:"prefUUID"`
+}
+
+// readConceptRelations will count the number of concordances and their incoming relationships for a given canonical concept.
+func readConceptRelations(uuid string) (*cmneo4j.Query, *relationsResult) {
+	var result relationsResult
+	query := &cmneo4j.Query{
+		Cypher: `
+				 MATCH (concept:Concept{uuid:$uuid})-[:EQUIVALENT_TO]->(canonical:Concept)
+				 MATCH (canonical)<-[:EQUIVALENT_TO]-(other:Concept)
+				 OPTIONAL MATCH (other)<-[]-(t:Thing)
+				 WITH COUNT(DISTINCT other) as concordances,
+					  COUNT(DISTINCT t) as incoming,
+					  concept, canonical
+				 RETURN concordances, incoming, concept.uuid as uuid, canonical.prefUUID as prefUUID`,
+		Params: map[string]interface{}{
+			"uuid": uuid,
+		},
+		Result: &result,
+	}
+	return query, &result
 }
 
 // Handle new source nodes that have been added to current concordance

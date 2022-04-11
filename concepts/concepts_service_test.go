@@ -2356,6 +2356,114 @@ func TestWriteLocation(t *testing.T) {
 	readConceptAndCompare(t, locationISO31661, "TestWriteLocationISO31661")
 }
 
+//nolint:gocognit
+func TestConceptService_Delete(t *testing.T) {
+	tests := []struct {
+		testName             string
+		aggregatedConcept    transform.OldAggregatedConcept
+		otherRelatedConcepts []transform.OldAggregatedConcept
+		expectedErr          error
+		deleteUUIDs          []string
+	}{
+		{
+			testName:          "Deletes a canonical concept with a single source",
+			aggregatedConcept: getAggregatedConcept(t, "single-concordance.json"),
+			deleteUUIDs:       []string{basicConceptUUID},
+		},
+		{
+			testName:          "Deletes a concept which has outgoing relationship",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-related-to.json"),
+			deleteUUIDs:       []string{basicConceptUUID},
+		},
+		{
+			testName:          "Throws an error when deleting a source concept different from the canonical",
+			aggregatedConcept: getAggregatedConcept(t, "tri-concordance.json"),
+			expectedErr:       ErrDeleteSource,
+			deleteUUIDs:       []string{sourceID1},
+		},
+		{
+			testName:          "Throws an error when deleting a concept that has relations",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-related-to.json"),
+			otherRelatedConcepts: []transform.OldAggregatedConcept{
+				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
+			},
+			expectedErr: ErrDeleteRelated,
+			deleteUUIDs: []string{yetAnotherBasicConceptUUID},
+		},
+		{
+			testName:          "Throws an error when deleting a concept with concordances which have relations to other things",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-related-to.json"),
+			otherRelatedConcepts: []transform.OldAggregatedConcept{
+				getAggregatedConcept(t, "transfer-multiple-source-concordance.json"),
+			},
+			expectedErr: ErrDeleteRelated,
+			deleteUUIDs: []string{simpleSmartlogicTopicUUID},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+			defer cleanDB(t)
+
+			// Create the related, broader than and impliedBy on concepts
+			for _, relatedConcept := range test.otherRelatedConcepts {
+				_, err := conceptsDriver.Write(relatedConcept, "")
+				if !assert.NoError(t, err, "Failed to write related/broader/impliedBy concept") {
+					return
+				}
+			}
+			_, err := conceptsDriver.Write(test.aggregatedConcept, "")
+			assert.Nil(t, err)
+
+			// Attempt to delete the chosen UUIDs.
+			for _, uuid := range test.deleteUUIDs {
+				err = conceptsDriver.Delete(uuid, "")
+				if test.expectedErr != nil {
+					assert.Equal(t, test.expectedErr, err)
+				} else {
+					assert.Nil(t, err)
+				}
+			}
+
+			// Check if the deletion was actually successful if this was expected
+			if test.expectedErr == nil {
+				for _, uuid := range test.deleteUUIDs {
+					query := &cmneo4j.Query{
+						Cypher: "MATCH (n:Concept{uuid:$uuid}) RETURN n",
+						Params: map[string]interface{}{"uuid": uuid},
+						Result: &struct{}{},
+					}
+					err := conceptsDriver.driver.Read(query)
+					assert.ErrorIs(t, err, cmneo4j.ErrNoResultsFound, "UUID: %s", uuid)
+				}
+			}
+		})
+	}
+}
+
+func TestConceptService_DeleteConcordedCanonical(t *testing.T) {
+	defer cleanDB(t)
+
+	aggregatedConcept := getAggregatedConcept(t, "tri-concordance.json")
+	_, err := conceptsDriver.Write(aggregatedConcept, "")
+	assert.Nil(t, err)
+
+	err = conceptsDriver.Delete(aggregatedConcept.PrefUUID, "")
+	assert.Nil(t, err)
+
+	// All source representations should be deleted also
+	for _, c := range aggregatedConcept.SourceRepresentations {
+		err := conceptsDriver.driver.Read(&cmneo4j.Query{
+			Cypher: "MATCH (n:Concept{uuid:$uuid}) RETURN n",
+			Params: map[string]interface{}{
+				"uuid": c.UUID,
+			},
+			Result: &struct{}{},
+		})
+		assert.ErrorIs(t, err, cmneo4j.ErrNoResultsFound, "UUID: %s", c.UUID)
+	}
+}
+
 func readConceptAndCompare(t *testing.T, payload transform.OldAggregatedConcept, testName string, ignoredFields ...string) {
 	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
 	actual := actualIf.(transform.OldAggregatedConcept)

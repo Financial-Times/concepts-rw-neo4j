@@ -119,6 +119,14 @@ If not found, you'll get a 404 response.
 Empty fields are omitted from the response.
 `curl -H "X-Request-Id: 123" localhost:8080/sections/3fa70485-3a57-3b9b-9449-774b001cd965`
 
+### DELETE /{taxonomy}/{uuid}
+Deletes a canonical concept and its concorded source concepts but only if they do not have any incoming relationships, e.g.
+no content is annotated with any of the source concepts, no relationships to other concepts.
+
+If not found, you'll get a 404 response. If the concept cannot be deleted, you'll get 400 with a response containing the reason.
+
+`curl -XDELETE -H "X-Request-Id: 123" localhost:8080/sections/3fa70485-3a57-3b9b-9449-774b001cd965`
+
 ### Admin endpoints
 Healthchecks: [http://localhost:8080/__health](http://localhost:8080/__health)
 Good to Go: [http://localhost:8080/__gtg](http://localhost:8080/__gtg)

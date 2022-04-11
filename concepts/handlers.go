@@ -32,8 +32,9 @@ type ConceptsHandler struct {
 
 func (h *ConceptsHandler) RegisterHandlers(router *mux.Router) {
 	router.Handle("/{concept_type}/{uuid}", handlers.MethodHandler{
-		"GET": http.HandlerFunc(h.GetConcept),
-		"PUT": http.HandlerFunc(h.PutConcept),
+		"GET":    http.HandlerFunc(h.GetConcept),
+		"PUT":    http.HandlerFunc(h.PutConcept),
+		"DELETE": http.HandlerFunc(h.DeleteConcept),
 	})
 }
 
@@ -129,6 +130,57 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *ConceptsHandler) DeleteConcept(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	conceptType := vars["concept_type"]
+
+	transID := transactionidutils.GetTransactionIDFromRequest(r)
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Set("X-Request-Id", transID)
+
+	// Validate that the concept exists and is of the right type.
+	obj, found, err := h.ConceptsService.Read(uuid, transID)
+	if err != nil {
+		writeJSONError(w, err.Error(), http.StatusServiceUnavailable)
+		return
+	}
+	if !found {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(fmt.Sprintf("{\"message\":\"Concept with prefUUID %s not found in db.\"}", uuid)))
+		return
+	}
+	agConcept := obj.(transform.OldAggregatedConcept)
+	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
+		writeJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Delete the concept
+	err = h.ConceptsService.Delete(uuid, transID)
+	if errors.Is(err, ErrNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(fmt.Sprintf("{\"message\": \"Concept with prefUUID %s not found in db.\"}\n", uuid)))
+		return
+	}
+	if errors.Is(err, ErrDeleteRelated) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(fmt.Sprintf("{\"message\": \"Concept with prefUUID %s is referenced by other concepts or content, remove these before deleting.\"}\n", uuid))) //nolint:errcheck
+		return
+	}
+	if errors.Is(err, ErrDeleteSource) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(fmt.Sprintf("{\"message\": \"Concept with UUID %s is a source concept, only canonical concepts can be deleted.\"}\n", uuid)))
+		return
+	}
+	if err != nil {
+		writeJSONError(w, err.Error(), http.StatusServiceUnavailable)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func writeJSONError(w http.ResponseWriter, errorMsg string, statusCode int) {
