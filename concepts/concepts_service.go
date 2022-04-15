@@ -44,7 +44,7 @@ type ConceptService struct {
 type ConceptServicer interface {
 	Write(thing interface{}, transID string) (updatedIds interface{}, err error)
 	Read(uuid string, transID string) (thing interface{}, found bool, err error)
-	Delete(uuid string, transID string) error
+	Delete(uuid string, transID string) (uuids []string, err error)
 	DecodeJSON(*json.Decoder) (thing interface{}, identity string, err error)
 	Check() error
 	Initialise() error
@@ -379,27 +379,27 @@ func (s *ConceptService) validateObject(aggConcept ontology.NewAggregatedConcept
 	return requestError{err.Error()}
 }
 
-func (s *ConceptService) Delete(uuid string, transID string) error {
+func (s *ConceptService) Delete(uuid string, transID string) ([]string, error) {
 	logEntry := s.log.WithUUID(uuid).WithTransactionID(transID)
 
 	query, result := readConceptRelations(uuid)
 	err := s.driver.Read(query)
 	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
-		return ErrNotFound
+		return nil, ErrNotFound
 	}
 	if err != nil {
 		logEntry.WithError(err).Error("could not find concept to delete")
-		return err
+		return nil, err
 	}
 
 	// One of the source concepts has incoming relationships
 	if result.Incoming > 0 {
-		return ErrDeleteRelated
+		return result.IncomingUUIDs, ErrDeleteRelated
 	}
 
 	// Trying to delete a source concept not a canonical.
 	if result.UUID != result.PrefUUID {
-		return ErrDeleteSource
+		return []string{result.PrefUUID}, ErrDeleteSource
 	}
 
 	// Delete the canonical and all source concepts
@@ -414,17 +414,19 @@ func (s *ConceptService) Delete(uuid string, transID string) error {
 	err = s.driver.Write(query)
 	if err != nil {
 		logEntry.WithError(err).Error("could not delete concept")
-		return err
+		return result.ConcordancesUUIDs, err
 	}
 
-	return nil
+	return result.ConcordancesUUIDs, nil
 }
 
 type relationsResult struct {
-	Concordances int    `json:"concordances"`
-	Incoming     int    `json:"incoming"`
-	UUID         string `json:"uuid"`
-	PrefUUID     string `json:"prefUUID"`
+	Concordances      int      `json:"concordances"`
+	Incoming          int      `json:"incoming"`
+	ConcordancesUUIDs []string `json:"concordances_uuids"`
+	IncomingUUIDs     []string `json:"incoming_uuids"`
+	UUID              string   `json:"uuid"`
+	PrefUUID          string   `json:"prefUUID"`
 }
 
 // readConceptRelations will count the number of concordances and their incoming relationships for a given canonical concept.
@@ -432,13 +434,16 @@ func readConceptRelations(uuid string) (*cmneo4j.Query, *relationsResult) {
 	var result relationsResult
 	query := &cmneo4j.Query{
 		Cypher: `
-				 MATCH (concept:Concept{uuid:$uuid})-[:EQUIVALENT_TO]->(canonical:Concept)
-				 MATCH (canonical)<-[:EQUIVALENT_TO]-(other:Concept)
-				 OPTIONAL MATCH (other)<-[]-(t:Thing)
-				 WITH COUNT(DISTINCT other) as concordances,
-					  COUNT(DISTINCT t) as incoming,
-					  concept, canonical
-				 RETURN concordances, incoming, concept.uuid as uuid, canonical.prefUUID as prefUUID`,
+		   MATCH (concept:Concept{uuid:$uuid})-[:EQUIVALENT_TO]->(canonical:Concept)
+		   MATCH (canonical)<-[:EQUIVALENT_TO]-(other:Concept)
+		   OPTIONAL MATCH (other)<-[]-(t:Thing)
+		   WITH COUNT(DISTINCT other) as concordances,
+			  COUNT(DISTINCT t) as incoming,
+			  COLLECT(DISTINCT other.uuid) as concordances_uuids,
+			  COLLECT(DISTINCT t.uuid) as incoming_uuids,
+			  concept, canonical
+		   RETURN concordances, incoming, concordances_uuids, incoming_uuids,
+				 concept.uuid as uuid, canonical.prefUUID as prefUUID`,
 		Params: map[string]interface{}{
 			"uuid": uuid,
 		},

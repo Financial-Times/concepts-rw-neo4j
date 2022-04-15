@@ -148,8 +148,7 @@ func (h *ConceptsHandler) DeleteConcept(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if !found {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte(fmt.Sprintf("{\"message\":\"Concept with prefUUID %s not found in db.\"}", uuid)))
+		writeJSONError(w, fmt.Sprintf("Concept with prefUUID %s not found in db.", uuid), http.StatusNotFound)
 		return
 	}
 	agConcept := obj.(transform.OldAggregatedConcept)
@@ -159,20 +158,17 @@ func (h *ConceptsHandler) DeleteConcept(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Delete the concept
-	err = h.ConceptsService.Delete(uuid, transID)
+	affected, err := h.ConceptsService.Delete(uuid, transID)
 	if errors.Is(err, ErrNotFound) {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte(fmt.Sprintf("{\"message\": \"Concept with prefUUID %s not found in db.\"}\n", uuid)))
+		writeJSONError(w, fmt.Sprintf("Concept with prefUUID %s not found in db.", uuid), http.StatusNotFound)
 		return
 	}
 	if errors.Is(err, ErrDeleteRelated) {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(fmt.Sprintf("{\"message\": \"Concept with prefUUID %s is referenced by other concepts or content, remove these before deleting.\"}\n", uuid))) //nolint:errcheck
+		writeJSONError(w, fmt.Sprintf("Concept with prefUUID %s is referenced by %q, remove these before deleting.", uuid, affected), http.StatusBadRequest)
 		return
 	}
 	if errors.Is(err, ErrDeleteSource) {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(fmt.Sprintf("{\"message\": \"Concept with UUID %s is a source concept, only canonical concepts can be deleted.\"}\n", uuid)))
+		writeJSONError(w, fmt.Sprintf("Concept with UUID %s is a source concept, the canonical concept %q should be deleted instead.", uuid, affected[0]), http.StatusBadRequest)
 		return
 	}
 	if err != nil {
@@ -180,12 +176,23 @@ func (h *ConceptsHandler) DeleteConcept(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	resp := struct {
+		UUIDS []string `json:"uuids"`
+	}{affected}
+
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(resp); err != nil {
+		writeJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func writeJSONError(w http.ResponseWriter, errorMsg string, statusCode int) {
 	w.WriteHeader(statusCode)
-	fmt.Fprintln(w, fmt.Sprintf("{\"message\": \"%s\"}", errorMsg))
+	_, err := fmt.Fprintf(w, "{\"message\": \"%s\"}\n", errorMsg)
+	if err != nil {
+		return
+	}
 }
 
 func checkConceptTypeAgainstPath(conceptType, path string) error {

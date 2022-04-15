@@ -22,12 +22,11 @@ const knownUUID = "12345"
 func TestDeleteHandler(t *testing.T) {
 	assert := assert.New(t)
 	tests := []struct {
-		name        string
-		req         *http.Request
-		ds          ConceptServicer
-		statusCode  int
-		contentType string // Contents of the Content-Type header
-		body        string
+		name       string
+		req        *http.Request
+		ds         ConceptServicer
+		statusCode int
+		body       string
 	}{
 		{
 			name: "IrregularPathSuccess",
@@ -36,13 +35,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
 				},
-				delete: func(uuid string, transID string) error {
-					return nil
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{knownUUID}, nil
 				},
 			},
-			statusCode:  http.StatusNoContent,
-			contentType: "",
-			body:        "",
+			statusCode: http.StatusOK,
+			body:       deleteSuccess(knownUUID),
 		},
 		{
 			name: "IrregularPathFailure",
@@ -51,13 +49,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
 				},
-				delete: func(uuid string, transID string) error {
-					return nil
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, nil
 				},
 			},
-			statusCode:  http.StatusBadRequest,
-			contentType: "",
-			body:        errorMessage("concept type does not match path"),
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("concept type does not match path"),
 		},
 		{
 			name: "RegularPathSuccess",
@@ -66,13 +63,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
 				},
-				delete: func(uuid string, transID string) error {
-					return nil
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{knownUUID}, nil
 				},
 			},
-			statusCode:  http.StatusNoContent,
-			contentType: "",
-			body:        "",
+			statusCode: http.StatusOK,
+			body:       deleteSuccess(knownUUID),
 		},
 		{
 			name: "RegularPathFailure",
@@ -81,13 +77,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
 				},
-				delete: func(uuid string, transID string) error {
-					return nil
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, nil
 				},
 			},
-			statusCode:  http.StatusBadRequest,
-			contentType: "",
-			body:        errorMessage("concept type does not match path"),
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("concept type does not match path"),
 		},
 		{
 			name: "NotFound",
@@ -96,13 +91,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return nil, false, nil
 				},
-				delete: func(uuid string, transID string) error {
-					return ErrNotFound
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, ErrNotFound
 				},
 			},
-			statusCode:  http.StatusNotFound,
-			contentType: "",
-			body:        "{\"message\":\"Concept with prefUUID 99999 not found in db.\"}",
+			statusCode: http.StatusNotFound,
+			body:       errorMessage("Concept with prefUUID 99999 not found in db."),
 		},
 		{
 			name: "ReadError",
@@ -111,13 +105,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return nil, false, errors.New("TEST failing to READ")
 				},
-				delete: func(uuid string, transID string) error {
-					return nil
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, nil
 				},
 			},
-			statusCode:  http.StatusServiceUnavailable,
-			contentType: "",
-			body:        errorMessage("TEST failing to READ"),
+			statusCode: http.StatusServiceUnavailable,
+			body:       errorMessage("TEST failing to READ"),
 		},
 		{
 			name: "DeleteError",
@@ -126,13 +119,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
 				},
-				delete: func(uuid string, transID string) error {
-					return errors.New("TEST failing to READ")
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, errors.New("TEST failing to DELETE")
 				},
 			},
-			statusCode:  http.StatusServiceUnavailable,
-			contentType: "",
-			body:        errorMessage("TEST failing to READ"),
+			statusCode: http.StatusServiceUnavailable,
+			body:       errorMessage("TEST failing to DELETE"),
 		},
 		{
 			name: "BadConceptType",
@@ -141,13 +133,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
 				},
-				delete: func(uuid string, transID string) error {
-					return nil
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, nil
 				},
 			},
-			statusCode:  http.StatusBadRequest,
-			contentType: "",
-			body:        errorMessage("concept type does not match path"),
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("concept type does not match path"),
 		},
 		{
 			name: "DeleteRelatedErr",
@@ -156,13 +147,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
 				},
-				delete: func(uuid string, transID string) error {
-					return ErrDeleteRelated
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{"uuid1", "uuid2"}, ErrDeleteRelated
 				},
 			},
-			statusCode:  http.StatusBadRequest,
-			contentType: "",
-			body:        errorMessage("Concept with prefUUID " + knownUUID + " is referenced by other concepts or content, remove these before deleting."),
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("Concept with prefUUID " + knownUUID + " is referenced by [\"uuid1\" \"uuid2\"], remove these before deleting."),
 		},
 		{
 			name: "DeleteSourceErr",
@@ -171,13 +161,12 @@ func TestDeleteHandler(t *testing.T) {
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
 				},
-				delete: func(uuid string, transID string) error {
-					return ErrDeleteSource
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{"uuid1"}, ErrDeleteSource
 				},
 			},
-			statusCode:  http.StatusBadRequest,
-			contentType: "",
-			body:        errorMessage("Concept with UUID " + knownUUID + " is a source concept, only canonical concepts can be deleted."),
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("Concept with UUID " + knownUUID + " is a source concept, the canonical concept \"uuid1\" should be deleted instead."),
 		},
 	}
 
@@ -192,6 +181,16 @@ func TestDeleteHandler(t *testing.T) {
 			assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
 		})
 	}
+}
+
+func deleteSuccess(uuids ...string) string {
+	enc, err := json.Marshal(struct {
+		UUIDS []string `json:"uuids"`
+	}{uuids})
+	if err != nil {
+		return ""
+	}
+	return string(enc) + "\n"
 }
 
 func TestPutHandler(t *testing.T) {

@@ -2363,23 +2363,27 @@ func TestConceptService_Delete(t *testing.T) {
 		aggregatedConcept    transform.OldAggregatedConcept
 		otherRelatedConcepts []transform.OldAggregatedConcept
 		expectedErr          error
-		deleteUUIDs          []string
+		uuidsToDelete        []string
+		affectedUUIDs        []string
 	}{
 		{
 			testName:          "Deletes a canonical concept with a single source",
 			aggregatedConcept: getAggregatedConcept(t, "single-concordance.json"),
-			deleteUUIDs:       []string{basicConceptUUID},
+			uuidsToDelete:     []string{basicConceptUUID},
+			affectedUUIDs:     []string{basicConceptUUID},
 		},
 		{
 			testName:          "Deletes a concept which has outgoing relationship",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-related-to.json"),
-			deleteUUIDs:       []string{basicConceptUUID},
+			uuidsToDelete:     []string{basicConceptUUID},
+			affectedUUIDs:     []string{basicConceptUUID},
 		},
 		{
 			testName:          "Throws an error when deleting a source concept different from the canonical",
 			aggregatedConcept: getAggregatedConcept(t, "tri-concordance.json"),
 			expectedErr:       ErrDeleteSource,
-			deleteUUIDs:       []string{sourceID1},
+			uuidsToDelete:     []string{sourceID1},
+			affectedUUIDs:     []string{basicConceptUUID},
 		},
 		{
 			testName:          "Throws an error when deleting a concept that has relations",
@@ -2387,8 +2391,9 @@ func TestConceptService_Delete(t *testing.T) {
 			otherRelatedConcepts: []transform.OldAggregatedConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
-			expectedErr: ErrDeleteRelated,
-			deleteUUIDs: []string{yetAnotherBasicConceptUUID},
+			expectedErr:   ErrDeleteRelated,
+			uuidsToDelete: []string{yetAnotherBasicConceptUUID},
+			affectedUUIDs: []string{basicConceptUUID},
 		},
 		{
 			testName:          "Throws an error when deleting a concept with concordances which have relations to other things",
@@ -2396,8 +2401,9 @@ func TestConceptService_Delete(t *testing.T) {
 			otherRelatedConcepts: []transform.OldAggregatedConcept{
 				getAggregatedConcept(t, "transfer-multiple-source-concordance.json"),
 			},
-			expectedErr: ErrDeleteRelated,
-			deleteUUIDs: []string{simpleSmartlogicTopicUUID},
+			expectedErr:   ErrDeleteRelated,
+			uuidsToDelete: []string{simpleSmartlogicTopicUUID},
+			affectedUUIDs: []string{basicConceptUUID},
 		},
 	}
 
@@ -2416,18 +2422,20 @@ func TestConceptService_Delete(t *testing.T) {
 			assert.Nil(t, err)
 
 			// Attempt to delete the chosen UUIDs.
-			for _, uuid := range test.deleteUUIDs {
-				err = conceptsDriver.Delete(uuid, "")
+			for _, uuid := range test.uuidsToDelete {
+				affected, err := conceptsDriver.Delete(uuid, "")
 				if test.expectedErr != nil {
 					assert.Equal(t, test.expectedErr, err)
 				} else {
 					assert.Nil(t, err)
 				}
+				assert.Equal(t, len(test.affectedUUIDs), len(affected))
+				assert.Subset(t, test.affectedUUIDs, affected)
 			}
 
 			// Check if the deletion was actually successful if this was expected
 			if test.expectedErr == nil {
-				for _, uuid := range test.deleteUUIDs {
+				for _, uuid := range test.uuidsToDelete {
 					query := &cmneo4j.Query{
 						Cypher: "MATCH (n:Concept{uuid:$uuid}) RETURN n",
 						Params: map[string]interface{}{"uuid": uuid},
@@ -2448,8 +2456,15 @@ func TestConceptService_DeleteConcordedCanonical(t *testing.T) {
 	_, err := conceptsDriver.Write(aggregatedConcept, "")
 	assert.Nil(t, err)
 
-	err = conceptsDriver.Delete(aggregatedConcept.PrefUUID, "")
+	expectedUUIDs := []string{}
+	for _, concept := range aggregatedConcept.SourceRepresentations {
+		expectedUUIDs = append(expectedUUIDs, concept.UUID)
+	}
+
+	affected, err := conceptsDriver.Delete(aggregatedConcept.PrefUUID, "")
 	assert.Nil(t, err)
+	assert.Equal(t, len(expectedUUIDs), len(affected))
+	assert.Subset(t, expectedUUIDs, affected)
 
 	// All source representations should be deleted also
 	for _, c := range aggregatedConcept.SourceRepresentations {
