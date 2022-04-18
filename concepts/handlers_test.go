@@ -54,7 +54,7 @@ func TestDeleteHandler(t *testing.T) {
 				},
 			},
 			statusCode: http.StatusBadRequest,
-			body:       errorMessage("concept type does not match path"),
+			body:       errorMessage("concept type does not match path", knownUUID),
 		},
 		{
 			name: "RegularPathSuccess",
@@ -82,7 +82,7 @@ func TestDeleteHandler(t *testing.T) {
 				},
 			},
 			statusCode: http.StatusBadRequest,
-			body:       errorMessage("concept type does not match path"),
+			body:       errorMessage("concept type does not match path", knownUUID),
 		},
 		{
 			name: "NotFound",
@@ -96,7 +96,7 @@ func TestDeleteHandler(t *testing.T) {
 				},
 			},
 			statusCode: http.StatusNotFound,
-			body:       errorMessage("Concept with prefUUID 99999 not found in db."),
+			body:       errorMessage("Concept with prefUUID 99999 not found in db.", "99999"),
 		},
 		{
 			name: "ReadError",
@@ -110,7 +110,7 @@ func TestDeleteHandler(t *testing.T) {
 				},
 			},
 			statusCode: http.StatusServiceUnavailable,
-			body:       errorMessage("TEST failing to READ"),
+			body:       errorMessage("TEST failing to READ", knownUUID),
 		},
 		{
 			name: "DeleteError",
@@ -124,7 +124,7 @@ func TestDeleteHandler(t *testing.T) {
 				},
 			},
 			statusCode: http.StatusServiceUnavailable,
-			body:       errorMessage("TEST failing to DELETE"),
+			body:       errorMessage("TEST failing to DELETE", knownUUID),
 		},
 		{
 			name: "BadConceptType",
@@ -138,7 +138,7 @@ func TestDeleteHandler(t *testing.T) {
 				},
 			},
 			statusCode: http.StatusBadRequest,
-			body:       errorMessage("concept type does not match path"),
+			body:       errorMessage("concept type does not match path", knownUUID),
 		},
 		{
 			name: "DeleteRelatedErr",
@@ -152,7 +152,7 @@ func TestDeleteHandler(t *testing.T) {
 				},
 			},
 			statusCode: http.StatusBadRequest,
-			body:       errorMessage("Concept with prefUUID " + knownUUID + " is referenced by [\"uuid1\" \"uuid2\"], remove these before deleting."),
+			body:       errorMessage("Concept with prefUUID "+knownUUID+" is referenced by [\"uuid1\" \"uuid2\"], remove these before deleting.", "uuid1", "uuid2"),
 		},
 		{
 			name: "DeleteSourceErr",
@@ -166,7 +166,7 @@ func TestDeleteHandler(t *testing.T) {
 				},
 			},
 			statusCode: http.StatusBadRequest,
-			body:       errorMessage("Concept with UUID " + knownUUID + " is a source concept, the canonical concept \"uuid1\" should be deleted instead."),
+			body:       errorMessage("Concept with UUID "+knownUUID+" is a source concept, the canonical concept \"uuid1\" should be deleted instead.", "uuid1"),
 		},
 	}
 
@@ -181,16 +181,6 @@ func TestDeleteHandler(t *testing.T) {
 			assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
 		})
 	}
-}
-
-func deleteSuccess(uuids ...string) string {
-	enc, err := json.Marshal(struct {
-		UUIDS []string `json:"uuids"`
-	}{uuids})
-	if err != nil {
-		return ""
-	}
-	return string(enc) + "\n"
 }
 
 func TestPutHandler(t *testing.T) {
@@ -338,13 +328,15 @@ func TestPutHandler(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := mux.NewRouter()
-		handler := ConceptsHandler{test.mockService}
-		handler.RegisterHandlers(r)
-		rec := httptest.NewRecorder()
-		r.ServeHTTP(rec, test.req)
-		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
-		assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		t.Run(test.name, func(t *testing.T) {
+			r := mux.NewRouter()
+			handler := ConceptsHandler{test.mockService}
+			handler.RegisterHandlers(r)
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, test.req)
+			assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
+			assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		})
 	}
 }
 
@@ -416,7 +408,7 @@ func TestGetHandler(t *testing.T) {
 			},
 			statusCode:  http.StatusNotFound,
 			contentType: "",
-			body:        "{\"message\":\"Concept with prefUUID 99999 not found in db.\"}",
+			body:        errorMessage("Concept with prefUUID 99999 not found in db."),
 		},
 		{
 			name: "ReadError",
@@ -445,13 +437,15 @@ func TestGetHandler(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := mux.NewRouter()
-		handler := ConceptsHandler{test.ds}
-		handler.RegisterHandlers(r)
-		rec := httptest.NewRecorder()
-		r.ServeHTTP(rec, test.req)
-		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
-		assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		t.Run(test.name, func(t *testing.T) {
+			r := mux.NewRouter()
+			handler := ConceptsHandler{test.ds}
+			handler.RegisterHandlers(r)
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, test.req)
+			assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
+			assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		})
 	}
 }
 
@@ -492,14 +486,16 @@ func TestGtgHandler(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := mux.NewRouter()
-		handler := ConceptsHandler{test.ds}
-		log := logger.NewUPPLogger("handlers_test", "PANIC")
-		sm := handler.RegisterAdminHandlers(r, log, "", "", "", true)
-		rec := httptest.NewRecorder()
-		sm.ServeHTTP(rec, test.req)
-		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
-		assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		t.Run(test.name, func(t *testing.T) {
+			r := mux.NewRouter()
+			handler := ConceptsHandler{test.ds}
+			log := logger.NewUPPLogger("handlers_test", "PANIC")
+			sm := handler.RegisterAdminHandlers(r, log, "", "", "", true)
+			rec := httptest.NewRecorder()
+			sm.ServeHTTP(rec, test.req)
+			assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
+			assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		})
 	}
 }
 
@@ -511,6 +507,18 @@ func newRequest(method, url string, t *testing.T) *http.Request {
 	return req
 }
 
-func errorMessage(errMsg string) string {
-	return fmt.Sprintf("{\"message\": \"%s\"}\n", errMsg)
+func errorMessage(errMsg string, uuids ...string) string {
+	enc, err := json.Marshal(errorResponse{Message: errMsg, UUIDs: uuids})
+	if err != nil {
+		return ""
+	}
+	return string(enc) + "\n"
+}
+
+func deleteSuccess(uuids ...string) string {
+	enc, err := json.Marshal(errorResponse{UUIDs: uuids})
+	if err != nil {
+		return ""
+	}
+	return string(enc) + "\n"
 }
