@@ -10,7 +10,7 @@ import (
 
 	"github.com/Financial-Times/cm-graph-ontology/transform"
 
-	logger "github.com/Financial-Times/go-logger/v2"
+	"github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
 
 	"github.com/gorilla/mux"
@@ -18,6 +18,170 @@ import (
 )
 
 const knownUUID = "12345"
+
+func TestDeleteHandler(t *testing.T) {
+	assert := assert.New(t)
+	tests := []struct {
+		name       string
+		req        *http.Request
+		ds         ConceptServicer
+		statusCode int
+		body       string
+	}{
+		{
+			name: "IrregularPathSuccess",
+			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{knownUUID}, nil
+				},
+			},
+			statusCode: http.StatusOK,
+			body:       deleteSuccess(knownUUID),
+		},
+		{
+			name: "IrregularPathFailure",
+			req:  newRequest("DELETE", fmt.Sprintf("/Dummy/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, nil
+				},
+			},
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("concept type does not match path", knownUUID),
+		},
+		{
+			name: "RegularPathSuccess",
+			req:  newRequest("DELETE", fmt.Sprintf("/locations/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{knownUUID}, nil
+				},
+			},
+			statusCode: http.StatusOK,
+			body:       deleteSuccess(knownUUID),
+		},
+		{
+			name: "RegularPathFailure",
+			req:  newRequest("DELETE", fmt.Sprintf("/Location/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, nil
+				},
+			},
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("concept type does not match path", knownUUID),
+		},
+		{
+			name: "NotFound",
+			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", "99999"), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return nil, false, nil
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, ErrNotFound
+				},
+			},
+			statusCode: http.StatusNotFound,
+			body:       errorMessage("Concept with prefUUID 99999 not found in db.", "99999"),
+		},
+		{
+			name: "ReadError",
+			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return nil, false, errors.New("TEST failing to READ")
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, nil
+				},
+			},
+			statusCode: http.StatusServiceUnavailable,
+			body:       errorMessage("TEST failing to READ", knownUUID),
+		},
+		{
+			name: "DeleteError",
+			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, errors.New("TEST failing to DELETE")
+				},
+			},
+			statusCode: http.StatusServiceUnavailable,
+			body:       errorMessage("TEST failing to DELETE", knownUUID),
+		},
+		{
+			name: "BadConceptType",
+			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{}, nil
+				},
+			},
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("concept type does not match path", knownUUID),
+		},
+		{
+			name: "DeleteRelatedErr",
+			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{"uuid1", "uuid2"}, ErrDeleteRelated
+				},
+			},
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("Concept with prefUUID "+knownUUID+" is referenced by [\"uuid1\" \"uuid2\"], remove these before deleting.", "uuid1", "uuid2"),
+		},
+		{
+			name: "DeleteSourceErr",
+			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
+			ds: &mockConceptService{
+				read: func(uuid string, transID string) (interface{}, bool, error) {
+					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+				},
+				delete: func(uuid string, transID string) ([]string, error) {
+					return []string{"uuid1"}, ErrDeleteSource
+				},
+			},
+			statusCode: http.StatusBadRequest,
+			body:       errorMessage("Concept with UUID "+knownUUID+" is a source concept, the canonical concept \"uuid1\" should be deleted instead.", "uuid1"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := mux.NewRouter()
+			handler := ConceptsHandler{test.ds}
+			handler.RegisterHandlers(r)
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, test.req)
+			assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
+			assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		})
+	}
+}
 
 func TestPutHandler(t *testing.T) {
 	assert := assert.New(t)
@@ -164,13 +328,15 @@ func TestPutHandler(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := mux.NewRouter()
-		handler := ConceptsHandler{test.mockService}
-		handler.RegisterHandlers(r)
-		rec := httptest.NewRecorder()
-		r.ServeHTTP(rec, test.req)
-		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
-		assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		t.Run(test.name, func(t *testing.T) {
+			r := mux.NewRouter()
+			handler := ConceptsHandler{test.mockService}
+			handler.RegisterHandlers(r)
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, test.req)
+			assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
+			assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		})
 	}
 }
 
@@ -242,7 +408,7 @@ func TestGetHandler(t *testing.T) {
 			},
 			statusCode:  http.StatusNotFound,
 			contentType: "",
-			body:        "{\"message\":\"Concept with prefUUID 99999 not found in db.\"}",
+			body:        errorMessage("Concept with prefUUID 99999 not found in db."),
 		},
 		{
 			name: "ReadError",
@@ -271,13 +437,15 @@ func TestGetHandler(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := mux.NewRouter()
-		handler := ConceptsHandler{test.ds}
-		handler.RegisterHandlers(r)
-		rec := httptest.NewRecorder()
-		r.ServeHTTP(rec, test.req)
-		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
-		assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		t.Run(test.name, func(t *testing.T) {
+			r := mux.NewRouter()
+			handler := ConceptsHandler{test.ds}
+			handler.RegisterHandlers(r)
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, test.req)
+			assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
+			assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		})
 	}
 }
 
@@ -318,14 +486,16 @@ func TestGtgHandler(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := mux.NewRouter()
-		handler := ConceptsHandler{test.ds}
-		log := logger.NewUPPLogger("handlers_test", "PANIC")
-		sm := handler.RegisterAdminHandlers(r, log, "", "", "", true)
-		rec := httptest.NewRecorder()
-		sm.ServeHTTP(rec, test.req)
-		assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
-		assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		t.Run(test.name, func(t *testing.T) {
+			r := mux.NewRouter()
+			handler := ConceptsHandler{test.ds}
+			log := logger.NewUPPLogger("handlers_test", "PANIC")
+			sm := handler.RegisterAdminHandlers(r, log, "", "", "", true)
+			rec := httptest.NewRecorder()
+			sm.ServeHTTP(rec, test.req)
+			assert.Equal(test.statusCode, rec.Code, fmt.Sprintf("%s: Wrong response code, was %d, should be %d", test.name, rec.Code, test.statusCode))
+			assert.Equal(test.body, rec.Body.String(), fmt.Sprintf("%s: Wrong body", test.name))
+		})
 	}
 }
 
@@ -337,6 +507,18 @@ func newRequest(method, url string, t *testing.T) *http.Request {
 	return req
 }
 
-func errorMessage(errMsg string) string {
-	return fmt.Sprintf("{\"message\": \"%s\"}\n", errMsg)
+func errorMessage(errMsg string, uuids ...string) string {
+	enc, err := json.Marshal(errorResponse{Message: errMsg, UUIDs: uuids})
+	if err != nil {
+		return ""
+	}
+	return string(enc) + "\n"
+}
+
+func deleteSuccess(uuids ...string) string {
+	enc, err := json.Marshal(errorResponse{UUIDs: uuids})
+	if err != nil {
+		return ""
+	}
+	return string(enc) + "\n"
 }

@@ -8,8 +8,16 @@ import (
 type mockConceptService struct {
 	write      func(thing interface{}, transID string) (interface{}, error)
 	read       func(uuid string, transID string) (interface{}, bool, error)
+	delete     func(uuid string, transID string) ([]string, error)
 	decodeJSON func(*json.Decoder) (interface{}, string, error)
 	check      func() error
+}
+
+func (mcs *mockConceptService) Delete(uuid string, transID string) ([]string, error) {
+	if mcs.delete != nil {
+		return mcs.delete(uuid, transID)
+	}
+	return nil, errors.New("not implemented")
 }
 
 func (mcs *mockConceptService) Write(thing interface{}, transID string) (interface{}, error) {
