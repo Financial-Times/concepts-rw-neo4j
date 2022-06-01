@@ -688,15 +688,19 @@ func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregat
 	var cleanSources []ontology.NewConcept
 	for _, source := range c.SourceRepresentations {
 		cleanConcept := ontology.NewConcept{
-			Relationships:  source.Relationships,
-			UUID:           source.UUID,
-			PrefLabel:      source.PrefLabel,
-			Type:           source.Type,
-			Authority:      source.Authority,
-			AuthorityValue: source.AuthorityValue,
-			IssuedBy:       source.IssuedBy,
-			FigiCode:       source.FigiCode,
-			IsDeprecated:   source.IsDeprecated,
+			SourceConceptFields: ontology.SourceConceptFields{
+				UUID:           source.UUID,
+				Type:           source.Type,
+				PrefLabel:      source.PrefLabel,
+				Authority:      source.Authority,
+				AuthorityValue: source.AuthorityValue,
+				FigiCode:       source.FigiCode,
+				IssuedBy:       source.IssuedBy,
+				IsDeprecated:   source.IsDeprecated,
+			},
+			DynamicFields: ontology.DynamicFields{
+				Relationships: source.Relationships,
+			},
 		}
 		cleanSources = append(cleanSources, cleanConcept)
 	}
