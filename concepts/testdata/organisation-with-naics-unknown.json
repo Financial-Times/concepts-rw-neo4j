@@ -21,12 +21,6 @@
   "properName": "The New York Times Co.",
   "shortName": "The New York Times",
   "yearFounded": 1851,
-  "naicsIndustryClassifications": [
-    {
-      "uuid": "07fb6996-f046-4e95-8aaf-fafd138ca3ec",
-      "rank": 1
-    }
-  ],
   "sourceRepresentations": [
     {
       "uuid": "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed",
