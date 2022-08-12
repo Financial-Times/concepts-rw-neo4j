@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	ontology "github.com/Financial-Times/cm-graph-ontology"
 	"github.com/Financial-Times/cm-graph-ontology/transform"
 
 	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
@@ -61,7 +62,7 @@ func (h *ConceptsHandler) PutConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	agConcept := inst.(transform.OldAggregatedConcept)
+	agConcept := inst.(ontology.NewAggregatedConcept)
 	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
 		writeJSONError(w, err.Error(), http.StatusBadRequest)
 		return
