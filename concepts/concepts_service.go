@@ -15,7 +15,6 @@ import (
 
 	ontology "github.com/Financial-Times/cm-graph-ontology"
 	"github.com/Financial-Times/cm-graph-ontology/neo4j"
-	"github.com/Financial-Times/cm-graph-ontology/transform"
 )
 
 const (
@@ -105,7 +104,7 @@ func (s *ConceptService) Initialise() error {
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
 	if err != nil {
-		return transform.OldAggregatedConcept{}, exists, err
+		return ontology.NewAggregatedConcept{}, exists, err
 	}
 	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", newAggregatedConcept)
 	return newAggregatedConcept, exists, err

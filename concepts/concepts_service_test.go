@@ -78,14 +78,20 @@ const (
 )
 
 var (
-	membershipRole = transform.MembershipRole{
-		RoleUUID:        "f807193d-337b-412f-b32c-afa14b385819",
-		InceptionDate:   "2016-01-01",
-		TerminationDate: "2017-02-02",
+	membershipRole = ontology.Relationship{
+		UUID:  "f807193d-337b-412f-b32c-afa14b385819",
+		Label: "HAS_ROLE",
+		Properties: ontology.Properties{
+			"inceptionDate":   "2016-01-01",
+			"terminationDate": "2017-02-02",
+		},
 	}
-	anotherMembershipRole = transform.MembershipRole{
-		RoleUUID:      "fe94adc6-ca44-438f-ad8f-0188d4a74987",
-		InceptionDate: "2011-06-27",
+	anotherMembershipRole = ontology.Relationship{
+		UUID:  "fe94adc6-ca44-438f-ad8f-0188d4a74987",
+		Label: "HAS_ROLE",
+		Properties: ontology.Properties{
+			"inceptionDate": "2011-06-27",
+		},
 	}
 )
 
@@ -1086,34 +1092,71 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	ab, _ := json.Marshal(cleanHash(result.(ontology.NewAggregatedConcept)))
-
-	originalMembership := transform.OldAggregatedConcept{}
-	json.Unmarshal(ab, &originalMembership)
-
-	originalMembership = cleanConcept(originalMembership)
-
-	assert.Equal(t, len(originalMembership.MembershipRoles), 2)
-	assert.True(t, reflect.DeepEqual([]transform.MembershipRole{membershipRole, anotherMembershipRole}, originalMembership.MembershipRoles))
-	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
-	assert.Equal(t, personUUID, originalMembership.PersonUUID)
-	assert.Equal(t, "Mr", originalMembership.Salutation)
-	assert.Equal(t, 2018, originalMembership.BirthYear)
+	originalMembership := result.(ontology.NewAggregatedConcept)
+	originalMembership = cleanHash(originalMembership)
+	originalMembership = cleanNewAggregatedConcept(originalMembership)
+	memRoles := 0
+	var relationships ontology.Relationships
+	for i := range originalMembership.Relationships {
+		if originalMembership.Relationships[i].Label == "HAS_ROLE" {
+			memRoles++
+			relationships = append(relationships, originalMembership.Relationships[i])
+		}
+	}
+	assert.Equal(t, memRoles, 2)
+	assert.True(t, reflect.DeepEqual(ontology.Relationships{membershipRole, anotherMembershipRole}, relationships))
+	assert.Equal(t, organisationUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_ORGANISATION"))
+	assert.Equal(t, personUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_MEMBER"))
+	assert.Equal(t, "Mr", originalMembership.Properties["salutation"])
+	assert.Equal(t, 2018, originalMembership.Properties["birthYear"])
 
 	_, err = conceptsDriver.Write(getAggregatedConcept(t, "updated-membership.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write membership")
 
 	updatedResult, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	cd, _ := json.Marshal(cleanHash(updatedResult.(ontology.NewAggregatedConcept)))
+	updatedMemebership := updatedResult.(ontology.NewAggregatedConcept)
+	updatedMemebership = cleanHash(updatedMemebership)
+	updatedMemRoles := 0
+	var updatedRelationships ontology.Relationships
+	for i := range updatedMemebership.Relationships {
+		if updatedMemebership.Relationships[i].Label == "HAS_ROLE" {
+			updatedMemRoles++
+			updatedRelationships = append(updatedRelationships, updatedMemebership.Relationships[i])
+		}
+	}
+	for i := range updatedRelationships {
+		m := make(map[string]interface{}, len(updatedRelationships[i].Properties)-1)
+		for p := range updatedRelationships[i].Properties {
+			if p != "inceptionDateEpoch" {
+				m[p] = updatedRelationships[i].Properties[p]
+			}
+		}
+		updatedRelationships[i].Properties = m
+	}
 
-	updatedMemebership := transform.OldAggregatedConcept{}
-	json.Unmarshal(cd, &updatedMemebership)
+	assert.Equal(t, updatedMemRoles, 1)
+	assert.Equal(t, ontology.Relationships{anotherMembershipRole}, updatedRelationships)
+	assert.Contains(t, exctractAllUUIDsForSameRelationship(updatedMemebership.Relationships, "HAS_ORGANISATION"), anotherOrganisationUUID)
+	assert.Equal(t, anotherPersonUUID, extractFieldFromRelationship(updatedMemebership.Relationships, "HAS_MEMBER"))
+}
 
-	assert.Equal(t, len(updatedMemebership.MembershipRoles), 1)
-	assert.Equal(t, []transform.MembershipRole{anotherMembershipRole}, updatedMemebership.MembershipRoles)
-	assert.Equal(t, anotherOrganisationUUID, updatedMemebership.OrganisationUUID)
-	assert.Equal(t, anotherPersonUUID, updatedMemebership.PersonUUID)
+func exctractAllUUIDsForSameRelationship(r ontology.Relationships, relationshipName string) []string {
+	var rels []string
+	for i := range r {
+		if r[i].Label == relationshipName {
+			rels = append(rels, r[i].UUID)
+		}
+	}
+	return rels
+}
+func extractFieldFromRelationship(r ontology.Relationships, relationshipName string) string {
+	for i := range r {
+		if r[i].Label == relationshipName {
+			return r[i].UUID
+		}
+	}
+	return ""
 }
 
 func TestWriteMemberships_FixOldData(t *testing.T) {
@@ -1132,17 +1175,23 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	ab, _ := json.Marshal(cleanHash(result.(ontology.NewAggregatedConcept)))
+	originalMembership := result.(ontology.NewAggregatedConcept)
+	originalMembership = cleanHash(originalMembership)
+	originalMembership = cleanNewAggregatedConcept(originalMembership)
 
-	originalMembership := transform.OldAggregatedConcept{}
-	json.Unmarshal(ab, &originalMembership)
+	memRoles := 0
+	var updatedRelationships ontology.Relationships
+	for i := range originalMembership.Relationships {
+		if originalMembership.Relationships[i].Label == "HAS_ROLE" {
+			memRoles++
+			updatedRelationships = append(updatedRelationships, originalMembership.Relationships[i])
+		}
+	}
 
-	originalMembership = cleanConcept(originalMembership)
-
-	assert.Equal(t, len(originalMembership.MembershipRoles), 2)
-	assert.True(t, reflect.DeepEqual([]transform.MembershipRole{membershipRole, anotherMembershipRole}, originalMembership.MembershipRoles))
-	assert.Equal(t, organisationUUID, originalMembership.OrganisationUUID)
-	assert.Equal(t, personUUID, originalMembership.PersonUUID)
+	assert.Equal(t, memRoles, 2)
+	assert.True(t, reflect.DeepEqual(ontology.Relationships{membershipRole, anotherMembershipRole}, updatedRelationships))
+	assert.Equal(t, organisationUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_ORGANISATION"))
+	assert.Equal(t, personUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_MEMBER"))
 }
 
 func TestFinancialInstrumentExistingIssuedByRemoved(t *testing.T) {
@@ -1827,7 +1876,7 @@ func TestInvalidTypesThrowError(t *testing.T) {
 		err := driver.Write(&cmneo4j.Query{Cypher: scenario.statementToWrite})
 		assert.NoError(t, err, "Unexpected error on Write to the db")
 		aggConcept, found, err := conceptsDriver.Read(scenario.prefUUID, "")
-		assert.Equal(t, transform.OldAggregatedConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
+		assert.Equal(t, ontology.NewAggregatedConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
 		assert.Equal(t, false, found, "Scenario "+scenario.testName+" failed; aggregate concept should not be returned from read")
 		assert.Error(t, err, "Scenario "+scenario.testName+" failed; read of concept should return error")
 		assert.Contains(t, err.Error(), "provided types are not a consistent hierarchy", "Scenario "+scenario.testName+" failed; should throw error from mapper.MostSpecificType function")
@@ -2043,7 +2092,7 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		updatedSourceIds  map[string]string
 		expectedResult    []string
 		returnedError     error
-		targetConcordance transform.OldAggregatedConcept
+		targetConcordance ontology.NewAggregatedConcept
 	}
 	mergeManagedLocationCanonicalWithTwoSources := testStruct{
 		testName: "mergeManagedLocationCanonicalWithTwoSources",
@@ -2051,12 +2100,28 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 			"2": "Brand"},
 		returnedError:  nil,
 		expectedResult: []string{"2"},
-		targetConcordance: transform.OldAggregatedConcept{
-			PrefUUID: "1",
-			SourceRepresentations: []transform.OldConcept{
-				{UUID: "1", Authority: "Smartlogic"},
-				{UUID: "4", Authority: "FACTSET"},
-				{UUID: "2", Authority: "ManagedLocation"},
+		targetConcordance: ontology.NewAggregatedConcept{
+			AggregateConceptFields: ontology.AggregateConceptFields{
+				PrefUUID: "1",
+				SourceRepresentations: []ontology.NewConcept{
+					{
+						SourceConceptFields: ontology.SourceConceptFields{
+							UUID:      "1",
+							Authority: "Smartlogic",
+						},
+					}, {
+						SourceConceptFields: ontology.SourceConceptFields{
+							UUID:      "4",
+							Authority: "FACTSET",
+						},
+					},
+					{
+						SourceConceptFields: ontology.SourceConceptFields{
+							UUID:      "2",
+							Authority: "ManagedLocation",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -2067,13 +2132,35 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 			"2": "Brand"},
 		returnedError:  nil,
 		expectedResult: []string{"2"},
-		targetConcordance: transform.OldAggregatedConcept{
-			PrefUUID: "1",
-			SourceRepresentations: []transform.OldConcept{
-				{UUID: "1", Authority: "Smartlogic"},
-				{UUID: "4", Authority: "FACTSET"},
-				{UUID: "2", Authority: "ManagedLocation"},
-				{UUID: "5", Authority: "TME"},
+		targetConcordance: ontology.NewAggregatedConcept{
+			AggregateConceptFields: ontology.AggregateConceptFields{
+				PrefUUID: "1",
+				SourceRepresentations: []ontology.NewConcept{
+					{
+						SourceConceptFields: ontology.SourceConceptFields{
+							UUID:      "1",
+							Authority: "Smartlogic",
+						},
+					},
+					{
+						SourceConceptFields: ontology.SourceConceptFields{
+							UUID:      "4",
+							Authority: "FACTSET",
+						},
+					},
+					{
+						SourceConceptFields: ontology.SourceConceptFields{
+							UUID:      "2",
+							Authority: "ManagedLocation",
+						},
+					},
+					{
+						SourceConceptFields: ontology.SourceConceptFields{
+							UUID:      "5",
+							Authority: "TME",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -2092,9 +2179,7 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		newConcordance, err := transform.ToNewAggregateConcept(scenario.targetConcordance)
-		assert.NoError(t, err)
-		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", newConcordance, "")
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", scenario.targetConcordance, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.expectedResult != nil {
 			assert.Equal(t, scenario.expectedResult, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
@@ -2119,21 +2204,25 @@ func TestValidateObject(t *testing.T) {
 	}()
 	tests := []struct {
 		name          string
-		aggConcept    transform.OldAggregatedConcept
+		aggConcept    ontology.NewAggregatedConcept
 		returnedError string
 		expectedLogs  []map[string]interface{}
 	}{
 		{
 			name: "aggregate concept without prefLabel should be invalid",
-			aggConcept: transform.OldAggregatedConcept{
-				PrefUUID: basicConceptUUID,
-				Type:     "Brand",
-				SourceRepresentations: []transform.OldConcept{
-					{
-						UUID:           anotherBasicConceptUUID,
-						PrefLabel:      "The Best Label",
-						Type:           "Brand",
-						AuthorityValue: "123456-UPP",
+			aggConcept: ontology.NewAggregatedConcept{
+				AggregateConceptFields: ontology.AggregateConceptFields{
+					PrefUUID: basicConceptUUID,
+					Type:     "Brand",
+					SourceRepresentations: []ontology.NewConcept{
+						{
+							SourceConceptFields: ontology.SourceConceptFields{
+								UUID:           anotherBasicConceptUUID,
+								PrefLabel:      "The Best Label",
+								Type:           "Brand",
+								AuthorityValue: "123456-UPP",
+							},
+						},
 					},
 				},
 			},
@@ -2150,15 +2239,19 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "aggregate concept without type should be invalid",
-			aggConcept: transform.OldAggregatedConcept{
-				PrefUUID:  basicConceptUUID,
-				PrefLabel: "The Best Label",
-				SourceRepresentations: []transform.OldConcept{
-					{
-						UUID:           anotherBasicConceptUUID,
-						PrefLabel:      "The Best Label",
-						Type:           "Brand",
-						AuthorityValue: "123456-UPP",
+			aggConcept: ontology.NewAggregatedConcept{
+				AggregateConceptFields: ontology.AggregateConceptFields{
+					PrefUUID:  basicConceptUUID,
+					PrefLabel: "The Best Label",
+					SourceRepresentations: []ontology.NewConcept{
+						{
+							SourceConceptFields: ontology.SourceConceptFields{
+								UUID:           anotherBasicConceptUUID,
+								PrefLabel:      "The Best Label",
+								Type:           "Brand",
+								AuthorityValue: "123456-UPP",
+							},
+						},
 					},
 				},
 			},
@@ -2175,10 +2268,12 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "aggregate concept without source representations should be invalid",
-			aggConcept: transform.OldAggregatedConcept{
-				PrefUUID:  basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Type:      "Brand",
+			aggConcept: ontology.NewAggregatedConcept{
+				AggregateConceptFields: ontology.AggregateConceptFields{
+					PrefUUID:  basicConceptUUID,
+					PrefLabel: "The Best Label",
+					Type:      "Brand",
+				},
 			},
 			returnedError: "invalid request, no sourceRepresentation has been supplied",
 			expectedLogs: []map[string]interface{}{
@@ -2193,32 +2288,40 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "source representation without prefLabel should be valid",
-			aggConcept: transform.OldAggregatedConcept{
-				PrefUUID:  basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Type:      "Brand",
-				SourceRepresentations: []transform.OldConcept{
-					{
-						UUID:           anotherBasicConceptUUID,
-						Type:           "Brand",
-						AuthorityValue: "123456-UPP",
-						Authority:      "UPP",
+			aggConcept: ontology.NewAggregatedConcept{
+				AggregateConceptFields: ontology.AggregateConceptFields{
+					PrefUUID:  basicConceptUUID,
+					PrefLabel: "The Best Label",
+					Type:      "Brand",
+					SourceRepresentations: []ontology.NewConcept{
+						{
+							SourceConceptFields: ontology.SourceConceptFields{
+								UUID:           anotherBasicConceptUUID,
+								Type:           "Brand",
+								AuthorityValue: "123456-UPP",
+								Authority:      "UPP",
+							},
+						},
 					},
 				},
 			},
 		},
 		{
 			name: "source representation without type should be invalid",
-			aggConcept: transform.OldAggregatedConcept{
-				PrefUUID:  basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Type:      "Brand",
-				SourceRepresentations: []transform.OldConcept{
-					{
-						UUID:           anotherBasicConceptUUID,
-						PrefLabel:      "The Best Label",
-						Authority:      "UPP",
-						AuthorityValue: "123456-UPP",
+			aggConcept: ontology.NewAggregatedConcept{
+				AggregateConceptFields: ontology.AggregateConceptFields{
+					PrefUUID:  basicConceptUUID,
+					PrefLabel: "The Best Label",
+					Type:      "Brand",
+					SourceRepresentations: []ontology.NewConcept{
+						{
+							SourceConceptFields: ontology.SourceConceptFields{
+								UUID:           anotherBasicConceptUUID,
+								PrefLabel:      "The Best Label",
+								AuthorityValue: "123456-UPP",
+								Authority:      "UPP",
+							},
+						},
 					},
 				},
 			},
@@ -2235,16 +2338,20 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "source representation without authorityValue should be invalid",
-			aggConcept: transform.OldAggregatedConcept{
-				PrefUUID:  basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Type:      "Brand",
-				SourceRepresentations: []transform.OldConcept{
-					{
-						UUID:      anotherBasicConceptUUID,
-						PrefLabel: "The Best Label",
-						Type:      "Brand",
-						Authority: "UPP",
+			aggConcept: ontology.NewAggregatedConcept{
+				AggregateConceptFields: ontology.AggregateConceptFields{
+					PrefUUID:  basicConceptUUID,
+					PrefLabel: "The Best Label",
+					Type:      "Brand",
+					SourceRepresentations: []ontology.NewConcept{
+						{
+							SourceConceptFields: ontology.SourceConceptFields{
+								UUID:      anotherBasicConceptUUID,
+								PrefLabel: "The Best Label",
+								Type:      "Brand",
+								Authority: "UPP",
+							},
+						},
 					},
 				},
 			},
@@ -2261,16 +2368,20 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "source representation without authority should be invalid",
-			aggConcept: transform.OldAggregatedConcept{
-				PrefUUID:  basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Type:      "Brand",
-				SourceRepresentations: []transform.OldConcept{
-					{
-						UUID:           anotherBasicConceptUUID,
-						PrefLabel:      "The Best Label",
-						Type:           "Brand",
-						AuthorityValue: "123456-UPP",
+			aggConcept: ontology.NewAggregatedConcept{
+				AggregateConceptFields: ontology.AggregateConceptFields{
+					PrefUUID:  basicConceptUUID,
+					PrefLabel: "The Best Label",
+					Type:      "Brand",
+					SourceRepresentations: []ontology.NewConcept{
+						{
+							SourceConceptFields: ontology.SourceConceptFields{
+								UUID:           anotherBasicConceptUUID,
+								PrefLabel:      "The Best Label",
+								Type:           "Brand",
+								AuthorityValue: "123456-UPP",
+							},
+						},
 					},
 				},
 			},
@@ -2287,17 +2398,21 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "source representation with unknown authority should be invalid",
-			aggConcept: transform.OldAggregatedConcept{
-				PrefUUID:  basicConceptUUID,
-				PrefLabel: "The Best Label",
-				Type:      "Brand",
-				SourceRepresentations: []transform.OldConcept{
-					{
-						UUID:           anotherBasicConceptUUID,
-						PrefLabel:      "The Best Label",
-						Type:           "Brand",
-						Authority:      "Invalid",
-						AuthorityValue: "123456-UPP",
+			aggConcept: ontology.NewAggregatedConcept{
+				AggregateConceptFields: ontology.AggregateConceptFields{
+					PrefUUID:  basicConceptUUID,
+					PrefLabel: "The Best Label",
+					Type:      "Brand",
+					SourceRepresentations: []ontology.NewConcept{
+						{
+							SourceConceptFields: ontology.SourceConceptFields{
+								UUID:           anotherBasicConceptUUID,
+								PrefLabel:      "The Best Label",
+								Type:           "Brand",
+								Authority:      "Invalid",
+								AuthorityValue: "123456-UPP",
+							},
+						},
 					},
 				},
 			},
@@ -2313,20 +2428,27 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "valid concept",
-			aggConcept: transform.OldAggregatedConcept{
-				PrefUUID:    basicConceptUUID,
-				PrefLabel:   "The Best Label",
-				Type:        "Brand",
-				Aliases:     []string{"alias1", "alias2"},
-				Strapline:   "strapline",
-				YearFounded: 2000,
-				SourceRepresentations: []transform.OldConcept{
-					{
-						UUID:           anotherBasicConceptUUID,
-						PrefLabel:      "The Best Label",
-						Type:           "Brand",
-						Authority:      "UPP",
-						AuthorityValue: "123456-UPP",
+			aggConcept: ontology.NewAggregatedConcept{
+				AggregateConceptFields: ontology.AggregateConceptFields{
+					PrefUUID:  basicConceptUUID,
+					PrefLabel: "The Best Label",
+					Type:      "Brand",
+					SourceRepresentations: []ontology.NewConcept{
+						{
+							SourceConceptFields: ontology.SourceConceptFields{
+								UUID:           anotherBasicConceptUUID,
+								PrefLabel:      "The Best Label",
+								Type:           "Brand",
+								Authority:      "UPP",
+								AuthorityValue: "123456-UPP",
+							},
+						},
+					},
+				},
+				DynamicFields: ontology.DynamicFields{
+					Properties: ontology.Properties{
+						"aliases":     []string{"alias1", "alias2"},
+						"yearFounded": 2000,
 					},
 				},
 			},
@@ -2338,9 +2460,7 @@ func TestValidateObject(t *testing.T) {
 			hook := new(logTest.Hook)
 			conceptsDriver.log.AddHook(hook)
 
-			newAggConcept, err := transform.ToNewAggregateConcept(test.aggConcept)
-			assert.NoError(t, err)
-			err = conceptsDriver.validateObject(newAggConcept, "transaction_id")
+			err := conceptsDriver.validateObject(test.aggConcept, "transaction_id")
 			if err != nil {
 				assert.NotEmpty(t, test.returnedError, "test.returnedError should not be empty when there is an error")
 				assert.Contains(t, err.Error(), test.returnedError, test.name)
@@ -2614,11 +2734,11 @@ func cleanDB(t *testing.T) {
 		unknownThingUUID,
 		anotherUnknownThingUUID,
 		yetAnotherBasicConceptUUID,
-		membershipRole.RoleUUID,
+		membershipRole.UUID,
 		personUUID,
 		organisationUUID,
 		membershipUUID,
-		anotherMembershipRole.RoleUUID,
+		anotherMembershipRole.UUID,
 		anotherOrganisationUUID,
 		anotherPersonUUID,
 		simpleSmartlogicTopicUUID,
@@ -2653,11 +2773,11 @@ func cleanDB(t *testing.T) {
 		unknownThingUUID,
 		anotherUnknownThingUUID,
 		yetAnotherBasicConceptUUID,
-		membershipRole.RoleUUID,
+		membershipRole.UUID,
 		personUUID,
 		organisationUUID,
 		membershipUUID,
-		anotherMembershipRole.RoleUUID,
+		anotherMembershipRole.UUID,
 		anotherOrganisationUUID,
 		anotherPersonUUID,
 		simpleSmartlogicTopicUUID,
@@ -2692,11 +2812,11 @@ func cleanDB(t *testing.T) {
 		unknownThingUUID,
 		anotherUnknownThingUUID,
 		yetAnotherBasicConceptUUID,
-		membershipRole.RoleUUID,
+		membershipRole.UUID,
 		personUUID,
 		organisationUUID,
 		membershipUUID,
-		anotherMembershipRole.RoleUUID,
+		anotherMembershipRole.UUID,
 		anotherOrganisationUUID,
 		anotherPersonUUID,
 		simpleSmartlogicTopicUUID,
@@ -2786,45 +2906,6 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept ontology.NewAggregatedCo
 	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))
 }
 
-func cleanConcept(c transform.OldAggregatedConcept) transform.OldAggregatedConcept {
-	for j := range c.SourceRepresentations {
-		c.SourceRepresentations[j].LastModifiedEpoch = 0
-		for i := range c.SourceRepresentations[j].MembershipRoles {
-			c.SourceRepresentations[j].MembershipRoles[i].InceptionDateEpoch = 0
-			c.SourceRepresentations[j].MembershipRoles[i].TerminationDateEpoch = 0
-		}
-		sort.SliceStable(c.SourceRepresentations[j].MembershipRoles, func(k, l int) bool {
-			return c.SourceRepresentations[j].MembershipRoles[k].RoleUUID < c.SourceRepresentations[j].MembershipRoles[l].RoleUUID
-		})
-		sort.SliceStable(c.SourceRepresentations[j].BroaderUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].BroaderUUIDs[k] < c.SourceRepresentations[j].BroaderUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].RelatedUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].RelatedUUIDs[k] < c.SourceRepresentations[j].RelatedUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].SupersededByUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].SupersededByUUIDs[k] < c.SourceRepresentations[j].SupersededByUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].ImpliedByUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].ImpliedByUUIDs[k] < c.SourceRepresentations[j].ImpliedByUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].HasFocusUUIDs, func(k, l int) bool {
-			return c.SourceRepresentations[j].HasFocusUUIDs[k] < c.SourceRepresentations[j].HasFocusUUIDs[l]
-		})
-		sort.SliceStable(c.SourceRepresentations[j].NAICSIndustryClassifications, func(k, l int) bool {
-			return c.SourceRepresentations[j].NAICSIndustryClassifications[k].Rank < c.SourceRepresentations[j].NAICSIndustryClassifications[l].Rank
-		})
-	}
-	for i := range c.MembershipRoles {
-		c.MembershipRoles[i].InceptionDateEpoch = 0
-		c.MembershipRoles[i].TerminationDateEpoch = 0
-	}
-	sort.SliceStable(c.SourceRepresentations, func(k, l int) bool {
-		return c.SourceRepresentations[k].UUID < c.SourceRepresentations[l].UUID
-	})
-	return c
-}
-
 func cleanNewAggregatedConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	for i := range c.SourceRepresentations {
 		c.SourceRepresentations[i].LastModifiedEpoch = 0
@@ -2855,6 +2936,7 @@ func cleanNewAggregatedConcept(c ontology.NewAggregatedConcept) ontology.NewAggr
 			c.SourceRepresentations[i].Relationships[q].Properties = prop
 		}
 	}
+
 	for i := range c.Properties {
 		if i == "aliases" || i == "formerNames" || i == "tradeNames" {
 			s, ok := c.Properties[i].([]interface{})
@@ -2878,6 +2960,7 @@ func cleanNewAggregatedConcept(c ontology.NewAggregatedConcept) ontology.NewAggr
 			}
 		}
 	}
+
 	for i := range c.Relationships {
 		prop := make(map[string]interface{})
 		for p := range c.Relationships[i].Properties {
@@ -2887,6 +2970,7 @@ func cleanNewAggregatedConcept(c ontology.NewAggregatedConcept) ontology.NewAggr
 		}
 		c.Relationships[i].Properties = prop
 	}
+
 	return c
 }
 
