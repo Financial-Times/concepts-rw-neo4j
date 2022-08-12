@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	ontology "github.com/Financial-Times/cm-graph-ontology"
-	"github.com/Financial-Times/cm-graph-ontology/transform"
 
 	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
@@ -151,7 +150,7 @@ func (h *ConceptsHandler) DeleteConcept(w http.ResponseWriter, r *http.Request) 
 		writeJSONError(w, fmt.Sprintf("Concept with prefUUID %s not found in db.", uuid), http.StatusNotFound, uuid)
 		return
 	}
-	agConcept := obj.(transform.OldAggregatedConcept)
+	agConcept := obj.(ontology.NewAggregatedConcept)
 	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
 		writeJSONError(w, err.Error(), http.StatusBadRequest, uuid)
 		return

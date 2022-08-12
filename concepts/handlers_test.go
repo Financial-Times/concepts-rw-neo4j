@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	ontology "github.com/Financial-Times/cm-graph-ontology"
-	"github.com/Financial-Times/cm-graph-ontology/transform"
 
 	"github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
@@ -34,7 +33,9 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
 					return []string{knownUUID}, nil
@@ -48,7 +49,9 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/Dummy/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
 					return []string{}, nil
@@ -62,7 +65,9 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/locations/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Location"},
+					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
 					return []string{knownUUID}, nil
@@ -76,7 +81,9 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/Location/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Location"},
+					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
 					return []string{}, nil
@@ -118,7 +125,9 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
 					return []string{}, errors.New("TEST failing to DELETE")
@@ -132,7 +141,9 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "not-dummy"},
+					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
 					return []string{}, nil
@@ -146,7 +157,9 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
 					return []string{"uuid1", "uuid2"}, ErrDeleteRelated
@@ -160,7 +173,9 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
 					return []string{"uuid1"}, ErrDeleteSource
