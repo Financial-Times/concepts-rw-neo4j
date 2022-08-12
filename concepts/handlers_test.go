@@ -372,7 +372,9 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					}, true, nil
 				},
 			},
 			statusCode:  http.StatusOK,
@@ -384,7 +386,9 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/Dummy/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Dummy"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					}, true, nil
 				},
 			},
 			statusCode:  http.StatusBadRequest,
@@ -396,7 +400,9 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/locations/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Location"},
+					}, true, nil
 				},
 			},
 			statusCode:  http.StatusOK,
@@ -408,7 +414,9 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/Location/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "Location"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Location"},
+					}, true, nil
 				},
 			},
 			statusCode:  http.StatusBadRequest,
@@ -444,7 +452,9 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return transform.OldAggregatedConcept{PrefUUID: knownUUID, Type: "not-dummy"}, true, nil
+					return ontology.NewAggregatedConcept{
+						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "not-dummy"},
+					}, true, nil
 				},
 			},
 			statusCode:  http.StatusBadRequest,

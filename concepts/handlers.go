@@ -119,7 +119,7 @@ func (h *ConceptsHandler) GetConcept(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	agConcept := obj.(transform.OldAggregatedConcept)
+	agConcept := obj.(ontology.NewAggregatedConcept)
 	if err := checkConceptTypeAgainstPath(agConcept.Type, conceptType); err != nil {
 		writeJSONError(w, err.Error(), http.StatusBadRequest)
 		return
