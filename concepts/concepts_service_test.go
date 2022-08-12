@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package concepts
 
 import (
@@ -125,19 +122,19 @@ func getAggregatedConcept(t *testing.T, name string) ontology.NewAggregatedConce
 
 func getOrganisationWithAllCountries() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
-		ontology.AggregateConceptFields{
+		AggregateConceptFields: ontology.AggregateConceptFields{
 			PrefUUID:  testOrgUUID,
 			Type:      "PublicCompany",
 			PrefLabel: "Strix Group Plc",
 			SourceRepresentations: []ontology.NewConcept{
 				{
-					ontology.SourceConceptFields{
+					SourceConceptFields: ontology.SourceConceptFields{
 						UUID:           testOrgUUID,
 						Type:           "PublicCompany",
 						Authority:      "FACTSET",
 						AuthorityValue: "B000BB-S",
-					}, ontology.DynamicFields{
-						ontology.Properties{
+					}, DynamicFields: ontology.DynamicFields{
+						Properties: ontology.Properties{
 							"properName": "Strix Group Plc",
 							"prefLabel":  "Strix Group Plc",
 							"shortName":  "Strix Group",
@@ -167,13 +164,13 @@ func getOrganisationWithAllCountries() ontology.NewAggregatedConcept {
 							"emailAddress":               "info@strix.com",
 							"leiCode":                    "213800KZEW5W6BZMNT62",
 							"parentOrganisation":         parentOrgUUID,
-						}, nil,
+						}, Relationships: nil,
 					},
 				},
 			},
 		},
-		ontology.DynamicFields{
-			ontology.Properties{
+		DynamicFields: ontology.DynamicFields{
+			Properties: ontology.Properties{
 				"shortName":  "Strix Group",
 				"properName": "Strix Group Plc",
 				"tradeNames": []string{
@@ -199,7 +196,7 @@ func getOrganisationWithAllCountries() ontology.NewAggregatedConcept {
 				"emailAddress":           "info@strix.com",
 				"leiCode":                "213800KZEW5W6BZMNT62",
 			},
-			nil,
+			Relationships: nil,
 		},
 	}
 }
@@ -215,115 +212,115 @@ func getConcept(t *testing.T, name string) transform.OldConcept {
 
 func getLocation() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
-		ontology.AggregateConceptFields{
+		AggregateConceptFields: ontology.AggregateConceptFields{
 			PrefUUID:  locationUUID,
 			PrefLabel: "Location Pref Label",
 			Type:      "Location",
 			SourceRepresentations: []ontology.NewConcept{{
-				ontology.SourceConceptFields{
+				SourceConceptFields: ontology.SourceConceptFields{
 					UUID:           locationUUID,
 					PrefLabel:      "Location Pref Label",
 					Type:           "Location",
 					Authority:      "ManagedLocation",
 					AuthorityValue: locationUUID,
-				}, ontology.DynamicFields{},
+				}, DynamicFields: ontology.DynamicFields{},
 			}},
-		}, ontology.DynamicFields{
-			ontology.Properties{},
-			nil,
+		}, DynamicFields: ontology.DynamicFields{
+			Properties:    ontology.Properties{},
+			Relationships: nil,
 		},
 	}
 }
 
 func getLocationWithISO31661() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
-		ontology.AggregateConceptFields{
+		AggregateConceptFields: ontology.AggregateConceptFields{
 			PrefUUID:  locationUUID,
 			PrefLabel: "Location Pref Label 2",
 			Type:      "Location",
 			SourceRepresentations: []ontology.NewConcept{{
-				ontology.SourceConceptFields{
+				SourceConceptFields: ontology.SourceConceptFields{
 					UUID:           locationUUID,
 					PrefLabel:      "Location Pref Label 2",
 					Type:           "Location",
 					Authority:      "ManagedLocation",
 					AuthorityValue: locationUUID,
-				}, ontology.DynamicFields{
-					ontology.Properties{
+				}, DynamicFields: ontology.DynamicFields{
+					Properties: ontology.Properties{
 						"aliases": []string{
 							"Bulgaria",
 							"Bulgarie",
 							"Bulgarien",
 						},
 						"iso31661": "BG"},
-					nil,
+					Relationships: nil,
 				},
 			}},
-		}, ontology.DynamicFields{
-			ontology.Properties{
+		}, DynamicFields: ontology.DynamicFields{
+			Properties: ontology.Properties{
 				"aliases": []string{
 					"Bulgaria",
 					"Bulgarie",
 					"Bulgarien",
 				},
 				"iso31661": "BG",
-			}, nil,
+			}, Relationships: nil,
 		},
 	}
 }
 
 func getLocationWithISO31661AndConcordance() ontology.NewAggregatedConcept {
 	return ontology.NewAggregatedConcept{
-		ontology.AggregateConceptFields{
+		AggregateConceptFields: ontology.AggregateConceptFields{
 			PrefUUID:  anotherLocationUUID,
 			PrefLabel: "Location Pref Label 2",
 			Type:      "Location",
 			SourceRepresentations: []ontology.NewConcept{
 				{
-					ontology.SourceConceptFields{
+					SourceConceptFields: ontology.SourceConceptFields{
 						UUID:           locationUUID,
 						PrefLabel:      "Location Pref Label 2",
 						Type:           "Location",
 						Authority:      "ManagedLocation",
 						AuthorityValue: locationUUID,
-					}, ontology.DynamicFields{
-						ontology.Properties{
+					}, DynamicFields: ontology.DynamicFields{
+						Properties: ontology.Properties{
 							"aliases": []string{
 								"Bulgaria",
 								"Bulgarie",
 								"Bulgarien",
 							},
 							"iso31661": "BG",
-						}, nil,
+						}, Relationships: nil,
 					},
 				},
 				{
-					ontology.SourceConceptFields{
+					SourceConceptFields: ontology.SourceConceptFields{
 						UUID:           anotherLocationUUID,
 						PrefLabel:      "Location Pref Label 2",
 						Type:           "Location",
 						Authority:      "Smartlogic",
 						AuthorityValue: anotherLocationUUID,
-					}, ontology.DynamicFields{
-						ontology.Properties{
+					}, DynamicFields: ontology.DynamicFields{
+						Properties: ontology.Properties{
 							"aliases": []string{
 								"Bulgaria",
 								"Bulgarie",
 								"Bulgarien",
 							},
-						}, nil,
+						}, Relationships: nil,
 					},
 				},
 			},
-		}, ontology.DynamicFields{
-			ontology.Properties{
+		}, DynamicFields: ontology.DynamicFields{
+			Properties: ontology.Properties{
 				"aliases": []string{
 					"Bulgaria",
 					"Bulgarie",
 					"Bulgarien",
 				},
 				"iso31661": "BG",
-			}, nil,
+			}, Relationships: nil,
 		},
 	}
 }
@@ -363,7 +360,7 @@ func TestWriteService(t *testing.T) {
 	}{
 		{
 			testName:          "Throws validation error for invalid concept",
-			aggregatedConcept: ontology.NewAggregatedConcept{ontology.AggregateConceptFields{PrefUUID: basicConceptUUID}, ontology.DynamicFields{}},
+			aggregatedConcept: ontology.NewAggregatedConcept{AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: basicConceptUUID}, DynamicFields: ontology.DynamicFields{}},
 			errStr:            "invalid request, no prefLabel has been supplied",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
@@ -1038,7 +1035,7 @@ func TestWriteService(t *testing.T) {
 				if !assert.NoError(t, err, "Failed to write concept") {
 					return
 				}
-				readConceptAndCompare(t, test.aggregatedConcept, test.testName, test.writtenNotReadFields...)
+				readConceptAndCompare(t, test.aggregatedConcept, test.testName)
 
 				sort.Slice(test.updatedConcepts.ChangedRecords, func(i, j int) bool {
 					l, _ := json.Marshal(test.updatedConcepts.ChangedRecords[i])
@@ -2648,7 +2645,7 @@ func TestConceptService_DeleteConcordedCanonical(t *testing.T) {
 	}
 }
 
-func readConceptAndCompare(t *testing.T, payload ontology.NewAggregatedConcept, testName string, ignoredFields ...string) {
+func readConceptAndCompare(t *testing.T, payload ontology.NewAggregatedConcept, testName string) {
 	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
 	actual := actualIf.(ontology.NewAggregatedConcept)
 
@@ -2906,6 +2903,7 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept ontology.NewAggregatedCo
 	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))
 }
 
+// nolint:gocognit
 func cleanNewAggregatedConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	for i := range c.SourceRepresentations {
 		c.SourceRepresentations[i].LastModifiedEpoch = 0
