@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package concepts
 
 import (
@@ -2903,62 +2906,78 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept ontology.NewAggregatedCo
 	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))
 }
 
-// nolint:gocognit
 func cleanNewAggregatedConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	for i := range c.SourceRepresentations {
 		c.SourceRepresentations[i].LastModifiedEpoch = 0
-		for r := range c.SourceRepresentations[i].Properties {
-			if r == "rank" {
-				s, ok := c.SourceRepresentations[i].Properties[r].(float64)
+		cleanSourceRepresentationsProperties(c, i)
+		cleanSourceRepresentationsRelationships(c, i)
+	}
+
+	cleanNewAggregatedConceptProperties(c)
+	cleanNewAggregatedConceptRelationships(c)
+	return c
+}
+
+func cleanSourceRepresentationsProperties(c ontology.NewAggregatedConcept, i int) {
+	for r := range c.SourceRepresentations[i].Properties {
+		cleanIntProperties(c.SourceRepresentations[i].Properties, r)
+	}
+}
+
+func cleanSourceRepresentationsRelationships(c ontology.NewAggregatedConcept, i int) {
+	for q := range c.SourceRepresentations[i].Relationships {
+		prop := make(map[string]interface{})
+		for p := range c.SourceRepresentations[i].Relationships[q].Properties {
+			if p != "inceptionDateEpoch" && p != "terminationDateEpoch" {
+				prop[p] = c.SourceRepresentations[i].Relationships[q].Properties[p]
+			}
+
+			if p == "rank" {
+				s, ok := c.SourceRepresentations[i].Relationships[q].Properties[p].(float64)
 				if ok {
 					k := int(s)
-					c.SourceRepresentations[i].Properties[r] = k
+					prop[p] = k
 				}
 			}
 		}
-		for q := range c.SourceRepresentations[i].Relationships {
-			prop := make(map[string]interface{})
-			for p := range c.SourceRepresentations[i].Relationships[q].Properties {
-				if p != "inceptionDateEpoch" && p != "terminationDateEpoch" {
-					prop[p] = c.SourceRepresentations[i].Relationships[q].Properties[p]
-				}
-
-				if p == "rank" {
-					s, ok := c.SourceRepresentations[i].Relationships[q].Properties[p].(float64)
-					if ok {
-						k := int(s)
-						prop[p] = k
-					}
-				}
-			}
-			c.SourceRepresentations[i].Relationships[q].Properties = prop
-		}
+		c.SourceRepresentations[i].Relationships[q].Properties = prop
 	}
+}
 
+func cleanNewAggregatedConceptProperties(c ontology.NewAggregatedConcept) {
 	for i := range c.Properties {
-		if i == "aliases" || i == "formerNames" || i == "tradeNames" {
-			s, ok := c.Properties[i].([]interface{})
-			if ok {
-				tempArray := make([]string, 0, len(s))
-				for _, str := range s {
-					k, ok := str.(string)
-					if ok {
-						tempArray = append(tempArray, k)
-					}
-				}
-				c.Properties[i] = tempArray
-			}
-		}
+		cleanArrayProperties(c.Properties, i)
+		cleanIntProperties(c.Properties, i)
+	}
+}
 
-		if i == "birthYear" || i == "yearFounded" || i == "rank" {
-			s, ok := c.Properties[i].(float64)
-			if ok {
-				k := int(s)
-				c.Properties[i] = k
+func cleanArrayProperties(c ontology.Properties, i string) {
+	if i == "aliases" || i == "formerNames" || i == "tradeNames" {
+		s, ok := c[i].([]interface{})
+		if ok {
+			tempArray := make([]string, 0, len(s))
+			for _, str := range s {
+				k, ok := str.(string)
+				if ok {
+					tempArray = append(tempArray, k)
+				}
 			}
+			c[i] = tempArray
 		}
 	}
+}
 
+func cleanIntProperties(c ontology.Properties, i string) {
+	if i == "birthYear" || i == "yearFounded" || i == "rank" {
+		s, ok := c[i].(float64)
+		if ok {
+			k := int(s)
+			c[i] = k
+		}
+	}
+}
+
+func cleanNewAggregatedConceptRelationships(c ontology.NewAggregatedConcept) {
 	for i := range c.Relationships {
 		prop := make(map[string]interface{})
 		for p := range c.Relationships[i].Properties {
@@ -2968,8 +2987,6 @@ func cleanNewAggregatedConcept(c ontology.NewAggregatedConcept) ontology.NewAggr
 		}
 		c.Relationships[i].Properties = prop
 	}
-
-	return c
 }
 
 func cleanHash(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
