@@ -15,7 +15,6 @@ import (
 
 	ontology "github.com/Financial-Times/cm-graph-ontology"
 	"github.com/Financial-Times/cm-graph-ontology/neo4j"
-	"github.com/Financial-Times/cm-graph-ontology/transform"
 )
 
 const (
@@ -105,11 +104,10 @@ func (s *ConceptService) Initialise() error {
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
 	if err != nil {
-		return transform.OldAggregatedConcept{}, exists, err
+		return ontology.NewAggregatedConcept{}, exists, err
 	}
-	aggregatedConcept, err := transform.ToOldAggregateConcept(newAggregatedConcept)
-	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", aggregatedConcept)
-	return aggregatedConcept, exists, err
+	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", newAggregatedConcept)
+	return newAggregatedConcept, exists, err
 }
 
 func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
@@ -140,12 +138,7 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
-	oldAggregatedConcept := thing.(transform.OldAggregatedConcept)
-	aggregatedConceptToWrite, err := transform.ToNewAggregateConcept(oldAggregatedConcept)
-	if err != nil {
-		return ConceptChanges{}, err
-	}
-
+	aggregatedConceptToWrite := thing.(ontology.NewAggregatedConcept)
 	aggregatedConceptToWrite = cleanSourceProperties(aggregatedConceptToWrite)
 	requestSourceData := getSourceData(aggregatedConceptToWrite.SourceRepresentations)
 
@@ -658,7 +651,7 @@ func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, second
 
 //DecodeJSON - decode json
 func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
-	sub := transform.OldAggregatedConcept{}
+	sub := ontology.NewAggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
