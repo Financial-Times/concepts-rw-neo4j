@@ -2,10 +2,8 @@ module github.com/Financial-Times/concepts-rw-neo4j
 
 go 1.16
 
-replace github.com/Financial-Times/cm-graph-ontology => github.com/Financial-Times/cm-graph-ontology v0.0.9-0.20220822130210-9a2f7d191ed1
-
 require (
-	github.com/Financial-Times/cm-graph-ontology v0.0.8
+	github.com/Financial-Times/cm-graph-ontology v1.0.0
 	github.com/Financial-Times/cm-neo4j-driver v1.1.0
 	github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7
 	github.com/Financial-Times/go-logger/v2 v2.0.1
