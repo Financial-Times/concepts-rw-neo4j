@@ -126,7 +126,7 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 		return ontology.NewAggregatedConcept{}, false, err
 	}
 
-	newAggregatedConcept, logMsg, err := neoAggregateConcept.ToOntologyNewAggregateConcept(ontology.GetConfig())
+	newAggregatedConcept, logMsg, err := neo4j.ToOntologyNewAggregateConcept(ontology.GetConfig(), neoAggregateConcept)
 	if err != nil {
 		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error(logMsg)
 		return ontology.NewAggregatedConcept{}, false, err

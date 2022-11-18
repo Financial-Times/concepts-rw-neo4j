@@ -1,7 +1,13 @@
 github.com/Financial-Times/cm-graph-ontology v1.0.0 h1:7Bt8qsu9RbIJCIHbCvxuhCr8S64usL3H9XrDnwr23jk=
 github.com/Financial-Times/cm-graph-ontology v1.0.0/go.mod h1:SbHvysEXEg6tpMmtv7o5AgzTtwAGoqx/Hj7i1QNjTE8=
+github.com/Financial-Times/cm-graph-ontology v1.0.1 h1:hu8sx3nXT54kh+DpaiWrFKu7Iqwsy7kaCDKbMeiTBgM=
+github.com/Financial-Times/cm-graph-ontology v1.0.1/go.mod h1:Bku34350G+ZZh31w5lDAXlzLJH4Sc5ZmWyiQdp9PlHo=
+github.com/Financial-Times/cm-graph-ontology v1.1.0 h1:VDGZcpcbZLocaZfAJteqzOF/OyC1UWP/cShJhxaA3ZM=
+github.com/Financial-Times/cm-graph-ontology v1.1.0/go.mod h1:Bku34350G+ZZh31w5lDAXlzLJH4Sc5ZmWyiQdp9PlHo=
 github.com/Financial-Times/cm-neo4j-driver v1.1.0 h1:9TZgyE7Vl8iuH0MRQlrVLkjzLFwIQsCn/td806WU7A8=
 github.com/Financial-Times/cm-neo4j-driver v1.1.0/go.mod h1:fQ77C8A+6I+ihwe6Ob8Y7sIzU3s/DTrjBZJGVQOeum0=
+github.com/Financial-Times/cm-neo4j-driver v1.1.1 h1:kmgRa3boe58+tzNTbWTBx3IQnIZt5Hh57Yc2kHy85FM=
+github.com/Financial-Times/cm-neo4j-driver v1.1.1/go.mod h1:fQ77C8A+6I+ihwe6Ob8Y7sIzU3s/DTrjBZJGVQOeum0=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7 h1:dkf1EOTiHXA2lG2EJuePEim6y0HEOPt0hcqsT/qUr/k=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7/go.mod h1:gpAzq6W5rCheYlY32JOIxS/VjVcYHbC2PkMzQngHT9c=
 github.com/Financial-Times/go-logger/v2 v2.0.1 h1:iekEfSsUtlkg+YkXTZo+/fIN2VbZ2/3Hl9yolP3z5X8=
