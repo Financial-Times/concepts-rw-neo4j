@@ -24,6 +24,7 @@ var irregularConceptTypePaths = map[string]string{
 	"Person":                      "people",
 	"PublicCompany":               "organisations",
 	"NAICSIndustryClassification": "industry-classifications",
+	"FTAnIIndustryClassification": "industry-classifications",
 }
 
 type ConceptsHandler struct {
