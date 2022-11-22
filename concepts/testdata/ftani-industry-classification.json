@@ -1,0 +1,22 @@
+{
+    "prefUUID": "20c3c352-7248-4c93-92c2-0e5a57736e48",
+    "prefLabel": "Basic resources/mining",
+    "type": "FTAnIIndustryClassification",
+    "aliases": [
+        "Basic resources/mining"
+    ],
+    "industryIdentifier": "RES",
+    "sourceRepresentations": [
+        {
+            "uuid": "20c3c352-7248-4c93-92c2-0e5a57736e48",
+            "type": "FTAnIIndustryClassification",
+            "prefLabel": "Basic resources/mining",
+            "authority": "Smartlogic",
+            "authorityValue": "20c3c352-7248-4c93-92c2-0e5a57736e48",
+            "aliases": [
+                "Basic resources/mining"
+            ],
+            "industryIdentifier": "RES"
+        }
+    ]
+}
