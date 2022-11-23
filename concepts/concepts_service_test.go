@@ -24,15 +24,16 @@ import (
 	logTest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 
-	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	"github.com/Financial-Times/go-logger/v2"
+
+	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 
 	ontology "github.com/Financial-Times/cm-graph-ontology"
 	"github.com/Financial-Times/cm-graph-ontology/neo4j"
 	"github.com/Financial-Times/cm-graph-ontology/transform"
 )
 
-//all uuids to be cleaned from DB
+// all uuids to be cleaned from DB
 const (
 	basicConceptUUID           = "bbc4f575-edb3-4f51-92f0-5ce6c708d1ea"
 	anotherBasicConceptUUID    = "4c41f314-4548-4fb6-ac48-4618fcbfa84c"
@@ -58,6 +59,7 @@ const (
 	organisationWithNAICSUUID              = "b4ddd5a5-0b6c-4dc2-bb75-3eb40c1b05ed"
 	naicsIndustryClassificationUUID        = "38ee195d-ebdd-48a9-af4b-c8a322e7b04d"
 	naicsIndustryClassificationAnotherUUID = "49da878c-67ce-4343-9a09-a4a767e584a2"
+	aniIndustryClassificationUUID          = "20c3c352-7248-4c93-92c2-0e5a57736e48"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -95,10 +97,10 @@ var (
 	}
 )
 
-//Reusable Neo4J driver
+// Reusable Neo4J driver
 var driver *cmneo4j.Driver
 
-//Concept Service under test
+// Concept Service under test
 var conceptsDriver ConceptService
 
 var emptyList []string
@@ -1018,6 +1020,25 @@ func TestWriteService(t *testing.T) {
 				},
 				UpdatedIds: []string{
 					organisationWithNAICSUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a FTAnIIndustryClassification",
+			aggregatedConcept: getAggregatedConcept(t, "ftani-industry-classification.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "FTAnIIndustryClassification",
+						ConceptUUID:   aniIndustryClassificationUUID,
+						AggregateHash: "1773173587993451366",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					aniIndustryClassificationUUID,
 				},
 			},
 		},
