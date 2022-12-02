@@ -1,0 +1,20 @@
+{
+    "prefUUID":"0f060226-68b5-483b-b9f9-85af3eb1edaa",
+    "prefLabel":"Pref Label",
+    "type":"FTAnIIndustryClassification",
+    "industryIdentifier": "ABC",
+    "sourceRepresentations":[  
+        {  
+            "uuid":"0f060226-68b5-483b-b9f9-85af3eb1edaa",
+            "prefLabel":"Pref Label",
+            "type":"FTAnIIndustryClassification",
+            "authority":"Smartlogic",
+            "authorityValue":"0f060226-68b5-483b-b9f9-85af3eb1edaa",
+            "aliases":[  
+                "Pref Label"
+            ],
+            "isMappedToUUID": "553c7b4b-ed09-4365-a385-e9c816c861a2",
+            "industryIdentifier": "ABC"
+        }
+    ]
+}
