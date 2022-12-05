@@ -3138,6 +3138,7 @@ func cleanHash(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	return c
 }
 
+// nolint: gocognit
 func cleanChangeLog(t *testing.T, changeRecords []Event) []Event {
 	var cleanedChangeRecords []Event
 	for _, changeRecord := range changeRecords {
@@ -3172,5 +3173,6 @@ func cleanChangeLog(t *testing.T, changeRecords []Event) []Event {
 		}
 		cleanedChangeRecords = append(cleanedChangeRecords, changeRecord)
 	}
+
 	return cleanedChangeRecords
 }

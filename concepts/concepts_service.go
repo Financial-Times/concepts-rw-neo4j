@@ -809,11 +809,8 @@ func sortSourceRepresentations(ec ontology.NewAggregatedConcept, nc ontology.New
 func checkNaicsIndustryClassifications(ec map[string]interface{}, nc map[string]interface{}) bool {
 	existingNaicsUUID := getNaicsUUIDForRank1(ec)
 	newNaicsUUID := getNaicsUUIDForRank1(nc)
-	if existingNaicsUUID != newNaicsUUID {
-		return true
-	}
 
-	return false
+	return existingNaicsUUID != newNaicsUUID
 }
 
 func getNaicsUUIDForRank1(ac map[string]interface{}) string {
