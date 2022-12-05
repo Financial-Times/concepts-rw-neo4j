@@ -123,7 +123,7 @@ func getAggregatedConcept(t *testing.T, name string) ontology.NewAggregatedConce
 	ac := ontology.NewAggregatedConcept{}
 	err := json.Unmarshal(helperLoadBytes(t, name), &ac)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("failed to unmarshal %s concept: %v", name, err)
 	}
 	return ac
 }
@@ -1042,6 +1042,24 @@ func TestWriteService(t *testing.T) {
 				},
 				UpdatedIds: []string{
 					aniIndustryClassificationUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a Concept with a IS_MAPPED_TO relationship",
+			aggregatedConcept: getAggregatedConcept(t, "concept-with-is-mapped-to.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType: "FTAnIIndustryClassification",
+						ConceptUUID: "0f060226-68b5-483b-b9f9-85af3eb1edaa",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					"0f060226-68b5-483b-b9f9-85af3eb1edaa",
 				},
 			},
 		},
