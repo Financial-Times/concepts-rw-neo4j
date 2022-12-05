@@ -70,6 +70,12 @@ func main() {
 		Desc:   "Db's driver logging level (debug, info, warn, error)",
 		EnvVar: "DB_DRIVER_LOG_LEVEL",
 	})
+	annotationsChangeFields := app.Strings(cli.StringsOpt{
+		Name:   "annotationsChangeFields",
+		Value:  []string{"prefUUID", "prefLabel", "type", "leiCode", "figiCode", "issuedBy", "geonamesFeatureCode", "isDeprecated"},
+		Desc:   "Fields that can cause annotations changes if updated",
+		EnvVar: "ANNOTATIONS_CHANGE_FIELDS",
+	})
 
 	log := logger.NewUPPLogger(*appSystemCode, *logLevel)
 	dbDriverLog := logger.NewUPPLogger(*appSystemCode+"-cmneo4j-driver", *dbDriverLogLevel)
@@ -79,7 +85,7 @@ func main() {
 			log.WithError(err).WithField("neoURL", *neoURL).Fatal("Could not create a cmneo4j driver")
 		}
 
-		conceptsService := concepts.NewConceptService(driver, log)
+		conceptsService := concepts.NewConceptService(driver, log, *annotationsChangeFields)
 		err = conceptsService.Initialise()
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialise ConceptService")

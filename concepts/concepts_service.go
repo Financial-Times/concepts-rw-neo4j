@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/r3labs/diff/v3"
+	"golang.org/x/exp/slices"
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	"github.com/Financial-Times/go-logger/v2"
@@ -19,9 +23,10 @@ import (
 
 const (
 	//Event types
-	UpdatedEvent = "CONCEPT_UPDATED"
-	AddedEvent   = "CONCORDANCE_ADDED"
-	RemovedEvent = "CONCORDANCE_REMOVED"
+	UpdatedEvent   = "CONCEPT_UPDATED"
+	AddedEvent     = "CONCORDANCE_ADDED"
+	RemovedEvent   = "CONCORDANCE_REMOVED"
+	ChangeLogEvent = "CONCEPT_CHANGE_LOG"
 )
 
 var (
@@ -35,8 +40,9 @@ var concordancesSources = []string{"ManagedLocation", "Smartlogic"}
 
 // ConceptService - CypherDriver - CypherDriver
 type ConceptService struct {
-	driver *cmneo4j.Driver
-	log    *logger.UPPLogger
+	driver                  *cmneo4j.Driver
+	log                     *logger.UPPLogger
+	annotationsChangeFields []string
 }
 
 // ConceptServicer defines the functions any read-write application needs to implement
@@ -50,8 +56,8 @@ type ConceptServicer interface {
 }
 
 // NewConceptService instantiate driver
-func NewConceptService(driver *cmneo4j.Driver, log *logger.UPPLogger) ConceptService {
-	return ConceptService{driver: driver, log: log}
+func NewConceptService(driver *cmneo4j.Driver, log *logger.UPPLogger, annotationsChangeFields []string) ConceptService {
+	return ConceptService{driver: driver, log: log, annotationsChangeFields: annotationsChangeFields}
 }
 
 // Initialise tries to create indexes and constraints if they are not already
@@ -231,6 +237,26 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 					})
 				}
 			}
+		}
+
+		//Generate concept change log
+		annotationsChange, changelog, err := s.generateConceptChangeLog(existingAggregateConcept, aggregatedConceptToWrite)
+		if err != nil {
+			s.log.WithError(err).WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).Warn("Cannot generate concept change log")
+		}
+		if changelog != "" {
+			//Generate concept change log event
+			updateRecord.ChangedRecords = append(updateRecord.ChangedRecords, Event{
+				ConceptType:   aggregatedConceptToWrite.Type,
+				ConceptUUID:   aggregatedConceptToWrite.PrefUUID,
+				AggregateHash: hashAsString,
+				TransactionID: transID,
+				EventDetails: ConceptChangeLogEvent{
+					Type:              ChangeLogEvent,
+					AnnotationsChange: annotationsChange,
+					ChangeLog:         changelog,
+				},
+			})
 		}
 	} else {
 		prefUUIDsToBeDeleted, err = s.handleTransferConcordance(requestSourceData, &updateRecord, hashAsString, aggregatedConceptToWrite, transID)
@@ -628,7 +654,7 @@ func removeLoneCanonicalNode(prefUUID string) *cmneo4j.Query {
 	return equivQuery
 }
 
-//extract uuids of the source concepts
+// extract uuids of the source concepts
 func getSourceData(sourceConcepts []ontology.NewConcept) map[string]string {
 	conceptData := make(map[string]string)
 	for _, concept := range sourceConcepts {
@@ -649,14 +675,14 @@ func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, second
 	return filteredMap
 }
 
-//DecodeJSON - decode json
+// DecodeJSON - decode json
 func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
 	sub := ontology.NewAggregatedConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
 
-//Check - checker
+// Check - checker
 func (s *ConceptService) Check() error {
 	return s.driver.VerifyWriteConnectivity()
 }
@@ -665,12 +691,12 @@ type requestError struct {
 	details string
 }
 
-//Error - Error
+// Error - Error
 func (re requestError) Error() string {
 	return re.details
 }
 
-//InvalidRequestDetails - Specific error for providing bad request (400) back
+// InvalidRequestDetails - Specific error for providing bad request (400) back
 func (re requestError) InvalidRequestDetails() string {
 	return re.details
 }
@@ -708,4 +734,115 @@ func stringInArr(searchFor string, values []string) bool {
 		}
 	}
 	return false
+}
+
+func (s *ConceptService) generateConceptChangeLog(ec ontology.NewAggregatedConcept, nc ontology.NewAggregatedConcept) (bool, string, error) {
+	// Sort source representations in the new concept state in the order of the old concept state for cleaner change log
+	sortSourceRepresentations(ec, nc)
+
+	existingAggregateConcept, err := mappify(ec)
+	if err != nil {
+		return false, "", err
+	}
+	aggregatedConceptToWrite, err := mappify(nc)
+	if err != nil {
+		return false, "", err
+	}
+
+	changelog, err := diff.Diff(existingAggregateConcept, aggregatedConceptToWrite)
+	if err != nil {
+		return false, "", err
+	}
+
+	// Check for changes of NAICS with rank 1
+	annotationsChange := checkNaicsIndustryClassifications(existingAggregateConcept, aggregatedConceptToWrite)
+
+	if !annotationsChange {
+		for _, change := range changelog {
+			// Check for changes of configured annotations change fields only in the canonical concept
+			for _, field := range s.annotationsChangeFields {
+				if slices.Contains(change.Path, field) && len(change.Path) == 1 {
+					annotationsChange = true
+					break
+				}
+			}
+
+			if annotationsChange {
+				break
+			}
+		}
+	}
+
+	sort.Slice(changelog, func(i, j int) bool {
+		return fmt.Sprint(changelog[i].Path) < fmt.Sprint(changelog[j].Path)
+	})
+
+	result, err := json.Marshal(changelog)
+	if err != nil {
+		return false, "", err
+	}
+
+	return annotationsChange, string(result), nil
+}
+
+func sortSourceRepresentations(ec ontology.NewAggregatedConcept, nc ontology.NewAggregatedConcept) {
+	sourceMap := make(map[string]ontology.NewConcept)
+	for _, source := range nc.SourceRepresentations {
+		sourceMap[source.UUID] = source
+	}
+
+	var sourceSlice []ontology.NewConcept
+	for _, source := range ec.SourceRepresentations {
+		if _, ok := sourceMap[source.UUID]; ok {
+			sourceSlice = append(sourceSlice, source)
+			delete(sourceMap, source.UUID)
+		}
+	}
+
+	for _, source := range sourceMap {
+		sourceSlice = append(sourceSlice, source)
+	}
+
+	nc.SourceRepresentations = sourceSlice
+}
+
+func checkNaicsIndustryClassifications(ec map[string]interface{}, nc map[string]interface{}) bool {
+	existingNaicsUUID := getNaicsUUIDForRank1(ec)
+	newNaicsUUID := getNaicsUUIDForRank1(nc)
+	if existingNaicsUUID != newNaicsUUID {
+		return true
+	}
+
+	return false
+}
+
+func getNaicsUUIDForRank1(ac map[string]interface{}) string {
+	var uuid string
+	for _, source := range ac["sourceRepresentations"].([]interface{}) {
+		naicsIndustryClassifications, ok := source.(map[string]interface{})["naicsIndustryClassifications"].([]interface{})
+		if ok {
+			for _, n := range naicsIndustryClassifications {
+				naics := n.(map[string]interface{})
+				if naics["rank"] == float64(1) {
+					uuid = naics["uuid"].(string)
+					break
+				}
+			}
+		}
+	}
+
+	return uuid
+}
+
+func mappify(concept interface{}) (map[string]interface{}, error) {
+	data, err := json.Marshal(concept)
+	if err != nil {
+		return nil, err
+	}
+	result := map[string]interface{}{}
+	err = json.Unmarshal(data, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
