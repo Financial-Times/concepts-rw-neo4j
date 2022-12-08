@@ -5,3 +5,4 @@ service:
 env:
   LOG_LEVEL: info
   REQUEST_LOGGING_ON: true
+  ANNOTATIONS_CHANGE_FIELDS: "prefUUID, prefLabel, type, leiCode, figiCode, issuedBy, geonamesFeatureCode, isDeprecated"

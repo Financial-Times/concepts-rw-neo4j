@@ -17,6 +17,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/r3labs/diff/v3"
+	"golang.org/x/exp/slices"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mitchellh/hashstructure"
@@ -343,7 +346,7 @@ func init() {
 	if err != nil {
 		log.WithError(err).Fatal("could not create a new cmneo4j driver")
 	}
-	conceptsDriver = NewConceptService(d, log)
+	conceptsDriver = NewConceptService(d, log, []string{"prefUUID", "prefLabel", "type", "leiCode", "figiCode", "issuedBy", "geonamesFeatureCode", "isDeprecated"})
 	err = conceptsDriver.Initialise()
 	if err != nil {
 		log.WithError(err).Fatal("failed to initialise ConceptSerivce")
@@ -1340,6 +1343,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 						Type: UpdatedEvent,
 					},
 				},
+				{
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "13050067908998386737",
+					TransactionID: "test_tid",
+					EventDetails: ConceptChangeLogEvent{
+						Type:              ChangeLogEvent,
+						AnnotationsChange: false,
+						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"scopeNote\"],\"from\":\"Comments aboutstuff\",\"to\":\"Comments about stuff\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"1\"],\"from\":null,\"to\":{\"authority\":\"TME\",\"authorityValue\":\"987as3dza654-TME\",\"prefLabel\":\"Not as good Label\",\"type\":\"Brand\",\"uuid\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"}}]",
+					},
+				},
 			},
 			UpdatedIds: []string{
 				basicConceptUUID,
@@ -1375,6 +1389,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
+					},
+				},
+				{
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "2137764349277562661",
+					TransactionID: "test_tid",
+					EventDetails: ConceptChangeLogEvent{
+						Type:              ChangeLogEvent,
+						AnnotationsChange: false,
+						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"scopeNote\"],\"from\":\"Comments about stuff\",\"to\":\"Comments aboutstuff\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"987as3dza654-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"1\"],\"from\":{\"authority\":\"TME\",\"authorityValue\":\"1234\",\"prefLabel\":\"The Best Label\",\"type\":\"Brand\",\"uuid\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},\"to\":null}]",
 					},
 				},
 			},
@@ -1538,6 +1563,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 						Type: UpdatedEvent,
 					},
 				},
+				{
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "1825428118302879667",
+					TransactionID: "test_tid",
+					EventDetails: ConceptChangeLogEvent{
+						Type:              ChangeLogEvent,
+						AnnotationsChange: false,
+						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"987as3dza654-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"1234\",\"to\":\"987as3dza654-TME\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"Not as good Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\",\"to\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"2\"],\"from\":null,\"to\":{\"authority\":\"TME\",\"authorityValue\":\"123bc3xwa456-TME\",\"prefLabel\":\"Even worse Label\",\"type\":\"Brand\",\"uuid\":\"de3bcb30-992c-424e-8891-73f5bd9a7d3a\"}}]",
+					},
+				},
 			},
 			UpdatedIds: []string{
 				basicConceptUUID,
@@ -1577,6 +1613,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 						Type: UpdatedEvent,
 					},
 				},
+				{
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "13050067908998386737",
+					TransactionID: "test_tid",
+					EventDetails: ConceptChangeLogEvent{
+						Type:              ChangeLogEvent,
+						AnnotationsChange: false,
+						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"987as3dza654-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"1234\",\"to\":\"987as3dza654-TME\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"Not as good Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\",\"to\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\"],\"from\":{\"authority\":\"TME\",\"authorityValue\":\"123bc3xwa456-TME\",\"prefLabel\":\"Even worse Label\",\"type\":\"Brand\",\"uuid\":\"de3bcb30-992c-424e-8891-73f5bd9a7d3a\"},\"to\":null}]",
+					},
+				},
 			},
 			UpdatedIds: []string{
 				basicConceptUUID,
@@ -1602,6 +1649,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
+					},
+				},
+				{
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "411480971478777011",
+					TransactionID: "test_tid",
+					EventDetails: ConceptChangeLogEvent{
+						Type:              ChangeLogEvent,
+						AnnotationsChange: true,
+						ChangeLog:         "[{\"type\":\"delete\",\"path\":[\"aliases\",\"2\"],\"from\":\"anotherOne\",\"to\":null},{\"type\":\"delete\",\"path\":[\"aliases\",\"3\"],\"from\":\"whyNot\",\"to\":null},{\"type\":\"update\",\"path\":[\"descriptionXML\"],\"from\":\"\\u003cbody\\u003eThis \\u003ci\\u003ebrand\\u003c/i\\u003e has no parent but otherwise has valid values for all fields\\u003c/body\\u003e\",\"to\":\"\\u003cbody\\u003eOne brand to rule them all, one brand to find them; one brand to bring them all and in the darkness bind them\\u003c/body\\u003e\"},{\"type\":\"update\",\"path\":[\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"The Biggest, Bestest, Brandiest Brand\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"987as3dza654-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"1234\",\"to\":\"987as3dza654-TME\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"The Biggest, Bestest, Brandiest Brand\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\",\"to\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"},{\"type\":\"update\",\"path\":[\"strapline\"],\"from\":\"Keeping it simple\",\"to\":\"Much more complicated\"}]",
 					},
 				},
 			},
@@ -1634,6 +1692,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 						Type: UpdatedEvent,
 					},
 				},
+				{
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "17026098453454367869",
+					TransactionID: "test_tid",
+					EventDetails: ConceptChangeLogEvent{
+						Type:              ChangeLogEvent,
+						AnnotationsChange: true,
+						ChangeLog:         "[{\"type\":\"create\",\"path\":[\"isDeprecated\"],\"from\":null,\"to\":true},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"0\",\"isDeprecated\"],\"from\":null,\"to\":true}]",
+					},
+				},
 			},
 			UpdatedIds: []string{
 				basicConceptUUID,
@@ -1660,6 +1729,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
+					},
+				},
+				{
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "13590089407881813689",
+					TransactionID: "test_tid",
+					EventDetails: ConceptChangeLogEvent{
+						Type:              ChangeLogEvent,
+						AnnotationsChange: false,
+						ChangeLog:         "[{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"0\",\"supersededByUUIDs\"],\"from\":null,\"to\":[\"1a96ee7a-a4af-3a56-852c-60420b0b8da6\"]}]",
 					},
 				},
 			},
@@ -1689,6 +1769,17 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					TransactionID: "test_tid",
 					EventDetails: ConceptEvent{
 						Type: UpdatedEvent,
+					},
+				},
+				{
+					ConceptType:   "Brand",
+					ConceptUUID:   basicConceptUUID,
+					AggregateHash: "2137764349277562661",
+					TransactionID: "test_tid",
+					EventDetails: ConceptChangeLogEvent{
+						Type:              ChangeLogEvent,
+						AnnotationsChange: true,
+						ChangeLog:         "[{\"type\":\"create\",\"path\":[\"_imageUrl\"],\"from\":null,\"to\":\"http://media.ft.com/brand.png\"},{\"type\":\"create\",\"path\":[\"aliases\"],\"from\":null,\"to\":[\"oneLabel\",\"secondLabel\",\"anotherOne\",\"whyNot\"]},{\"type\":\"create\",\"path\":[\"descriptionXML\"],\"from\":null,\"to\":\"\\u003cbody\\u003eThis \\u003ci\\u003ebrand\\u003c/i\\u003e has no parent but otherwise has valid values for all fields\\u003c/body\\u003e\"},{\"type\":\"create\",\"path\":[\"emailAddress\"],\"from\":null,\"to\":\"simple@ft.com\"},{\"type\":\"create\",\"path\":[\"facebookPage\"],\"from\":null,\"to\":\"#facebookFTComment\"},{\"type\":\"update\",\"path\":[\"prefLabel\"],\"from\":\"Pref Label\",\"to\":\"The Best Label\"},{\"type\":\"create\",\"path\":[\"scopeNote\"],\"from\":null,\"to\":\"Comments aboutstuff\"},{\"type\":\"create\",\"path\":[\"shortLabel\"],\"from\":null,\"to\":\"Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authority\"],\"from\":\"Smartlogic\",\"to\":\"TME\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Pref Label\",\"to\":\"The Best Label\"},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"0\",\"supersededByUUIDs\"],\"from\":[\"1a96ee7a-a4af-3a56-852c-60420b0b8da6\"],\"to\":null},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"type\"],\"from\":\"Section\",\"to\":\"Brand\"},{\"type\":\"create\",\"path\":[\"strapline\"],\"from\":null,\"to\":\"Keeping it simple\"},{\"type\":\"create\",\"path\":[\"twitterHandle\"],\"from\":null,\"to\":\"@ftComment\"},{\"type\":\"update\",\"path\":[\"type\"],\"from\":\"Section\",\"to\":\"Brand\"}]",
 					},
 				},
 			},
@@ -1760,6 +1851,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 		sort.Strings(scenario.updatedConcepts.UpdatedIds)
 		sort.Strings(actualChanges.UpdatedIds)
 
+		actualChanges.ChangedRecords = cleanChangeLog(t, actualChanges.ChangedRecords)
 		cmpOpts := cmpopts.IgnoreFields(Event{}, "AggregateHash")
 		if !cmp.Equal(scenario.updatedConcepts, actualChanges, cmpOpts) {
 			t.Errorf("Scenario %s failed: Updated uuid list differs from expected:\n%s", scenario.testName, cmp.Diff(scenario.updatedConcepts, actualChanges, cmpOpts))
@@ -1807,7 +1899,7 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 
 // Test case is a concept with multiple sources, one of which has multiple Industry classifications.
 // From bug, https://financialtimes.atlassian.net/browse/UPPSF-2773 on Write (property update)
-// the concept in question was returning unexpected CONCORDANCE_ADDED/CONCORDANCE_REMOVED where only CONCEPT_UPDATED was expected.
+// the concept in question was returning unexpected CONCORDANCE_ADDED/CONCORDANCE_REMOVED where only CONCEPT_UPDATED and CONCEPT_CHANGE_LOG were expected.
 func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
 	const mainConceptUUID = "13465cc7-204f-48b9-a8d6-b901d5d86c48"
 	var aggregate ontology.NewAggregatedConcept
@@ -1832,7 +1924,19 @@ func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
 				ConceptType:   "Organisation",
 				ConceptUUID:   "13465cc7-204f-48b9-a8d6-b901d5d86c48",
 				TransactionID: "tid_second",
-				EventDetails:  ConceptEvent{Type: UpdatedEvent},
+				EventDetails: ConceptChangeLogEvent{
+					Type:              ChangeLogEvent,
+					AnnotationsChange: false,
+					ChangeLog:         "[{\"type\":\"create\",\"path\":[\"descriptionXML\"],\"from\":null,\"to\":\"testing\"},{\"type\":\"create\",\"path\":[\"naicsIndustryClassifications\"],\"from\":null,\"to\":[{\"rank\":1,\"uuid\":\"6ff5d091-26a1-45df-8367-08ccc6541686\"},{\"rank\":2,\"uuid\":\"2c29231c-7632-44ba-b23c-ead83e026d04\"},{\"rank\":3,\"uuid\":\"6773eb88-e129-4610-a221-6e94c585b1d6\"}]},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"13465cc7-204f-48b9-a8d6-b901d5d86c48\",\"to\":\"06VQ7V-E\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authority\"],\"from\":\"Smartlogic\",\"to\":\"FACTSET\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"1\",\"countryOfIncorporationUUID\"],\"from\":null,\"to\":\"6b683eff-56c3-43d9-acfc-7511d974fc01\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"1\",\"countryOfOperationsUUID\"],\"from\":null,\"to\":\"6b683eff-56c3-43d9-acfc-7511d974fc01\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"1\",\"naicsIndustryClassifications\"],\"from\":null,\"to\":[{\"rank\":1,\"uuid\":\"6ff5d091-26a1-45df-8367-08ccc6541686\"},{\"rank\":2,\"uuid\":\"2c29231c-7632-44ba-b23c-ead83e026d04\"},{\"rank\":3,\"uuid\":\"6773eb88-e129-4610-a221-6e94c585b1d6\"}]},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"1\",\"parentOrganisation\"],\"from\":null,\"to\":\"f3f15630-be31-3a00-ab2f-28648aa324bd\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"Matalan Retail Ltd\",\"to\":\"Matalan Retail Ltd.\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"13465cc7-204f-48b9-a8d6-b901d5d86c48\",\"to\":\"374fdcea-062f-3281-81ca-7851323bcf98\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"2\",\"authorityValue\"],\"from\":\"06VQ7V-E\",\"to\":\"http://www.wikidata.org/entity/Q12061509\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"2\",\"authority\"],\"from\":\"FACTSET\",\"to\":\"Wikidata\"},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\",\"countryOfIncorporationUUID\"],\"from\":\"6b683eff-56c3-43d9-acfc-7511d974fc01\",\"to\":null},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\",\"countryOfOperationsUUID\"],\"from\":\"6b683eff-56c3-43d9-acfc-7511d974fc01\",\"to\":null},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\",\"naicsIndustryClassifications\"],\"from\":[{\"rank\":3,\"uuid\":\"6773eb88-e129-4610-a221-6e94c585b1d6\"},{\"rank\":2,\"uuid\":\"2c29231c-7632-44ba-b23c-ead83e026d04\"},{\"rank\":1,\"uuid\":\"6ff5d091-26a1-45df-8367-08ccc6541686\"}],\"to\":null},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\",\"parentOrganisation\"],\"from\":\"f3f15630-be31-3a00-ab2f-28648aa324bd\",\"to\":null},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"2\",\"prefLabel\"],\"from\":\"Matalan Retail Ltd.\",\"to\":\"Matalan\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"2\",\"uuid\"],\"from\":\"374fdcea-062f-3281-81ca-7851323bcf98\",\"to\":\"6259ebad-ed4c-3b13-ae66-9117fa591328\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"3\",\"authorityValue\"],\"from\":\"http://www.wikidata.org/entity/Q12061509\",\"to\":\"13465cc7-204f-48b9-a8d6-b901d5d86c48\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"3\",\"authority\"],\"from\":\"Wikidata\",\"to\":\"Smartlogic\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"3\",\"prefLabel\"],\"from\":\"Matalan\",\"to\":\"Matalan Retail Ltd\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"3\",\"uuid\"],\"from\":\"6259ebad-ed4c-3b13-ae66-9117fa591328\",\"to\":\"13465cc7-204f-48b9-a8d6-b901d5d86c48\"}]",
+				},
+			},
+			{
+				ConceptType:   "Organisation",
+				ConceptUUID:   "13465cc7-204f-48b9-a8d6-b901d5d86c48",
+				TransactionID: "tid_second",
+				EventDetails: ConceptEvent{
+					Type: UpdatedEvent,
+				},
 			},
 		},
 		UpdatedIds: []string{
@@ -1858,6 +1962,7 @@ func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
 	if !ok {
 		t.Fatal("concept write did not return 'ConceptChanges'")
 	}
+	events.ChangedRecords = cleanChangeLog(t, events.ChangedRecords)
 	if !cmp.Equal(expectedEvents, events, cmpopts.IgnoreFields(Event{}, "AggregateHash")) {
 		t.Error(cmp.Diff(expectedEvents, events, cmpopts.IgnoreFields(Event{}, "AggregateHash")))
 	}
@@ -3031,4 +3136,43 @@ func cleanNewAggregatedConceptRelationships(c ontology.NewAggregatedConcept) {
 func cleanHash(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
 	c.AggregatedHash = ""
 	return c
+}
+
+// nolint: gocognit
+func cleanChangeLog(t *testing.T, changeRecords []Event) []Event {
+	var cleanedChangeRecords []Event
+	for _, changeRecord := range changeRecords {
+		if eventDetails, ok := changeRecord.EventDetails.(ConceptChangeLogEvent); ok {
+			changelog := diff.Changelog{}
+			err := json.Unmarshal([]byte(eventDetails.ChangeLog), &changelog)
+			if err != nil {
+				t.Fatal(err)
+			}
+			filteredChangelog := diff.Changelog{}
+			for _, change := range changelog {
+				if slices.Contains(change.Path, "aggregateHash") || slices.Contains(change.Path, "lastModifiedEpoch") {
+					continue
+				}
+
+				if fromMap, ok := change.From.(map[string]interface{}); ok {
+					delete(fromMap, "lastModifiedEpoch")
+				}
+
+				if toMap, ok := change.To.(map[string]interface{}); ok {
+					delete(toMap, "lastModifiedEpoch")
+				}
+
+				filteredChangelog = append(filteredChangelog, change)
+			}
+			filteredChangelogString, err := json.Marshal(filteredChangelog)
+			if err != nil {
+				t.Fatal(err)
+			}
+			eventDetails.ChangeLog = string(filteredChangelogString)
+			changeRecord.EventDetails = eventDetails
+		}
+		cleanedChangeRecords = append(cleanedChangeRecords, changeRecord)
+	}
+
+	return cleanedChangeRecords
 }

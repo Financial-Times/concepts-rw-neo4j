@@ -42,6 +42,8 @@ spec:
           value: "{{ .Values.env.LOG_LEVEL }}"
         - name: REQUEST_LOGGING_ON
           value: "{{ .Values.env.REQUEST_LOGGING_ON }}"
+        - name: ANNOTATIONS_CHANGE_FIELDS
+          value: "{{ .Values.env.ANNOTATIONS_CHANGE_FIELDS }}"
         ports:
         - containerPort: 8080
         livenessProbe:
