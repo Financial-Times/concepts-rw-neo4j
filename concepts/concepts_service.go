@@ -13,7 +13,6 @@ import (
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	"github.com/Financial-Times/go-logger/v2"
-	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/mitchellh/hashstructure"
 	"github.com/sirupsen/logrus"
 
@@ -521,7 +520,7 @@ func (s *ConceptService) handleTransferConcordance(conceptData map[string]string
 		}
 
 		entityEquivalence := (*result)[0]
-		conceptType, err := mapper.MostSpecificType(entityEquivalence.Types)
+		conceptType, err := ontology.MostSpecificType(entityEquivalence.Types)
 		if err != nil {
 			s.log.WithError(err).WithTransactionID(transID).WithUUID(newAggregatedConcept.PrefUUID).Errorf("could not return most specific type from source node: %v", entityEquivalence.Types)
 			return nil, err

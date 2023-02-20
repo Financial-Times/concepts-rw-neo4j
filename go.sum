@@ -1,5 +1,5 @@
-github.com/Financial-Times/cm-graph-ontology v1.1.3 h1:kBrWOY+6LkWfEgc5SwVFRO8PTaKyBLUrsyU+19sx9Yo=
-github.com/Financial-Times/cm-graph-ontology v1.1.3/go.mod h1:Bku34350G+ZZh31w5lDAXlzLJH4Sc5ZmWyiQdp9PlHo=
+github.com/Financial-Times/cm-graph-ontology v1.2.0 h1:Tg/40io7vfZb4pLgr2GY1qTySkJ5FrumKfqLN7CCe9M=
+github.com/Financial-Times/cm-graph-ontology v1.2.0/go.mod h1:37aV26KEJq/Kh7Q1Ik/QxGNculEbY6Jtg9b2MlqEiXM=
 github.com/Financial-Times/cm-neo4j-driver v1.1.1 h1:kmgRa3boe58+tzNTbWTBx3IQnIZt5Hh57Yc2kHy85FM=
 github.com/Financial-Times/cm-neo4j-driver v1.1.1/go.mod h1:fQ77C8A+6I+ihwe6Ob8Y7sIzU3s/DTrjBZJGVQOeum0=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7 h1:dkf1EOTiHXA2lG2EJuePEim6y0HEOPt0hcqsT/qUr/k=
@@ -8,8 +8,6 @@ github.com/Financial-Times/go-logger/v2 v2.0.1 h1:iekEfSsUtlkg+YkXTZo+/fIN2VbZ2/
 github.com/Financial-Times/go-logger/v2 v2.0.1/go.mod h1:Jpky5JYSX7xjGUClfA9hEMDmn40tUbfQQITjVIFGQiM=
 github.com/Financial-Times/http-handlers-go/v2 v2.3.0 h1:/DqRBffuPpnKsFC+DcXSdXl/qUARqAO+NoD5Vga4NCc=
 github.com/Financial-Times/http-handlers-go/v2 v2.3.0/go.mod h1:Tgkc7TqJXl/NFxB8eP8CX7YU5X01gbrL55LqNzo4YVY=
-github.com/Financial-Times/neo-model-utils-go v1.1.1 h1:couVMV7KahWcGl7cUxMYhOD9wX+J8ld7Tcrp3VvB5d0=
-github.com/Financial-Times/neo-model-utils-go v1.1.1/go.mod h1:D5ny/A+002uCPCZbtP/E+qpY3//gYJzHw6sqqBUm2Lc=
 github.com/Financial-Times/service-status-go v0.0.0-20160323111542-3f5199736a3d h1:USNBTIof6vWGM49SYrxvC5Y8NqyDL3YuuYmID81ORZQ=
 github.com/Financial-Times/service-status-go v0.0.0-20160323111542-3f5199736a3d/go.mod h1:7zULC9rrq6KxFkpB3Y5zNVaEwrf1g2m3dvXJBPDXyvM=
 github.com/Financial-Times/transactionid-utils-go v0.2.0 h1:YcET5Hd1fUGWWpQSVszYUlAc15ca8tmjRetUuQKRqEQ=
@@ -90,7 +88,6 @@ github.com/stretchr/testify v0.0.0-20170809224252-890a5c3458b4/go.mod h1:a8OnRci
 github.com/stretchr/testify v1.1.4/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
-github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMTY=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/vmihailenco/msgpack v4.0.4+incompatible h1:dSLoQfGFAo3F6OoNhwUmLwVgaUXK79GlxNBwueZn0xI=
