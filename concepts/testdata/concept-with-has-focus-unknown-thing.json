@@ -2,6 +2,9 @@
     "prefUUID":"a39a4558-f562-4dca-8774-000246e6eebe",
     "prefLabel":"Pref Label",
     "type":"Organisation",
+    "hasFocusUUIDs":[
+        "b5d7c6b5-db7d-4bce-9d6a-f62195571f92"
+    ],
     "sourceRepresentations":[  
         {  
             "uuid":"a39a4558-f562-4dca-8774-000246e6eebe",

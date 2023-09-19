@@ -11,6 +11,9 @@
     "strapline":"Some strapline",
     "descriptionXML":"Some description",
     "_imageUrl":"Some image url",
+    "parentUUIDs":[
+        "2ef39c2a-da9c-4263-8209-ebfd490d3101"
+    ],
     "sourceRepresentations":[  
         {  
             "uuid":"4c41f314-4548-4fb6-ac48-4618fcbfa84c",
