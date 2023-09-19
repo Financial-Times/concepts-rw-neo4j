@@ -31,9 +31,9 @@ import (
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 
-	ontology "github.com/Financial-Times/cm-graph-ontology"
-	"github.com/Financial-Times/cm-graph-ontology/neo4j"
-	"github.com/Financial-Times/cm-graph-ontology/transform"
+	ontology "github.com/Financial-Times/cm-graph-ontology/v2"
+	"github.com/Financial-Times/cm-graph-ontology/v2/neo4j"
+	"github.com/Financial-Times/cm-graph-ontology/v2/transform"
 )
 
 // all uuids to be cleaned from DB
@@ -119,8 +119,8 @@ func helperLoadBytes(t *testing.T, name string) []byte {
 
 // A lone concept should always have matching pref labels and uuid at the src system level and the top level - We are
 // currently missing validation around this
-func getAggregatedConcept(t *testing.T, name string) ontology.NewAggregatedConcept {
-	ac := ontology.NewAggregatedConcept{}
+func getAggregatedConcept(t *testing.T, name string) ontology.CanonicalConcept {
+	ac := ontology.CanonicalConcept{}
 	err := json.Unmarshal(helperLoadBytes(t, name), &ac)
 	if err != nil {
 		t.Fatalf("failed to unmarshal %s concept: %v", name, err)
@@ -128,13 +128,13 @@ func getAggregatedConcept(t *testing.T, name string) ontology.NewAggregatedConce
 	return ac
 }
 
-func getOrganisationWithAllCountries() ontology.NewAggregatedConcept {
-	return ontology.NewAggregatedConcept{
-		AggregateConceptFields: ontology.AggregateConceptFields{
+func getOrganisationWithAllCountries() ontology.CanonicalConcept {
+	return ontology.CanonicalConcept{
+		CanonicalConceptFields: ontology.CanonicalConceptFields{
 			PrefUUID:  testOrgUUID,
 			Type:      "PublicCompany",
 			PrefLabel: "Strix Group Plc",
-			SourceRepresentations: []ontology.NewConcept{
+			SourceRepresentations: []ontology.SourceConcept{
 				{
 					SourceConceptFields: ontology.SourceConceptFields{
 						UUID:           testOrgUUID,
@@ -218,13 +218,13 @@ func getConcept(t *testing.T, name string) transform.OldConcept {
 	return c
 }
 
-func getLocation() ontology.NewAggregatedConcept {
-	return ontology.NewAggregatedConcept{
-		AggregateConceptFields: ontology.AggregateConceptFields{
+func getLocation() ontology.CanonicalConcept {
+	return ontology.CanonicalConcept{
+		CanonicalConceptFields: ontology.CanonicalConceptFields{
 			PrefUUID:  locationUUID,
 			PrefLabel: "Location Pref Label",
 			Type:      "Location",
-			SourceRepresentations: []ontology.NewConcept{{
+			SourceRepresentations: []ontology.SourceConcept{{
 				SourceConceptFields: ontology.SourceConceptFields{
 					UUID:           locationUUID,
 					PrefLabel:      "Location Pref Label",
@@ -240,13 +240,13 @@ func getLocation() ontology.NewAggregatedConcept {
 	}
 }
 
-func getLocationWithISO31661() ontology.NewAggregatedConcept {
-	return ontology.NewAggregatedConcept{
-		AggregateConceptFields: ontology.AggregateConceptFields{
+func getLocationWithISO31661() ontology.CanonicalConcept {
+	return ontology.CanonicalConcept{
+		CanonicalConceptFields: ontology.CanonicalConceptFields{
 			PrefUUID:  locationUUID,
 			PrefLabel: "Location Pref Label 2",
 			Type:      "Location",
-			SourceRepresentations: []ontology.NewConcept{{
+			SourceRepresentations: []ontology.SourceConcept{{
 				SourceConceptFields: ontology.SourceConceptFields{
 					UUID:           locationUUID,
 					PrefLabel:      "Location Pref Label 2",
@@ -277,13 +277,13 @@ func getLocationWithISO31661() ontology.NewAggregatedConcept {
 	}
 }
 
-func getLocationWithISO31661AndConcordance() ontology.NewAggregatedConcept {
-	return ontology.NewAggregatedConcept{
-		AggregateConceptFields: ontology.AggregateConceptFields{
+func getLocationWithISO31661AndConcordance() ontology.CanonicalConcept {
+	return ontology.CanonicalConcept{
+		CanonicalConceptFields: ontology.CanonicalConceptFields{
 			PrefUUID:  anotherLocationUUID,
 			PrefLabel: "Location Pref Label 2",
 			Type:      "Location",
-			SourceRepresentations: []ontology.NewConcept{
+			SourceRepresentations: []ontology.SourceConcept{
 				{
 					SourceConceptFields: ontology.SourceConceptFields{
 						UUID:           locationUUID,
@@ -360,15 +360,15 @@ func init() {
 func TestWriteService(t *testing.T) {
 	tests := []struct {
 		testName             string
-		aggregatedConcept    ontology.NewAggregatedConcept
-		otherRelatedConcepts []ontology.NewAggregatedConcept
+		aggregatedConcept    ontology.CanonicalConcept
+		otherRelatedConcepts []ontology.CanonicalConcept
 		writtenNotReadFields []string
 		errStr               string
 		updatedConcepts      ConceptChanges
 	}{
 		{
 			testName:          "Throws validation error for invalid concept",
-			aggregatedConcept: ontology.NewAggregatedConcept{AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: basicConceptUUID}, DynamicFields: ontology.DynamicFields{}},
+			aggregatedConcept: ontology.CanonicalConcept{CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: basicConceptUUID}, DynamicFields: ontology.DynamicFields{}},
 			errStr:            "invalid request, no prefLabel has been supplied",
 			updatedConcepts: ConceptChanges{
 				UpdatedIds: []string{},
@@ -472,7 +472,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values Present for a Concept with a IS_RELATED_TO relationship",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-related-to.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -513,7 +513,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values correctly for a Concept with multiple IS_RELATED_TO relationships",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-related-to.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -535,7 +535,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values Present for a Concept with a HAS_BROADER relationship",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-has-broader.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -576,7 +576,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values correctly for a Concept with multiple HAS_BROADER relationships",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-has-broader.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -598,7 +598,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values Present for a Brand with an IMPLIED_BY relationship",
 			aggregatedConcept: getAggregatedConcept(t, "brand-with-implied-by.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "topic.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -639,7 +639,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values correctly for a Brand with multiple IMPLIED_BY relationships",
 			aggregatedConcept: getAggregatedConcept(t, "brand-with-multiple-implied-by.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "topic.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -661,7 +661,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values correctly for multiple Brand sources with common IMPLIED_BY relationships",
 			aggregatedConcept: getAggregatedConcept(t, "concorded-brand-with-multiple-implied-by.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "topic.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -702,7 +702,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values Present for a Concept with a HAS_FOCUS relationship",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-has-focus.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "another-topic.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -724,7 +724,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values Present for a Brand with a HAS_FOCUS relationship",
 			aggregatedConcept: getAggregatedConcept(t, "brand-with-has-focus.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "another-topic.json"), getAggregatedConcept(t, "organisation.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -765,7 +765,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values correctly for a Concept with multiple HAS_FOCUS relationships",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-has-focus.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "another-topic.json"), getAggregatedConcept(t, "organisation.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -787,7 +787,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values correctly for multiple Concept sources with common HAS_FOCUS relationships",
 			aggregatedConcept: getAggregatedConcept(t, "concorded-concept-with-multiple-has-focus.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "topic.json"), getAggregatedConcept(t, "another-topic.json"), getAggregatedConcept(t, "organisation.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -904,7 +904,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Adding Organisation with all related locations in place works",
 			aggregatedConcept: getOrganisationWithAllCountries(),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getLocationWithISO31661(),
 			},
 			updatedConcepts: ConceptChanges{
@@ -935,7 +935,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Concord a ManagedLocation concept with ISO code to a Smartlogic concept",
 			aggregatedConcept: getLocationWithISO31661AndConcordance(),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getLocationWithISO31661(),
 			},
 			updatedConcepts: ConceptChanges{
@@ -987,7 +987,7 @@ func TestWriteService(t *testing.T) {
 		{
 			testName:          "Creates All Values correctly for Organisation with HAS_INDUSTRY_CLASSIFICATION relationships",
 			aggregatedConcept: getAggregatedConcept(t, "organisation-with-naics.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "naics-industry-classification.json"), getAggregatedConcept(t, "naics-industry-classification-internet.json"),
 			},
 			updatedConcepts: ConceptChanges{
@@ -1134,7 +1134,7 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	originalMembership := result.(ontology.NewAggregatedConcept)
+	originalMembership := result.(ontology.CanonicalConcept)
 	originalMembership = cleanHash(originalMembership)
 	originalMembership = cleanNewAggregatedConcept(originalMembership)
 	memRoles := 0
@@ -1157,7 +1157,7 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 
 	updatedResult, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	updatedMemebership := updatedResult.(ontology.NewAggregatedConcept)
+	updatedMemebership := updatedResult.(ontology.CanonicalConcept)
 	updatedMemebership = cleanHash(updatedMemebership)
 	updatedMemRoles := 0
 	var updatedRelationships ontology.Relationships
@@ -1217,7 +1217,7 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 
 	result, _, err := conceptsDriver.Read(membershipUUID, "test_tid")
 	assert.NoError(t, err, "Failed to read membership")
-	originalMembership := result.(ontology.NewAggregatedConcept)
+	originalMembership := result.(ontology.CanonicalConcept)
 	originalMembership = cleanHash(originalMembership)
 	originalMembership = cleanNewAggregatedConcept(originalMembership)
 
@@ -1274,12 +1274,12 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	tid := "test_tid"
 	type testStruct struct {
 		testName        string
-		setUpConcept    ontology.NewAggregatedConcept
-		testConcept     ontology.NewAggregatedConcept
+		setUpConcept    ontology.CanonicalConcept
+		testConcept     ontology.CanonicalConcept
 		uuidsToCheck    []string
 		returnedError   string
 		updatedConcepts ConceptChanges
-		customAssertion func(t *testing.T, concept ontology.NewAggregatedConcept)
+		customAssertion func(t *testing.T, concept ontology.CanonicalConcept)
 	}
 	singleConcordanceNoChangesNoUpdates := testStruct{
 		testName:     "singleConcordanceNoChangesNoUpdates",
@@ -1672,7 +1672,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	singleConcordanceDeprecationChangesUpdates := testStruct{
 		testName:     "singleConcordanceDeprecationChangesUpdates",
 		setUpConcept: getAggregatedConcept(t, "single-concordance.json"),
-		testConcept: func() ontology.NewAggregatedConcept {
+		testConcept: func() ontology.CanonicalConcept {
 			concept := getAggregatedConcept(t, "single-concordance.json")
 			concept.IsDeprecated = true
 			concept.SourceRepresentations[0].IsDeprecated = true
@@ -1712,7 +1712,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	singleConcordanceSupersededByAddRelationship := testStruct{
 		testName:     "singleConcordanceSupersededByAddRelationship",
 		setUpConcept: getAggregatedConcept(t, "single-concordance.json"),
-		testConcept: func() ontology.NewAggregatedConcept {
+		testConcept: func() ontology.CanonicalConcept {
 			concept := getAggregatedConcept(t, "single-concordance.json")
 			concept.SourceRepresentations[0].Relationships = append(concept.SourceRepresentations[0].Relationships, ontology.Relationship{UUID: supersededByUUID, Label: "SUPERSEDED_BY"})
 			return concept
@@ -1747,7 +1747,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				basicConceptUUID,
 			},
 		},
-		customAssertion: func(t *testing.T, concept ontology.NewAggregatedConcept) {
+		customAssertion: func(t *testing.T, concept ontology.CanonicalConcept) {
 			assert.Lenf(t, concept.SourceRepresentations, 1, "Test %s failed. Different number of sourceRepresentation items than expected", "singleConcordanceSupersededByAddRelationship")
 			assert.Lenf(t, concept.SourceRepresentations[0].Relationships, 1, "Test %s failed. Different number of supersededByUUIDs items than expected", "singleConcordanceSupersededByAddRelationship")
 			assert.Equalf(t, supersededByUUID, concept.SourceRepresentations[0].Relationships[0].UUID, "Test %s failed. Different supersededByUUID than expected", "singleConcordanceSupersededByAddRelationship")
@@ -1787,7 +1787,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 				basicConceptUUID,
 			},
 		},
-		customAssertion: func(t *testing.T, concept ontology.NewAggregatedConcept) {
+		customAssertion: func(t *testing.T, concept ontology.CanonicalConcept) {
 			assert.Lenf(t, concept.SourceRepresentations, 1, "Test %s failed. Different number of sourceRepresentation items than expected", "singleConcordanceSupersededByRemoveRelationship")
 			assert.Emptyf(t, concept.SourceRepresentations[0].Relationships, "Test %s failed. No supersededByUUIDs content expected", "singleConcordanceSupersededByRemoveRelationship")
 		},
@@ -1840,14 +1840,14 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 
 			for _, id := range scenario.uuidsToCheck {
 				conceptIf, found, err := conceptsDriver.Read(id, tid)
-				concept := cleanHash(conceptIf.(ontology.NewAggregatedConcept))
+				concept := cleanHash(conceptIf.(ontology.CanonicalConcept))
 				if found {
 					assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 					assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 					assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 					verifyAggregateHashIsCorrect(t, scenario.testConcept, scenario.testName)
 				} else {
-					assert.Equal(t, ontology.NewAggregatedConcept{}, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+					assert.Equal(t, ontology.CanonicalConcept{}, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
 					assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
 				}
 				if scenario.customAssertion != nil {
@@ -1901,7 +1901,7 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 	assert.NoError(t, err, "Test TestMultipleConcordancesAreHandled failed; returned unexpected error")
 
 	conceptIf, found, err := conceptsDriver.Read(simpleSmartlogicTopicUUID, "test_tid")
-	concept := cleanHash(conceptIf.(ontology.NewAggregatedConcept))
+	concept := cleanHash(conceptIf.(ontology.CanonicalConcept))
 	assert.NoError(t, err, "Should be able to read concept with no problems")
 	assert.True(t, found, "Concept should exist")
 	assert.NotNil(t, concept, "Concept should be populated")
@@ -1913,7 +1913,7 @@ func TestMultipleConcordancesAreHandled(t *testing.T) {
 // the concept in question was returning unexpected CONCORDANCE_ADDED/CONCORDANCE_REMOVED where only CONCEPT_UPDATED and CONCEPT_CHANGE_LOG were expected.
 func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
 	const mainConceptUUID = "13465cc7-204f-48b9-a8d6-b901d5d86c48"
-	var aggregate ontology.NewAggregatedConcept
+	var aggregate ontology.CanonicalConcept
 	concepts, canonicalUUIDs, sourceUUIDs := readTestSetup(t, "testdata/bug/13465cc7-204f-48b9-a8d6-b901d5d86c48.json")
 	for _, concept := range concepts {
 		_, err := conceptsDriver.Write(concept, "tid_init")
@@ -2032,7 +2032,7 @@ func TestInvalidTypesThrowError(t *testing.T) {
 		err := driver.Write(&cmneo4j.Query{Cypher: scenario.statementToWrite})
 		assert.NoError(t, err, "Unexpected error on Write to the db")
 		aggConcept, found, err := conceptsDriver.Read(scenario.prefUUID, "")
-		assert.Equal(t, ontology.NewAggregatedConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
+		assert.Equal(t, ontology.CanonicalConcept{}, aggConcept, "Scenario "+scenario.testName+" failed; aggregate concept should be empty")
 		assert.Equal(t, false, found, "Scenario "+scenario.testName+" failed; aggregate concept should not be returned from read")
 		assert.Error(t, err, "Scenario "+scenario.testName+" failed; read of concept should return error")
 		assert.Contains(t, err.Error(), "provided types are not a consistent hierarchy", "Scenario "+scenario.testName+" failed; should throw error from mapper.MostSpecificType function")
@@ -2204,7 +2204,7 @@ func TestTransferConcordance(t *testing.T) {
 	}
 
 	for _, scenario := range scenarios {
-		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", ontology.NewAggregatedConcept{}, "")
+		returnedQueryList, err := conceptsDriver.handleTransferConcordance(scenario.updatedSourceIds, &updatedConcept, "1234", ontology.CanonicalConcept{}, "")
 		assert.Equal(t, scenario.returnedError, err, "Scenario "+scenario.testName+" returned unexpected error")
 		if scenario.expectedResult != nil {
 			assert.Equal(t, scenario.expectedResult, returnedQueryList, "Scenario "+scenario.testName+" results do not match")
@@ -2248,7 +2248,7 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 		updatedSourceIds  map[string]string
 		expectedResult    []string
 		returnedError     error
-		targetConcordance ontology.NewAggregatedConcept
+		targetConcordance ontology.CanonicalConcept
 	}
 	mergeManagedLocationCanonicalWithTwoSources := testStruct{
 		testName: "mergeManagedLocationCanonicalWithTwoSources",
@@ -2256,10 +2256,10 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 			"2": "Brand"},
 		returnedError:  nil,
 		expectedResult: []string{"2"},
-		targetConcordance: ontology.NewAggregatedConcept{
-			AggregateConceptFields: ontology.AggregateConceptFields{
+		targetConcordance: ontology.CanonicalConcept{
+			CanonicalConceptFields: ontology.CanonicalConceptFields{
 				PrefUUID: "1",
-				SourceRepresentations: []ontology.NewConcept{
+				SourceRepresentations: []ontology.SourceConcept{
 					{
 						SourceConceptFields: ontology.SourceConceptFields{
 							UUID:      "1",
@@ -2288,10 +2288,10 @@ func TestTransferCanonicalMultipleConcordance(t *testing.T) {
 			"2": "Brand"},
 		returnedError:  nil,
 		expectedResult: []string{"2"},
-		targetConcordance: ontology.NewAggregatedConcept{
-			AggregateConceptFields: ontology.AggregateConceptFields{
+		targetConcordance: ontology.CanonicalConcept{
+			CanonicalConceptFields: ontology.CanonicalConceptFields{
 				PrefUUID: "1",
-				SourceRepresentations: []ontology.NewConcept{
+				SourceRepresentations: []ontology.SourceConcept{
 					{
 						SourceConceptFields: ontology.SourceConceptFields{
 							UUID:      "1",
@@ -2360,17 +2360,17 @@ func TestValidateObject(t *testing.T) {
 	}()
 	tests := []struct {
 		name          string
-		aggConcept    ontology.NewAggregatedConcept
+		aggConcept    ontology.CanonicalConcept
 		returnedError string
 		expectedLogs  []map[string]interface{}
 	}{
 		{
 			name: "aggregate concept without prefLabel should be invalid",
-			aggConcept: ontology.NewAggregatedConcept{
-				AggregateConceptFields: ontology.AggregateConceptFields{
+			aggConcept: ontology.CanonicalConcept{
+				CanonicalConceptFields: ontology.CanonicalConceptFields{
 					PrefUUID: basicConceptUUID,
 					Type:     "Brand",
-					SourceRepresentations: []ontology.NewConcept{
+					SourceRepresentations: []ontology.SourceConcept{
 						{
 							SourceConceptFields: ontology.SourceConceptFields{
 								UUID:           anotherBasicConceptUUID,
@@ -2395,11 +2395,11 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "aggregate concept without type should be invalid",
-			aggConcept: ontology.NewAggregatedConcept{
-				AggregateConceptFields: ontology.AggregateConceptFields{
+			aggConcept: ontology.CanonicalConcept{
+				CanonicalConceptFields: ontology.CanonicalConceptFields{
 					PrefUUID:  basicConceptUUID,
 					PrefLabel: "The Best Label",
-					SourceRepresentations: []ontology.NewConcept{
+					SourceRepresentations: []ontology.SourceConcept{
 						{
 							SourceConceptFields: ontology.SourceConceptFields{
 								UUID:           anotherBasicConceptUUID,
@@ -2424,8 +2424,8 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "aggregate concept without source representations should be invalid",
-			aggConcept: ontology.NewAggregatedConcept{
-				AggregateConceptFields: ontology.AggregateConceptFields{
+			aggConcept: ontology.CanonicalConcept{
+				CanonicalConceptFields: ontology.CanonicalConceptFields{
 					PrefUUID:  basicConceptUUID,
 					PrefLabel: "The Best Label",
 					Type:      "Brand",
@@ -2444,12 +2444,12 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "source representation without prefLabel should be valid",
-			aggConcept: ontology.NewAggregatedConcept{
-				AggregateConceptFields: ontology.AggregateConceptFields{
+			aggConcept: ontology.CanonicalConcept{
+				CanonicalConceptFields: ontology.CanonicalConceptFields{
 					PrefUUID:  basicConceptUUID,
 					PrefLabel: "The Best Label",
 					Type:      "Brand",
-					SourceRepresentations: []ontology.NewConcept{
+					SourceRepresentations: []ontology.SourceConcept{
 						{
 							SourceConceptFields: ontology.SourceConceptFields{
 								UUID:           anotherBasicConceptUUID,
@@ -2464,12 +2464,12 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "source representation without type should be invalid",
-			aggConcept: ontology.NewAggregatedConcept{
-				AggregateConceptFields: ontology.AggregateConceptFields{
+			aggConcept: ontology.CanonicalConcept{
+				CanonicalConceptFields: ontology.CanonicalConceptFields{
 					PrefUUID:  basicConceptUUID,
 					PrefLabel: "The Best Label",
 					Type:      "Brand",
-					SourceRepresentations: []ontology.NewConcept{
+					SourceRepresentations: []ontology.SourceConcept{
 						{
 							SourceConceptFields: ontology.SourceConceptFields{
 								UUID:           anotherBasicConceptUUID,
@@ -2494,12 +2494,12 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "source representation without authorityValue should be invalid",
-			aggConcept: ontology.NewAggregatedConcept{
-				AggregateConceptFields: ontology.AggregateConceptFields{
+			aggConcept: ontology.CanonicalConcept{
+				CanonicalConceptFields: ontology.CanonicalConceptFields{
 					PrefUUID:  basicConceptUUID,
 					PrefLabel: "The Best Label",
 					Type:      "Brand",
-					SourceRepresentations: []ontology.NewConcept{
+					SourceRepresentations: []ontology.SourceConcept{
 						{
 							SourceConceptFields: ontology.SourceConceptFields{
 								UUID:      anotherBasicConceptUUID,
@@ -2524,12 +2524,12 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "source representation without authority should be invalid",
-			aggConcept: ontology.NewAggregatedConcept{
-				AggregateConceptFields: ontology.AggregateConceptFields{
+			aggConcept: ontology.CanonicalConcept{
+				CanonicalConceptFields: ontology.CanonicalConceptFields{
 					PrefUUID:  basicConceptUUID,
 					PrefLabel: "The Best Label",
 					Type:      "Brand",
-					SourceRepresentations: []ontology.NewConcept{
+					SourceRepresentations: []ontology.SourceConcept{
 						{
 							SourceConceptFields: ontology.SourceConceptFields{
 								UUID:           anotherBasicConceptUUID,
@@ -2554,12 +2554,12 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "source representation with unknown authority should be invalid",
-			aggConcept: ontology.NewAggregatedConcept{
-				AggregateConceptFields: ontology.AggregateConceptFields{
+			aggConcept: ontology.CanonicalConcept{
+				CanonicalConceptFields: ontology.CanonicalConceptFields{
 					PrefUUID:  basicConceptUUID,
 					PrefLabel: "The Best Label",
 					Type:      "Brand",
-					SourceRepresentations: []ontology.NewConcept{
+					SourceRepresentations: []ontology.SourceConcept{
 						{
 							SourceConceptFields: ontology.SourceConceptFields{
 								UUID:           anotherBasicConceptUUID,
@@ -2584,12 +2584,12 @@ func TestValidateObject(t *testing.T) {
 		},
 		{
 			name: "valid concept",
-			aggConcept: ontology.NewAggregatedConcept{
-				AggregateConceptFields: ontology.AggregateConceptFields{
+			aggConcept: ontology.CanonicalConcept{
+				CanonicalConceptFields: ontology.CanonicalConceptFields{
 					PrefUUID:  basicConceptUUID,
 					PrefLabel: "The Best Label",
 					Type:      "Brand",
-					SourceRepresentations: []ontology.NewConcept{
+					SourceRepresentations: []ontology.SourceConcept{
 						{
 							SourceConceptFields: ontology.SourceConceptFields{
 								UUID:           anotherBasicConceptUUID,
@@ -2685,8 +2685,8 @@ func TestWriteLocation(t *testing.T) {
 func TestConceptService_Delete(t *testing.T) {
 	tests := []struct {
 		testName             string
-		aggregatedConcept    ontology.NewAggregatedConcept
-		otherRelatedConcepts []ontology.NewAggregatedConcept
+		aggregatedConcept    ontology.CanonicalConcept
+		otherRelatedConcepts []ontology.CanonicalConcept
 		expectedErr          error
 		uuidsToDelete        []string
 		affectedUUIDs        []string
@@ -2713,7 +2713,7 @@ func TestConceptService_Delete(t *testing.T) {
 		{
 			testName:          "Throws an error when deleting a concept that has relations",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-multiple-related-to.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "yet-another-full-lone-aggregated-concept.json"),
 			},
 			expectedErr:   ErrDeleteRelated,
@@ -2723,7 +2723,7 @@ func TestConceptService_Delete(t *testing.T) {
 		{
 			testName:          "Throws an error when deleting a concept with concordances which have relations to other things",
 			aggregatedConcept: getAggregatedConcept(t, "concept-with-related-to.json"),
-			otherRelatedConcepts: []ontology.NewAggregatedConcept{
+			otherRelatedConcepts: []ontology.CanonicalConcept{
 				getAggregatedConcept(t, "transfer-multiple-source-concordance.json"),
 			},
 			expectedErr:   ErrDeleteRelated,
@@ -2804,9 +2804,9 @@ func TestConceptService_DeleteConcordedCanonical(t *testing.T) {
 	}
 }
 
-func readConceptAndCompare(t *testing.T, payload ontology.NewAggregatedConcept, testName string) {
+func readConceptAndCompare(t *testing.T, payload ontology.CanonicalConcept, testName string) {
 	actualIf, found, err := conceptsDriver.Read(payload.PrefUUID, "")
-	actual := actualIf.(ontology.NewAggregatedConcept)
+	actual := actualIf.(ontology.CanonicalConcept)
 
 	assert.NoError(t, err, fmt.Sprintf("Test %s failed: Transformation Error occurred", testName))
 	expected := cleanSourceProperties(payload)
@@ -2827,14 +2827,14 @@ func readConceptAndCompare(t *testing.T, payload ontology.NewAggregatedConcept, 
 	assert.True(t, found, fmt.Sprintf("Test %s failed: Concept has not been found", testName))
 }
 
-func readTestSetup(t *testing.T, filename string) ([]ontology.NewAggregatedConcept, []string, []string) {
+func readTestSetup(t *testing.T, filename string) ([]ontology.CanonicalConcept, []string, []string) {
 	t.Helper()
 	f, err := os.Open(filename)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	result := []ontology.NewAggregatedConcept{}
+	result := []ontology.CanonicalConcept{}
 	err = json.NewDecoder(f).Decode(&result)
 	if err != nil {
 		t.Fatal(err)
@@ -2848,7 +2848,7 @@ func readTestSetup(t *testing.T, filename string) ([]ontology.NewAggregatedConce
 	return result, canonicalUUIDs, sourceUUIDs
 }
 
-func collectRelatedUUIDs(concept ontology.NewAggregatedConcept) []string {
+func collectRelatedUUIDs(concept ontology.CanonicalConcept) []string {
 	var result []string
 	for _, src := range concept.SourceRepresentations {
 		result = append(result, src.UUID)
@@ -3039,7 +3039,7 @@ func deleteConcordedNodes(t *testing.T, uuids ...string) {
 	assert.NoError(t, err, "Error executing clean up cypher")
 }
 
-func verifyAggregateHashIsCorrect(t *testing.T, concept ontology.NewAggregatedConcept, testName string) {
+func verifyAggregateHashIsCorrect(t *testing.T, concept ontology.CanonicalConcept, testName string) {
 	var results []struct {
 		Hash string `json:"a.aggregateHash"`
 	}
@@ -3062,7 +3062,7 @@ func verifyAggregateHashIsCorrect(t *testing.T, concept ontology.NewAggregatedCo
 	assert.Equal(t, hashAsString, results[0].Hash, fmt.Sprintf("Test %s failed: Concept hash %s and stored record %s are not equal!", testName, hashAsString, results[0].Hash))
 }
 
-func cleanNewAggregatedConcept(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
+func cleanNewAggregatedConcept(c ontology.CanonicalConcept) ontology.CanonicalConcept {
 	for i := range c.SourceRepresentations {
 		c.SourceRepresentations[i].LastModifiedEpoch = 0
 		cleanSourceRepresentationsProperties(c, i)
@@ -3074,13 +3074,13 @@ func cleanNewAggregatedConcept(c ontology.NewAggregatedConcept) ontology.NewAggr
 	return c
 }
 
-func cleanSourceRepresentationsProperties(c ontology.NewAggregatedConcept, i int) {
+func cleanSourceRepresentationsProperties(c ontology.CanonicalConcept, i int) {
 	for r := range c.SourceRepresentations[i].Properties {
 		cleanIntProperties(c.SourceRepresentations[i].Properties, r)
 	}
 }
 
-func cleanSourceRepresentationsRelationships(c ontology.NewAggregatedConcept, i int) {
+func cleanSourceRepresentationsRelationships(c ontology.CanonicalConcept, i int) {
 	for q := range c.SourceRepresentations[i].Relationships {
 		prop := make(map[string]interface{})
 		for p := range c.SourceRepresentations[i].Relationships[q].Properties {
@@ -3100,7 +3100,7 @@ func cleanSourceRepresentationsRelationships(c ontology.NewAggregatedConcept, i 
 	}
 }
 
-func cleanNewAggregatedConceptProperties(c ontology.NewAggregatedConcept) {
+func cleanNewAggregatedConceptProperties(c ontology.CanonicalConcept) {
 	for i := range c.Properties {
 		cleanArrayProperties(c.Properties, i)
 		cleanIntProperties(c.Properties, i)
@@ -3133,7 +3133,7 @@ func cleanIntProperties(c ontology.Properties, i string) {
 	}
 }
 
-func cleanNewAggregatedConceptRelationships(c ontology.NewAggregatedConcept) {
+func cleanNewAggregatedConceptRelationships(c ontology.CanonicalConcept) {
 	for i := range c.Relationships {
 		prop := make(map[string]interface{})
 		for p := range c.Relationships[i].Properties {
@@ -3145,7 +3145,7 @@ func cleanNewAggregatedConceptRelationships(c ontology.NewAggregatedConcept) {
 	}
 }
 
-func cleanHash(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
+func cleanHash(c ontology.CanonicalConcept) ontology.CanonicalConcept {
 	c.AggregatedHash = ""
 	return c
 }

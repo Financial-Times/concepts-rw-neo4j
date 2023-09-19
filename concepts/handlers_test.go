@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	ontology "github.com/Financial-Times/cm-graph-ontology"
+	ontology "github.com/Financial-Times/cm-graph-ontology/v2"
 
 	"github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/up-rw-app-api-go/rwapi"
@@ -33,8 +33,8 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
@@ -49,8 +49,8 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/Dummy/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
@@ -65,8 +65,8 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/locations/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Location"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Location"},
 					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
@@ -81,8 +81,8 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/Location/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Location"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Location"},
 					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
@@ -125,8 +125,8 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
@@ -141,8 +141,8 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "not-dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "not-dummy"},
 					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
@@ -157,8 +157,8 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
@@ -173,8 +173,8 @@ func TestDeleteHandler(t *testing.T) {
 			req:  newRequest("DELETE", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, true, nil
 				},
 				delete: func(uuid string, transID string) ([]string, error) {
@@ -214,8 +214,8 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
@@ -231,8 +231,8 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/Dummy/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
@@ -248,8 +248,8 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/financial-instruments/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "FinancialInstrument"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "FinancialInstrument"},
 					}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
@@ -265,8 +265,8 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/FinancialInstrument/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "FinancialInstrument"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "FinancialInstrument"},
 					}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
@@ -294,8 +294,8 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", "99999"), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
@@ -311,8 +311,8 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
@@ -328,8 +328,8 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
@@ -345,8 +345,8 @@ func TestPutHandler(t *testing.T) {
 			req:  newRequest("PUT", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			mockService: &mockConceptService{
 				decodeJSON: func(decoder *json.Decoder) (interface{}, string, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "not-dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "not-dummy"},
 					}, knownUUID, nil
 				},
 				write: func(thing interface{}, transID string) (interface{}, error) {
@@ -387,8 +387,8 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, true, nil
 				},
 			},
@@ -401,8 +401,8 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/Dummy/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
 					}, true, nil
 				},
 			},
@@ -415,8 +415,8 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/locations/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Location"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Location"},
 					}, true, nil
 				},
 			},
@@ -429,8 +429,8 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/Location/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "Location"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Location"},
 					}, true, nil
 				},
 			},
@@ -467,8 +467,8 @@ func TestGetHandler(t *testing.T) {
 			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
-					return ontology.NewAggregatedConcept{
-						AggregateConceptFields: ontology.AggregateConceptFields{PrefUUID: knownUUID, Type: "not-dummy"},
+					return ontology.CanonicalConcept{
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "not-dummy"},
 					}, true, nil
 				},
 			},

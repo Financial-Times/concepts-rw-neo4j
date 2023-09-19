@@ -16,8 +16,8 @@ import (
 	"github.com/mitchellh/hashstructure"
 	"github.com/sirupsen/logrus"
 
-	ontology "github.com/Financial-Times/cm-graph-ontology"
-	"github.com/Financial-Times/cm-graph-ontology/neo4j"
+	ontology "github.com/Financial-Times/cm-graph-ontology/v2"
+	"github.com/Financial-Times/cm-graph-ontology/v2/neo4j"
 )
 
 const (
@@ -109,32 +109,32 @@ func (s *ConceptService) Initialise() error {
 func (s *ConceptService) Read(uuid string, transID string) (interface{}, bool, error) {
 	newAggregatedConcept, exists, err := s.read(uuid, transID)
 	if err != nil {
-		return ontology.NewAggregatedConcept{}, exists, err
+		return ontology.CanonicalConcept{}, exists, err
 	}
 	s.log.WithTransactionID(transID).WithUUID(uuid).Debugf("Returned concept is %v", newAggregatedConcept)
 	return newAggregatedConcept, exists, err
 }
 
-func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregatedConcept, bool, error) {
-	query, neoAggregateConcept := neo4j.GetReadQuery(uuid)
-	err := s.driver.Read(query)
+func (s *ConceptService) read(uuid string, transID string) (ontology.CanonicalConcept, bool, error) {
+	readResult := neo4j.GetReadConceptRequestQuery(uuid)
+	err := s.driver.Read(readResult.Query)
 	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
 		s.log.WithTransactionID(transID).WithUUID(uuid).Info("Concept not found in db")
-		return ontology.NewAggregatedConcept{}, false, nil
+		return ontology.CanonicalConcept{}, false, nil
 	}
 	if errors.Is(err, cmneo4j.ErrMultipleResultsFound) {
 		s.log.WithTransactionID(transID).WithUUID(uuid).Errorf("read concept returned multiple rows, where one is expected")
-		return ontology.NewAggregatedConcept{}, false, ErrUnexpectedReadResult
+		return ontology.CanonicalConcept{}, false, ErrUnexpectedReadResult
 	}
 	if err != nil {
 		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("Error executing neo4j read query")
-		return ontology.NewAggregatedConcept{}, false, err
+		return ontology.CanonicalConcept{}, false, err
 	}
 
-	newAggregatedConcept, logMsg, err := neo4j.ToOntologyNewAggregateConcept(ontology.GetConfig(), neoAggregateConcept)
+	newAggregatedConcept, err := neo4j.GetCanonicalConcept(readResult.Result)
 	if err != nil {
-		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error(logMsg)
-		return ontology.NewAggregatedConcept{}, false, err
+		s.log.WithError(err).WithTransactionID(transID).WithUUID(uuid).Error("failed to read concept")
+		return ontology.CanonicalConcept{}, false, err
 	}
 
 	return newAggregatedConcept, true, nil
@@ -143,7 +143,7 @@ func (s *ConceptService) read(uuid string, transID string) (ontology.NewAggregat
 func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, error) {
 	// Read the aggregated concept - We need read the entire model first. This is because if we unconcord a TME concept
 	// then we need to add prefUUID to the lone node if it has been removed from the concordance listed against a Smartlogic concept
-	aggregatedConceptToWrite := thing.(ontology.NewAggregatedConcept)
+	aggregatedConceptToWrite := thing.(ontology.CanonicalConcept)
 	aggregatedConceptToWrite = cleanSourceProperties(aggregatedConceptToWrite)
 	requestSourceData := getSourceData(aggregatedConceptToWrite.SourceRepresentations)
 
@@ -168,7 +168,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	var queryBatch []*cmneo4j.Query
 	var prefUUIDsToBeDeleted []string
 	var updatedUUIDList []string
-	var orphanConcepts []ontology.NewConcept
+	var orphanConcepts []ontology.SourceConcept
 	updateRecord := ConceptChanges{}
 	if exists {
 		if existingAggregateConcept.AggregatedHash == "" {
@@ -287,7 +287,11 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 	// for source concepts that were unconcorded we recreate the canonical node
 	for _, concept := range orphanConcepts {
-		unconcordQuery := neo4j.WriteCanonicalForUnconcordedConcept(concept)
+		unconcordQuery, err := neo4j.WriteCanonicalForUnconcordedConcept(concept)
+		if err != nil {
+			s.log.WithTransactionID(transID).WithUUID(concept.UUID).WithError(err).Error("failed to create prefUUID node query for unconcorded concept")
+			return nil, fmt.Errorf("failed to create prefUUID node for unconcorded concept: %w", err)
+		}
 		s.log.WithTransactionID(transID).WithUUID(concept.UUID).Warn("Creating prefUUID node for unconcorded concept")
 		queryBatch = append(queryBatch, unconcordQuery)
 	}
@@ -298,7 +302,11 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	}
 
 	aggregatedConceptToWrite.AggregatedHash = hashAsString
-	writeQueries := neo4j.WriteCanonicalConceptQueries(aggregatedConceptToWrite)
+	writeQueries, err := neo4j.WriteCanonicalConceptQueries(aggregatedConceptToWrite)
+	if err != nil {
+		s.log.WithTransactionID(transID).WithUUID(aggregatedConceptToWrite.PrefUUID).WithError(err).Error("failed to create query for canonical concept")
+		return nil, fmt.Errorf("failed to create query for canonical concept: %w", err)
+	}
 	queryBatch = append(queryBatch, writeQueries...)
 
 	// check that the issuer is not already related to a different org
@@ -376,7 +384,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 	return updateRecord, nil
 }
 
-func (s *ConceptService) validateObject(aggConcept ontology.NewAggregatedConcept, transID string) error {
+func (s *ConceptService) validateObject(aggConcept ontology.CanonicalConcept, transID string) error {
 	err := aggConcept.Validate()
 	if err == nil {
 		return nil
@@ -472,7 +480,7 @@ func readConceptRelations(uuid string) (*cmneo4j.Query, *relationsResult) {
 
 // Handle new source nodes that have been added to current concordance
 // nolint:gocognit
-func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.NewAggregatedConcept, transID string) ([]string, error) {
+func (s *ConceptService) handleTransferConcordance(conceptData map[string]string, updateRecord *ConceptChanges, aggregateHash string, newAggregatedConcept ontology.CanonicalConcept, transID string) ([]string, error) {
 	var canonicalUUIDsToRemove []string
 	for updatedSourceID := range conceptData {
 		equivQuery, result := readCanonicalStats(updatedSourceID)
@@ -654,7 +662,7 @@ func removeLoneCanonicalNode(prefUUID string) *cmneo4j.Query {
 }
 
 // extract uuids of the source concepts
-func getSourceData(sourceConcepts []ontology.NewConcept) map[string]string {
+func getSourceData(sourceConcepts []ontology.SourceConcept) map[string]string {
 	conceptData := make(map[string]string)
 	for _, concept := range sourceConcepts {
 		conceptData[concept.UUID] = concept.Type
@@ -676,7 +684,7 @@ func filterIdsThatAreUniqueToFirstMap(firstMapConcepts map[string]string, second
 
 // DecodeJSON - decode json
 func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
-	sub := ontology.NewAggregatedConcept{}
+	sub := ontology.CanonicalConcept{}
 	err := dec.Decode(&sub)
 	return sub, sub.PrefUUID, err
 }
@@ -702,10 +710,10 @@ func (re requestError) InvalidRequestDetails() string {
 
 // cleanSourceProperties removes all properties from source concepts that are not stored in source nodes
 // TODO: investigate why are we doing this.
-func cleanSourceProperties(c ontology.NewAggregatedConcept) ontology.NewAggregatedConcept {
-	var cleanSources []ontology.NewConcept
+func cleanSourceProperties(c ontology.CanonicalConcept) ontology.CanonicalConcept {
+	var cleanSources []ontology.SourceConcept
 	for _, source := range c.SourceRepresentations {
-		cleanConcept := ontology.NewConcept{
+		cleanConcept := ontology.SourceConcept{
 			SourceConceptFields: ontology.SourceConceptFields{
 				UUID:           source.UUID,
 				Type:           source.Type,
@@ -735,7 +743,7 @@ func stringInArr(searchFor string, values []string) bool {
 	return false
 }
 
-func (s *ConceptService) generateConceptChangeLog(ec ontology.NewAggregatedConcept, nc ontology.NewAggregatedConcept) (bool, string, error) {
+func (s *ConceptService) generateConceptChangeLog(ec ontology.CanonicalConcept, nc ontology.CanonicalConcept) (bool, string, error) {
 	// Sort source representations in the new concept state in the order of the old concept state for cleaner change log
 	sortSourceRepresentations(ec, nc)
 
@@ -784,7 +792,7 @@ func (s *ConceptService) generateConceptChangeLog(ec ontology.NewAggregatedConce
 	return annotationsChange, string(result), nil
 }
 
-func sortConcept(concept ontology.NewAggregatedConcept) {
+func sortConcept(concept ontology.CanonicalConcept) {
 	sortRelationships := func(rels ontology.Relationships) {
 		sort.SliceStable(rels, func(i, j int) bool {
 			left := rels[i]
@@ -806,15 +814,15 @@ func sortConcept(concept ontology.NewAggregatedConcept) {
 	})
 }
 
-func sortSourceRepresentations(ec ontology.NewAggregatedConcept, nc ontology.NewAggregatedConcept) {
+func sortSourceRepresentations(ec ontology.CanonicalConcept, nc ontology.CanonicalConcept) {
 	sortConcept(ec)
 	sortConcept(nc)
-	sourceMap := make(map[string]ontology.NewConcept)
+	sourceMap := make(map[string]ontology.SourceConcept)
 	for _, source := range nc.SourceRepresentations {
 		sourceMap[source.UUID] = source
 	}
 
-	var sourceSlice []ontology.NewConcept
+	var sourceSlice []ontology.SourceConcept
 	for _, source := range ec.SourceRepresentations {
 		if _, ok := sourceMap[source.UUID]; ok {
 			sourceSlice = append(sourceSlice, source)
