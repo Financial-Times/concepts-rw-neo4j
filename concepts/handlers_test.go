@@ -384,17 +384,17 @@ func TestGetHandler(t *testing.T) {
 	}{
 		{
 			name: "IrregularPathSuccess",
-			req:  newRequest("GET", fmt.Sprintf("/dummies/%s", knownUUID), t),
+			req:  newRequest("GET", fmt.Sprintf("/test-concepts/%s", knownUUID), t),
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return ontology.CanonicalConcept{
-						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "TestConcept"},
 					}, true, nil
 				},
 			},
 			statusCode:  http.StatusOK,
 			contentType: "",
-			body:        "{\"prefUUID\":\"12345\",\"type\":\"Dummy\"}\n",
+			body:        "{\"prefUUID\":\"12345\",\"type\":\"TestConcept\"}\n",
 		},
 		{
 			name: "IrregularPathFailure",
@@ -402,7 +402,7 @@ func TestGetHandler(t *testing.T) {
 			ds: &mockConceptService{
 				read: func(uuid string, transID string) (interface{}, bool, error) {
 					return ontology.CanonicalConcept{
-						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "Dummy"},
+						CanonicalConceptFields: ontology.CanonicalConceptFields{PrefUUID: knownUUID, Type: "TestConcept"},
 					}, true, nil
 				},
 			},
