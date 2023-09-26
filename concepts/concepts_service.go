@@ -784,7 +784,31 @@ func (s *ConceptService) generateConceptChangeLog(ec ontology.NewAggregatedConce
 	return annotationsChange, string(result), nil
 }
 
+func sortConcept(concept ontology.NewAggregatedConcept) {
+	sortRelationships := func(rels ontology.Relationships) {
+		sort.SliceStable(rels, func(i, j int) bool {
+			left := rels[i]
+			right := rels[j]
+			if strings.Compare(left.Label, right.Label) < 0 {
+				return true
+			}
+			return strings.Compare(left.UUID, right.UUID) < 0
+		})
+	}
+	sortRelationships(concept.Relationships)
+	for _, src := range concept.SourceRepresentations {
+		sortRelationships(src.Relationships)
+	}
+	sort.SliceStable(concept.SourceRepresentations, func(i, j int) bool {
+		left := concept.SourceRepresentations[i]
+		right := concept.SourceRepresentations[j]
+		return strings.Compare(left.UUID, right.UUID) > 0
+	})
+}
+
 func sortSourceRepresentations(ec ontology.NewAggregatedConcept, nc ontology.NewAggregatedConcept) {
+	sortConcept(ec)
+	sortConcept(nc)
 	sourceMap := make(map[string]ontology.NewConcept)
 	for _, source := range nc.SourceRepresentations {
 		sourceMap[source.UUID] = source

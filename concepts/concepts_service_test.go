@@ -1399,7 +1399,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					EventDetails: ConceptChangeLogEvent{
 						Type:              ChangeLogEvent,
 						AnnotationsChange: false,
-						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"scopeNote\"],\"from\":\"Comments about stuff\",\"to\":\"Comments aboutstuff\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"987as3dza654-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"1\"],\"from\":{\"authority\":\"TME\",\"authorityValue\":\"1234\",\"prefLabel\":\"The Best Label\",\"type\":\"Brand\",\"uuid\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},\"to\":null}]",
+						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"scopeNote\"],\"from\":\"Comments about stuff\",\"to\":\"Comments aboutstuff\"},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"1\"],\"from\":{\"authority\":\"TME\",\"authorityValue\":\"987as3dza654-TME\",\"prefLabel\":\"Not as good Label\",\"type\":\"Brand\",\"uuid\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"},\"to\":null}]",
 					},
 				},
 			},
@@ -1571,7 +1571,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					EventDetails: ConceptChangeLogEvent{
 						Type:              ChangeLogEvent,
 						AnnotationsChange: false,
-						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"987as3dza654-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"1234\",\"to\":\"987as3dza654-TME\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"Not as good Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\",\"to\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"2\"],\"from\":null,\"to\":{\"authority\":\"TME\",\"authorityValue\":\"123bc3xwa456-TME\",\"prefLabel\":\"Even worse Label\",\"type\":\"Brand\",\"uuid\":\"de3bcb30-992c-424e-8891-73f5bd9a7d3a\"}}]",
+						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"1234\",\"to\":\"123bc3xwa456-TME\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"Even worse Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\",\"to\":\"de3bcb30-992c-424e-8891-73f5bd9a7d3a\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"987as3dza654-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"2\"],\"from\":null,\"to\":{\"authority\":\"TME\",\"authorityValue\":\"987as3dza654-TME\",\"prefLabel\":\"Not as good Label\",\"type\":\"Brand\",\"uuid\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"}}]",
 					},
 				},
 			},
@@ -1621,7 +1621,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					EventDetails: ConceptChangeLogEvent{
 						Type:              ChangeLogEvent,
 						AnnotationsChange: false,
-						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"987as3dza654-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"1234\",\"to\":\"987as3dza654-TME\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"Not as good Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\",\"to\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\"],\"from\":{\"authority\":\"TME\",\"authorityValue\":\"123bc3xwa456-TME\",\"prefLabel\":\"Even worse Label\",\"type\":\"Brand\",\"uuid\":\"de3bcb30-992c-424e-8891-73f5bd9a7d3a\"},\"to\":null}]",
+						ChangeLog:         "[{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"123bc3xwa456-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Even worse Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"de3bcb30-992c-424e-8891-73f5bd9a7d3a\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"1234\",\"to\":\"987as3dza654-TME\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"Not as good Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\",\"to\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\"],\"from\":{\"authority\":\"TME\",\"authorityValue\":\"987as3dza654-TME\",\"prefLabel\":\"Not as good Label\",\"type\":\"Brand\",\"uuid\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"},\"to\":null}]",
 					},
 				},
 			},
@@ -1659,7 +1659,7 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 					EventDetails: ConceptChangeLogEvent{
 						Type:              ChangeLogEvent,
 						AnnotationsChange: true,
-						ChangeLog:         "[{\"type\":\"delete\",\"path\":[\"aliases\",\"2\"],\"from\":\"anotherOne\",\"to\":null},{\"type\":\"delete\",\"path\":[\"aliases\",\"3\"],\"from\":\"whyNot\",\"to\":null},{\"type\":\"update\",\"path\":[\"descriptionXML\"],\"from\":\"\\u003cbody\\u003eThis \\u003ci\\u003ebrand\\u003c/i\\u003e has no parent but otherwise has valid values for all fields\\u003c/body\\u003e\",\"to\":\"\\u003cbody\\u003eOne brand to rule them all, one brand to find them; one brand to bring them all and in the darkness bind them\\u003c/body\\u003e\"},{\"type\":\"update\",\"path\":[\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"The Biggest, Bestest, Brandiest Brand\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"authorityValue\"],\"from\":\"987as3dza654-TME\",\"to\":\"1234\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Best Label\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"0\",\"uuid\"],\"from\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\",\"to\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"1234\",\"to\":\"987as3dza654-TME\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"The Biggest, Bestest, Brandiest Brand\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea\",\"to\":\"74c94c35-e16b-4527-8ef1-c8bcdcc8f05b\"},{\"type\":\"update\",\"path\":[\"strapline\"],\"from\":\"Keeping it simple\",\"to\":\"Much more complicated\"}]",
+						ChangeLog:         "[{\"type\":\"delete\",\"path\":[\"aliases\",\"2\"],\"from\":\"anotherOne\",\"to\":null},{\"type\":\"delete\",\"path\":[\"aliases\",\"3\"],\"from\":\"whyNot\",\"to\":null},{\"type\":\"update\",\"path\":[\"descriptionXML\"],\"from\":\"\\u003cbody\\u003eThis \\u003ci\\u003ebrand\\u003c/i\\u003e has no parent but otherwise has valid values for all fields\\u003c/body\\u003e\",\"to\":\"\\u003cbody\\u003eOne brand to rule them all, one brand to find them; one brand to bring them all and in the darkness bind them\\u003c/body\\u003e\"},{\"type\":\"update\",\"path\":[\"prefLabel\"],\"from\":\"The Best Label\",\"to\":\"The Biggest, Bestest, Brandiest Brand\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"Not as good Label\",\"to\":\"The Biggest, Bestest, Brandiest Brand\"},{\"type\":\"update\",\"path\":[\"strapline\"],\"from\":\"Keeping it simple\",\"to\":\"Much more complicated\"}]",
 					},
 				},
 			},
@@ -1811,70 +1811,81 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 
 	cleanDB(t)
 	for _, scenario := range scenarios {
-		//Write data into db, to set up test scenario
-		_, err := conceptsDriver.Write(scenario.setUpConcept, tid)
-		assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
-		verifyAggregateHashIsCorrect(t, scenario.setUpConcept, scenario.testName)
-		//Overwrite data with update
-		output, err := conceptsDriver.Write(scenario.testConcept, tid)
-		if scenario.returnedError != "" {
-			if assert.Error(t, err, "Scenario "+scenario.testName+" failed; should return an error") {
-				assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unknown error")
-			}
-			// Do not check the output on error because it sometimes causes test errors
-			continue
-		}
-		if !assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error") {
-			continue
-		}
+		t.Run(scenario.testName, func(t *testing.T) {
 
-		actualChanges := output.(ConceptChanges)
-		sort.Slice(actualChanges.ChangedRecords, func(i, j int) bool {
-			l, _ := json.Marshal(actualChanges.ChangedRecords[i])
-			r, _ := json.Marshal(actualChanges.ChangedRecords[j])
-			c := strings.Compare(string(l), string(r))
-			if c >= 0 {
-				return true
+			//Write data into db, to set up test scenario
+			_, err := conceptsDriver.Write(scenario.setUpConcept, tid)
+			assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
+			verifyAggregateHashIsCorrect(t, scenario.setUpConcept, scenario.testName)
+			//Overwrite data with update
+			output, err := conceptsDriver.Write(scenario.testConcept, tid)
+			if scenario.returnedError != "" {
+				if assert.Error(t, err, "Scenario "+scenario.testName+" failed; should return an error") {
+					assert.Contains(t, err.Error(), scenario.returnedError, "Scenario "+scenario.testName+" failed; returned unknown error")
+				}
+				// Do not check the output on error because it sometimes causes test errors
+				return
 			}
-			return false
+			if !assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error") {
+				return
+			}
+
+			actualChanges := output.(ConceptChanges)
+
+			actualChanges.ChangedRecords = cleanChangeLog(t, actualChanges.ChangedRecords)
+			changesDiff := conceptChangesDiff(scenario.updatedConcepts, actualChanges)
+			if changesDiff != "" {
+				t.Errorf("Scenario %s failed: Updated uuid list differs from expected:\n%s", scenario.testName, changesDiff)
+			}
+
+			for _, id := range scenario.uuidsToCheck {
+				conceptIf, found, err := conceptsDriver.Read(id, tid)
+				concept := cleanHash(conceptIf.(ontology.NewAggregatedConcept))
+				if found {
+					assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+					assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+					assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
+					verifyAggregateHashIsCorrect(t, scenario.testConcept, scenario.testName)
+				} else {
+					assert.Equal(t, ontology.NewAggregatedConcept{}, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
+					assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
+				}
+				if scenario.customAssertion != nil {
+					scenario.customAssertion(t, concept)
+				}
+			}
+			cleanDB(t)
 		})
-		sort.Slice(scenario.updatedConcepts.ChangedRecords, func(i, j int) bool {
-			l, _ := json.Marshal(scenario.updatedConcepts.ChangedRecords[i])
-			r, _ := json.Marshal(scenario.updatedConcepts.ChangedRecords[j])
-			c := strings.Compare(string(l), string(r))
-			if c >= 0 {
-				return true
-			}
-			return false
-		})
-
-		sort.Strings(scenario.updatedConcepts.UpdatedIds)
-		sort.Strings(actualChanges.UpdatedIds)
-
-		actualChanges.ChangedRecords = cleanChangeLog(t, actualChanges.ChangedRecords)
-		cmpOpts := cmpopts.IgnoreFields(Event{}, "AggregateHash")
-		if !cmp.Equal(scenario.updatedConcepts, actualChanges, cmpOpts) {
-			t.Errorf("Scenario %s failed: Updated uuid list differs from expected:\n%s", scenario.testName, cmp.Diff(scenario.updatedConcepts, actualChanges, cmpOpts))
-		}
-
-		for _, id := range scenario.uuidsToCheck {
-			conceptIf, found, err := conceptsDriver.Read(id, tid)
-			concept := cleanHash(conceptIf.(ontology.NewAggregatedConcept))
-			if found {
-				assert.NotNil(t, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
-				assert.True(t, found, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
-				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
-				verifyAggregateHashIsCorrect(t, scenario.testConcept, scenario.testName)
-			} else {
-				assert.Equal(t, ontology.NewAggregatedConcept{}, concept, "Scenario "+scenario.testName+" failed; id: "+id+" should return a valid concept")
-				assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")
-			}
-			if scenario.customAssertion != nil {
-				scenario.customAssertion(t, concept)
-			}
-		}
-		cleanDB(t)
 	}
+}
+
+func conceptChangesDiff(expected, actual ConceptChanges) string {
+	cmpOpts := cmp.Options{
+		cmpopts.IgnoreFields(Event{}, "AggregateHash"),
+		cmpopts.SortSlices(strings.EqualFold),
+		cmpopts.SortSlices(func(left, right Event) bool {
+			l, _ := json.Marshal(left)
+			r, _ := json.Marshal(right)
+			c := strings.Compare(string(l), string(r))
+			if c >= 0 {
+				return true
+			}
+			return false
+		}),
+		cmp.Transformer("ConceptChangeLogEvent", func(event ConceptChangeLogEvent) map[string]any {
+			result := map[string]any{}
+			result["eventType"] = event.Type
+			result["annotationsChange"] = event.AnnotationsChange
+			var changeLog []map[string]any
+			_ = json.Unmarshal([]byte(event.ChangeLog), &changeLog)
+			result["changelog"] = changeLog
+			return result
+		}),
+	}
+	if !cmp.Equal(expected, actual, cmpOpts) {
+		return cmp.Diff(expected, actual, cmpOpts)
+	}
+	return ""
 }
 
 func TestMultipleConcordancesAreHandled(t *testing.T) {
@@ -1927,7 +1938,7 @@ func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
 				EventDetails: ConceptChangeLogEvent{
 					Type:              ChangeLogEvent,
 					AnnotationsChange: false,
-					ChangeLog:         "[{\"type\":\"create\",\"path\":[\"descriptionXML\"],\"from\":null,\"to\":\"testing\"},{\"type\":\"create\",\"path\":[\"naicsIndustryClassifications\"],\"from\":null,\"to\":[{\"rank\":1,\"uuid\":\"6ff5d091-26a1-45df-8367-08ccc6541686\"},{\"rank\":2,\"uuid\":\"2c29231c-7632-44ba-b23c-ead83e026d04\"},{\"rank\":3,\"uuid\":\"6773eb88-e129-4610-a221-6e94c585b1d6\"}]},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authorityValue\"],\"from\":\"13465cc7-204f-48b9-a8d6-b901d5d86c48\",\"to\":\"06VQ7V-E\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"authority\"],\"from\":\"Smartlogic\",\"to\":\"FACTSET\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"1\",\"countryOfIncorporationUUID\"],\"from\":null,\"to\":\"6b683eff-56c3-43d9-acfc-7511d974fc01\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"1\",\"countryOfOperationsUUID\"],\"from\":null,\"to\":\"6b683eff-56c3-43d9-acfc-7511d974fc01\"},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"1\",\"naicsIndustryClassifications\"],\"from\":null,\"to\":[{\"rank\":1,\"uuid\":\"6ff5d091-26a1-45df-8367-08ccc6541686\"},{\"rank\":2,\"uuid\":\"2c29231c-7632-44ba-b23c-ead83e026d04\"},{\"rank\":3,\"uuid\":\"6773eb88-e129-4610-a221-6e94c585b1d6\"}]},{\"type\":\"create\",\"path\":[\"sourceRepresentations\",\"1\",\"parentOrganisation\"],\"from\":null,\"to\":\"f3f15630-be31-3a00-ab2f-28648aa324bd\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"prefLabel\"],\"from\":\"Matalan Retail Ltd\",\"to\":\"Matalan Retail Ltd.\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"1\",\"uuid\"],\"from\":\"13465cc7-204f-48b9-a8d6-b901d5d86c48\",\"to\":\"374fdcea-062f-3281-81ca-7851323bcf98\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"2\",\"authorityValue\"],\"from\":\"06VQ7V-E\",\"to\":\"http://www.wikidata.org/entity/Q12061509\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"2\",\"authority\"],\"from\":\"FACTSET\",\"to\":\"Wikidata\"},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\",\"countryOfIncorporationUUID\"],\"from\":\"6b683eff-56c3-43d9-acfc-7511d974fc01\",\"to\":null},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\",\"countryOfOperationsUUID\"],\"from\":\"6b683eff-56c3-43d9-acfc-7511d974fc01\",\"to\":null},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\",\"naicsIndustryClassifications\"],\"from\":[{\"rank\":3,\"uuid\":\"6773eb88-e129-4610-a221-6e94c585b1d6\"},{\"rank\":2,\"uuid\":\"2c29231c-7632-44ba-b23c-ead83e026d04\"},{\"rank\":1,\"uuid\":\"6ff5d091-26a1-45df-8367-08ccc6541686\"}],\"to\":null},{\"type\":\"delete\",\"path\":[\"sourceRepresentations\",\"2\",\"parentOrganisation\"],\"from\":\"f3f15630-be31-3a00-ab2f-28648aa324bd\",\"to\":null},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"2\",\"prefLabel\"],\"from\":\"Matalan Retail Ltd.\",\"to\":\"Matalan\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"2\",\"uuid\"],\"from\":\"374fdcea-062f-3281-81ca-7851323bcf98\",\"to\":\"6259ebad-ed4c-3b13-ae66-9117fa591328\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"3\",\"authorityValue\"],\"from\":\"http://www.wikidata.org/entity/Q12061509\",\"to\":\"13465cc7-204f-48b9-a8d6-b901d5d86c48\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"3\",\"authority\"],\"from\":\"Wikidata\",\"to\":\"Smartlogic\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"3\",\"prefLabel\"],\"from\":\"Matalan\",\"to\":\"Matalan Retail Ltd\"},{\"type\":\"update\",\"path\":[\"sourceRepresentations\",\"3\",\"uuid\"],\"from\":\"6259ebad-ed4c-3b13-ae66-9117fa591328\",\"to\":\"13465cc7-204f-48b9-a8d6-b901d5d86c48\"}]",
+					ChangeLog:         "[{\"type\":\"create\",\"path\":[\"descriptionXML\"],\"from\":null,\"to\":\"testing\"},{\"type\":\"create\",\"path\":[\"naicsIndustryClassifications\"],\"from\":null,\"to\":[{\"rank\":2,\"uuid\":\"2c29231c-7632-44ba-b23c-ead83e026d04\"},{\"rank\":3,\"uuid\":\"6773eb88-e129-4610-a221-6e94c585b1d6\"},{\"rank\":1,\"uuid\":\"6ff5d091-26a1-45df-8367-08ccc6541686\"}]}]",
 				},
 			},
 			{
@@ -1963,8 +1974,9 @@ func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
 		t.Fatal("concept write did not return 'ConceptChanges'")
 	}
 	events.ChangedRecords = cleanChangeLog(t, events.ChangedRecords)
-	if !cmp.Equal(expectedEvents, events, cmpopts.IgnoreFields(Event{}, "AggregateHash")) {
-		t.Error(cmp.Diff(expectedEvents, events, cmpopts.IgnoreFields(Event{}, "AggregateHash")))
+	changesDiff := conceptChangesDiff(expectedEvents, events)
+	if changesDiff != "" {
+		t.Error(changesDiff)
 	}
 }
 
