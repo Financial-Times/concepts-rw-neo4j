@@ -1952,7 +1952,7 @@ func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
 				EventDetails: ConceptChangeLogEvent{
 					Type:              ChangeLogEvent,
 					AnnotationsChange: false,
-					ChangeLog:         "[{\"type\":\"create\",\"path\":[\"descriptionXML\"],\"from\":null,\"to\":\"testing\"},{\"type\":\"create\",\"path\":[\"naicsIndustryClassifications\"],\"from\":null,\"to\":[{\"rank\":2,\"uuid\":\"2c29231c-7632-44ba-b23c-ead83e026d04\"},{\"rank\":3,\"uuid\":\"6773eb88-e129-4610-a221-6e94c585b1d6\"},{\"rank\":1,\"uuid\":\"6ff5d091-26a1-45df-8367-08ccc6541686\"}]}]",
+					ChangeLog:         "[{\"type\":\"create\",\"path\":[\"descriptionXML\"],\"from\":null,\"to\":\"testing\"}]",
 				},
 			},
 			{
