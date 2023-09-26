@@ -1995,10 +1995,10 @@ func TestWriteShouldReturnCorrectConceptChanges(t *testing.T) {
 }
 
 func TestReadReturnsErrorOnMultipleResults(t *testing.T) {
-	// note the test data that this is explicitly broken setup, where multiple source concepts have HAS_ORGANISATION relationship
+	// note the test data that this is explicitly broken setup, where multiple source concepts have ISSUED_BY relationship
 	// this is unsupported behaviour and will produce multiple results when reading from neo4j
 	const mainConceptUUID = "13465cc7-204f-48b9-a8d6-b901d5d86c48"
-	concepts, canonicalUUIDs, sourceUUIDs := readTestSetup(t, "testdata/bug/concorded-multiple-has-organisation.json")
+	concepts, canonicalUUIDs, sourceUUIDs := readTestSetup(t, "testdata/bug/concorded-multiple-issued-by.json")
 	for _, concept := range concepts {
 		_, err := conceptsDriver.Write(concept, "tid_init")
 		if err != nil {
