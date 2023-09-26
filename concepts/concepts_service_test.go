@@ -1137,20 +1137,34 @@ func TestWriteMemberships_CleansUpExisting(t *testing.T) {
 	originalMembership := result.(ontology.CanonicalConcept)
 	originalMembership = cleanHash(originalMembership)
 	originalMembership = cleanNewAggregatedConcept(originalMembership)
-	memRoles := 0
-	var relationships ontology.Relationships
-	for i := range originalMembership.Relationships {
-		if originalMembership.Relationships[i].Label == "HAS_ROLE" {
-			memRoles++
-			relationships = append(relationships, originalMembership.Relationships[i])
-		}
+	expectedRelationships := ontology.Relationships{
+		ontology.Relationship{
+			UUID:       organisationUUID,
+			Label:      "HAS_ORGANISATION",
+			Properties: ontology.Properties{},
+		},
+		ontology.Relationship{
+			UUID:       personUUID,
+			Label:      "HAS_MEMBER",
+			Properties: ontology.Properties{},
+		},
+		membershipRole,
+		anotherMembershipRole,
 	}
-	assert.Equal(t, memRoles, 2)
-	assert.True(t, reflect.DeepEqual(ontology.Relationships{membershipRole, anotherMembershipRole}, relationships))
-	assert.Equal(t, organisationUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_ORGANISATION"))
-	assert.Equal(t, personUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_MEMBER"))
-	assert.Equal(t, "Mr", originalMembership.Properties["salutation"])
-	assert.Equal(t, 2018, originalMembership.Properties["birthYear"])
+	opts := cmpopts.SortSlices(func(l, r ontology.Relationship) bool {
+		if strings.Compare(l.Label, r.Label) < 0 {
+			return true
+		}
+		if strings.Compare(l.UUID, r.UUID) < 0 {
+			return true
+		}
+		return false
+	})
+
+	if !cmp.Equal(expectedRelationships, originalMembership.Relationships, opts) {
+		diff := cmp.Diff(expectedRelationships, originalMembership.Relationships, opts)
+		t.Errorf("unexpected membership relationships: %s", diff)
+	}
 
 	_, err = conceptsDriver.Write(getAggregatedConcept(t, "updated-membership.json"), "test_tid")
 	assert.NoError(t, err, "Failed to write membership")
@@ -1231,7 +1245,7 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 	}
 
 	assert.Equal(t, memRoles, 2)
-	assert.True(t, reflect.DeepEqual(ontology.Relationships{membershipRole, anotherMembershipRole}, updatedRelationships))
+	assert.True(t, reflect.DeepEqual(ontology.Relationships{anotherMembershipRole, membershipRole}, updatedRelationships))
 	assert.Equal(t, organisationUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_ORGANISATION"))
 	assert.Equal(t, personUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_MEMBER"))
 }

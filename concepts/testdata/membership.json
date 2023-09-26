@@ -25,9 +25,7 @@
                 }
             ],
             "inceptionDate":"2016-01-01",
-            "terminationDate":"2017-02-02",
-            "salutation":"Mr",
-            "birthYear":2018
+            "terminationDate":"2017-02-02"
         }
     ],
     "membershipRoles":[  
@@ -42,7 +40,5 @@
         }
     ],
     "inceptionDate":"2016-01-01",
-    "terminationDate":"2017-02-02",
-    "salutation":"Mr",
-    "birthYear":2018
+    "terminationDate":"2017-02-02"
 }
