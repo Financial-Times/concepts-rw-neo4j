@@ -3,7 +3,7 @@ module github.com/Financial-Times/concepts-rw-neo4j
 go 1.19
 
 require (
-	github.com/Financial-Times/cm-graph-ontology/v2 v2.0.0-20230824071803-df4140cbc32e
+	github.com/Financial-Times/cm-graph-ontology/v2 v2.0.0
 	github.com/Financial-Times/cm-neo4j-driver v1.1.1
 	github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7
 	github.com/Financial-Times/go-logger/v2 v2.0.1
@@ -30,7 +30,6 @@ require (
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/hashicorp/go-version v1.0.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/neo4j/neo4j-go-driver/v4 v4.3.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.0 // indirect

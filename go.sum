@@ -1,5 +1,5 @@
-github.com/Financial-Times/cm-graph-ontology/v2 v2.0.0-20230824071803-df4140cbc32e h1:xqMxwXvSSpb+4/bPToMcwbwdsrPznwIr22haSKdh6xU=
-github.com/Financial-Times/cm-graph-ontology/v2 v2.0.0-20230824071803-df4140cbc32e/go.mod h1:rJrS+0w9tneXiLhiMJ+Hf0XSEiUlOF8jUU9E0FXolK4=
+github.com/Financial-Times/cm-graph-ontology/v2 v2.0.0 h1:m/91POCNa3Ip+060uiFN7U/d0yD26KcfB0V4RUE8UrI=
+github.com/Financial-Times/cm-graph-ontology/v2 v2.0.0/go.mod h1:U80GMHgwX9t3Jmdojl6M9a1truProkjYEleToFoRUT0=
 github.com/Financial-Times/cm-neo4j-driver v1.1.1 h1:kmgRa3boe58+tzNTbWTBx3IQnIZt5Hh57Yc2kHy85FM=
 github.com/Financial-Times/cm-neo4j-driver v1.1.1/go.mod h1:fQ77C8A+6I+ihwe6Ob8Y7sIzU3s/DTrjBZJGVQOeum0=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7 h1:dkf1EOTiHXA2lG2EJuePEim6y0HEOPt0hcqsT/qUr/k=
@@ -14,7 +14,6 @@ github.com/Financial-Times/transactionid-utils-go v0.2.0 h1:YcET5Hd1fUGWWpQSVszY
 github.com/Financial-Times/transactionid-utils-go v0.2.0/go.mod h1:tPAcAFs/dR6Q7hBDGNyUyixHRvg/n9NW/JTq8C58oZ0=
 github.com/Financial-Times/up-rw-app-api-go v0.0.0-20170710125828-d9d93a1f6895 h1:UkmfGpvzyZAnwhPq95hKHg0MjSo2fRUxAIwnx/7JFos=
 github.com/Financial-Times/up-rw-app-api-go v0.0.0-20170710125828-d9d93a1f6895/go.mod h1:4gFzx5u4779W7H0DI9EO25+kyLDVlDQPHFQwprijX8Y=
-github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v0.0.0-20170829195320-a47672248388/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1-0.20170711183451-adab96458c51/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -58,7 +57,6 @@ github.com/konsorten/go-windows-terminal-sequences v1.0.1 h1:mweAR1A6xJ3oS2pRaGi
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
-github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
 github.com/mitchellh/hashstructure v1.0.0 h1:ZkRJX1CyOoTkar7p/mLS5TZU4nJ1Rn/F8u9dGS02Q3Y=
 github.com/mitchellh/hashstructure v1.0.0/go.mod h1:QjSHrPWS+BGUVBYkbTZWEnOh3G1DutKwClXU/ABz6AQ=
 github.com/neo4j/neo4j-go-driver/v4 v4.3.3 h1:QwM0IN1L6q1+N9cNqjv9Pmj4J4qCVauczQZdFsDafv8=
