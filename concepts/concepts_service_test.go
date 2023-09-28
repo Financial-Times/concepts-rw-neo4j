@@ -1826,7 +1826,6 @@ func TestWriteService_HandlingConcordance(t *testing.T) {
 	cleanDB(t)
 	for _, scenario := range scenarios {
 		t.Run(scenario.testName, func(t *testing.T) {
-
 			//Write data into db, to set up test scenario
 			_, err := conceptsDriver.Write(scenario.setUpConcept, tid)
 			assert.NoError(t, err, "Scenario "+scenario.testName+" failed; returned unexpected error")

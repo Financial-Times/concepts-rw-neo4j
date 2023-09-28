@@ -287,7 +287,7 @@ func (s *ConceptService) Write(thing interface{}, transID string) (interface{}, 
 
 	// for source concepts that were unconcorded we recreate the canonical node
 	for _, concept := range orphanConcepts {
-		unconcordQuery, err := neo4j.WriteCanonicalForUnconcordedConcept(concept)
+		unconcordQuery, err := neo4j.WriteCanonicalForUnconcordedConcept(concept) //nolint:govet // silence shadow: declaration of "err"
 		if err != nil {
 			s.log.WithTransactionID(transID).WithUUID(concept.UUID).WithError(err).Error("failed to create prefUUID node query for unconcorded concept")
 			return nil, fmt.Errorf("failed to create prefUUID node for unconcorded concept: %w", err)
