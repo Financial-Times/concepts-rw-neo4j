@@ -2,6 +2,12 @@
     "prefUUID": "cce1bc63-3717-4ae6-9399-88dab5966815",
     "prefLabel": "Pref Label",
     "type": "Brand",
+    "impliedByUUIDs": [
+        "740c604b-8d97-443e-be70-33de6f1d6e67",
+        "740c604b-8d97-443e-be70-33de6f1d6e67",
+        "b5d7c6b5-db7d-4bce-9d6a-f62195571f92",
+        "a4fe339d-664f-4609-9fe0-dd3ec6efe87e"
+    ],
     "sourceRepresentations": [
         {
             "uuid": "cce1bc63-3717-4ae6-9399-88dab5966815",

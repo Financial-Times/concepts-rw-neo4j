@@ -2,6 +2,9 @@
     "prefUUID":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",
     "prefLabel":"Pref Label",
     "type":"Section",
+    "supersededByUUIDs":[
+        "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
+    ],
     "sourceRepresentations":[  
         {  
             "uuid":"bbc4f575-edb3-4f51-92f0-5ce6c708d1ea",

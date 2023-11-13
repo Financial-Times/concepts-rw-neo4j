@@ -3,6 +3,9 @@
     "prefLabel":"Pref Label",
     "type":"FTAnIIndustryClassification",
     "industryIdentifier": "ABC",
+    "isMappedToUUID": [
+        "553c7b4b-ed09-4365-a385-e9c816c861a2"
+    ],
     "sourceRepresentations":[  
         {  
             "uuid":"0f060226-68b5-483b-b9f9-85af3eb1edaa",

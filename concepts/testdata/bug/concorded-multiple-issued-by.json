@@ -40,7 +40,7 @@
     "sourceRepresentations": [
       {
         "uuid": "0eb54dff-fbe3-330e-b755-7435c4aad411",
-        "type": "Organisation",
+        "type": "TestConcept",
         "prefLabel": "Matalan Retail Ltd",
         "authority": "TME",
         "authorityValue": "TnN0ZWluX09OX0FGVE1fT05fMjA3MDk4-T04=",
@@ -51,7 +51,7 @@
           "Matalan Retail Limited",
           "Matalan Retail Ltd"
         ],
-        "organisationUUID": "90c76d8c-da86-4941-92b9-e187597e52de"
+        "issuedBy": "90c76d8c-da86-4941-92b9-e187597e52de"
       },
       {
         "uuid": "374fdcea-062f-3281-81ca-7851323bcf98",
@@ -95,14 +95,14 @@
       },
       {
         "uuid": "13465cc7-204f-48b9-a8d6-b901d5d86c48",
-        "type": "Organisation",
+        "type": "TestConcept",
         "prefLabel": "Matalan Retail Ltd",
         "authority": "Smartlogic",
         "authorityValue": "13465cc7-204f-48b9-a8d6-b901d5d86c48",
         "aliases": [
           "Matalan Retail Ltd"
         ],
-        "organisationUUID": "90c76d8c-da86-4941-92b9-e187597e52de"
+        "issuedBy": "90c76d8c-da86-4941-92b9-e187597e52de"
       }
     ]
   },
