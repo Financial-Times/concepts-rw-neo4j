@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -1245,7 +1244,7 @@ func TestWriteMemberships_FixOldData(t *testing.T) {
 	}
 
 	assert.Equal(t, memRoles, 2)
-	assert.True(t, reflect.DeepEqual(ontology.Relationships{anotherMembershipRole, membershipRole}, updatedRelationships))
+	assert.True(t, cmp.Equal(ontology.Relationships{anotherMembershipRole, membershipRole}, updatedRelationships, cmpopts.SortMaps(func(a, b string) bool { return a < b })))
 	assert.Equal(t, organisationUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_ORGANISATION"))
 	assert.Equal(t, personUUID, extractFieldFromRelationship(originalMembership.Relationships, "HAS_MEMBER"))
 }

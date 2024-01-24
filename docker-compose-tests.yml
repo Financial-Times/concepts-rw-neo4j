@@ -10,7 +10,7 @@ services:
     container_name: test-runner
     environment:
       - NEO4J_TEST_URL=bolt://neo4j:7687
-    command: ["go", "test", "-mod=readonly", "-race", "-tags=integration", "./..."]
+    command: ["go", "test", "-v", "-mod=readonly", "-race", "-tags=integration", "./..."]
     depends_on:
       - neo4j
   neo4j:
