@@ -691,7 +691,7 @@ func (s *ConceptService) DecodeJSON(dec *json.Decoder) (interface{}, string, err
 
 // Check - checker
 func (s *ConceptService) Check() error {
-	return s.driver.VerifyWriteConnectivity()
+	return s.driver.VerifyConnectivity()
 }
 
 type requestError struct {
