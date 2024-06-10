@@ -1,0 +1,23 @@
+{
+    "aliases": [
+        "Test SvProvision"
+    ],
+    "prefLabel": "Test SvProvision",
+    "prefUUID": "a1258efa-b36b-5228-9c85-1c1358c1c535",
+    "sourceRepresentations": [
+        {
+            "authority": "8e6c705e-1132-42a2-8db0-c295e29e8658",
+            "authorityValue": "6662f8ff15bc75d774f2e170",
+            "prefLabel": "Test SvProvision",
+            "sourceURL": [
+                "https://localhost:8000"
+            ],
+            "type": "SVProvision",
+            "uuid": "a1258efa-b36b-5228-9c85-1c1358c1c535"
+        }
+    ],
+    "sourceURL": [
+        "https://localhost:8000"
+    ],
+    "type": "SVProvision"
+}
