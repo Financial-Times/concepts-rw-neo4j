@@ -62,6 +62,7 @@ const (
 	naicsIndustryClassificationUUID        = "38ee195d-ebdd-48a9-af4b-c8a322e7b04d"
 	naicsIndustryClassificationAnotherUUID = "49da878c-67ce-4343-9a09-a4a767e584a2"
 	aniIndustryClassificationUUID          = "20c3c352-7248-4c93-92c2-0e5a57736e48"
+	svProvisionUUID                        = "a1258efa-b36b-5228-9c85-1c1358c1c535"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -446,6 +447,25 @@ func TestWriteService(t *testing.T) {
 				},
 				UpdatedIds: []string{
 					membershipUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a SVProvision",
+			aggregatedConcept: getAggregatedConcept(t, "sv-provision.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "SVProvision",
+						ConceptUUID:   svProvisionUUID,
+						AggregateHash: "2583709379931978683",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					svProvisionUUID,
 				},
 			},
 		},
@@ -3120,7 +3140,7 @@ func cleanNewAggregatedConceptProperties(c ontology.CanonicalConcept) {
 }
 
 func cleanArrayProperties(c ontology.Properties, i string) {
-	if i == "aliases" || i == "formerNames" || i == "tradeNames" {
+	if i == "aliases" || i == "formerNames" || i == "tradeNames" || i == "sourceURL" {
 		s, ok := c[i].([]interface{})
 		if ok {
 			tempArray := make([]string, 0, len(s))
