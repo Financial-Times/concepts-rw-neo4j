@@ -1,0 +1,17 @@
+{
+    "aliases": [
+        "Test FTPC Source"
+    ],
+    "prefLabel": "Test FTPC Source",
+    "prefUUID": "8a852776-38b4-47fc-bb5e-e496801a28bf",
+    "sourceRepresentations": [
+        {
+            "authority": "724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+            "authorityValue": "8a852776-38b4-47fc-bb5e-e496801a28bf",
+            "prefLabel": "Test FTPC Source",
+            "type": "FTPCSource",
+            "uuid": "8a852776-38b4-47fc-bb5e-e496801a28bf"
+        }
+    ],
+    "type": "FTPCSource"
+}
