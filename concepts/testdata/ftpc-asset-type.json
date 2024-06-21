@@ -1,0 +1,17 @@
+{
+    "aliases": [
+        "Test FTPC Asset Type"
+    ],
+    "prefLabel": "Test FTPC Asset Type",
+    "prefUUID": "c5440e5e-a472-4948-ab33-97e0089dd926",
+    "sourceRepresentations": [
+        {
+            "authority": "724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+            "authorityValue": "c5440e5e-a472-4948-ab33-97e0089dd926",
+            "prefLabel": "Test FTPC Asset Type",
+            "type": "FTPCAssetType",
+            "uuid": "c5440e5e-a472-4948-ab33-97e0089dd926"
+        }
+    ],
+    "type": "FTPCAssetType"
+}

@@ -1,0 +1,17 @@
+{
+    "aliases": [
+        "Test FTPC Genre"
+    ],
+    "prefLabel": "Test FTPC Genre",
+    "prefUUID": "e02fb4c0-1fe5-476b-b791-e921db5b99f2",
+    "sourceRepresentations": [
+        {
+            "authority": "724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+            "authorityValue": "e02fb4c0-1fe5-476b-b791-e921db5b99f2",
+            "prefLabel": "Test FTPC Genre",
+            "type": "FTPCGenre",
+            "uuid": "e02fb4c0-1fe5-476b-b791-e921db5b99f2"
+        }
+    ],
+    "type": "FTPCGenre"
+}

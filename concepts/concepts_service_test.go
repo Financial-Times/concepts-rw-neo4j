@@ -63,6 +63,9 @@ const (
 	naicsIndustryClassificationAnotherUUID = "49da878c-67ce-4343-9a09-a4a767e584a2"
 	aniIndustryClassificationUUID          = "20c3c352-7248-4c93-92c2-0e5a57736e48"
 	svProvisionUUID                        = "a1258efa-b36b-5228-9c85-1c1358c1c535"
+	ftpcSourceUUID                         = "8a852776-38b4-47fc-bb5e-e496801a28bf"
+	ftpcGenreUUID                          = "e02fb4c0-1fe5-476b-b791-e921db5b99f2"
+	ftpcAssetTypeUUID                      = "c5440e5e-a472-4948-ab33-97e0089dd926"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -466,6 +469,63 @@ func TestWriteService(t *testing.T) {
 				},
 				UpdatedIds: []string{
 					svProvisionUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a FTPCSource",
+			aggregatedConcept: getAggregatedConcept(t, "ftpc-source.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "FTPCSource",
+						ConceptUUID:   ftpcSourceUUID,
+						AggregateHash: "2583709379931978683",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					ftpcSourceUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a FTPCGenre",
+			aggregatedConcept: getAggregatedConcept(t, "ftpc-genre.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "FTPCGenre",
+						ConceptUUID:   ftpcGenreUUID,
+						AggregateHash: "2583709379931978683",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					ftpcGenreUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a FTPCAssetType",
+			aggregatedConcept: getAggregatedConcept(t, "ftpc-asset-type.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "FTPCAssetType",
+						ConceptUUID:   ftpcAssetTypeUUID,
+						AggregateHash: "2583709379931978683",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					ftpcAssetTypeUUID,
 				},
 			},
 		},
