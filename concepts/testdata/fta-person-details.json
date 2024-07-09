@@ -1,0 +1,17 @@
+{
+    "aliases": [
+        "FTAPersonDetails Concept Node"
+    ],
+    "prefLabel": "FTAPersonDetails Concept Node",
+    "prefUUID": "a671f5a9-b9a4-4836-a174-fc273166f0db",
+    "sourceRepresentations": [
+        {
+            "authority": "19d50190-8656-4e91-8d34-82e646ada9c9",
+            "authorityValue": "a671f5a9-b9a4-4836-a174-fc273166f0db",
+            "prefLabel": "FTAPersonDetails Concept Node",
+            "type": "FTAPersonDetails",
+            "uuid": "a671f5a9-b9a4-4836-a174-fc273166f0db"
+        }
+    ],
+    "type": "FTAPersonDetails"
+}
