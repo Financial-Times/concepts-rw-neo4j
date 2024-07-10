@@ -4,13 +4,27 @@
     ],
     "prefLabel": "FTAPersonDetails Concept Node",
     "prefUUID": "a671f5a9-b9a4-4836-a174-fc273166f0db",
+    "imageUrl": "https://www.ft.com/",
+    "twitterHandle": "@testhandle",
+    "facebookPage": "https://www.facebook.com/test",
+    "linkedInPage": "https://www.linkedin.com/test",
+    "emailAddress": "test@ft.com",
+    "descriptionXML": "this is a test description",
+    "enrichesUUID": "01da628d-a97b-3ad6-bc84-a4e9acfdfdb6",
     "sourceRepresentations": [
         {
             "authority": "19d50190-8656-4e91-8d34-82e646ada9c9",
             "authorityValue": "a671f5a9-b9a4-4836-a174-fc273166f0db",
             "prefLabel": "FTAPersonDetails Concept Node",
             "type": "FTAPersonDetails",
-            "uuid": "a671f5a9-b9a4-4836-a174-fc273166f0db"
+            "uuid": "a671f5a9-b9a4-4836-a174-fc273166f0db",
+            "imageUrl": "https://www.ft.com/",
+            "twitterHandle": "@testhandle",
+            "facebookPage": "https://www.facebook.com/test",
+            "linkedInPage": "https://www.linkedin.com/test",
+            "emailAddress": "test@ft.com",
+            "descriptionXML": "this is a test description",
+            "enrichesUUID": "01da628d-a97b-3ad6-bc84-a4e9acfdfdb6"
         }
     ],
     "type": "FTAPersonDetails"
