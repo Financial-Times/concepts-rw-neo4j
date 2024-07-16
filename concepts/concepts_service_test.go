@@ -66,6 +66,8 @@ const (
 	ftpcSourceUUID                         = "8a852776-38b4-47fc-bb5e-e496801a28bf"
 	ftpcGenreUUID                          = "e02fb4c0-1fe5-476b-b791-e921db5b99f2"
 	ftpcAssetTypeUUID                      = "c5440e5e-a472-4948-ab33-97e0089dd926"
+	ftaOrganisationDetailsUUID             = "77701984-3542-4f77-91aa-b5f7bfa43330"
+	ftaPersonDetailsUUID                   = "a671f5a9-b9a4-4836-a174-fc273166f0db"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -526,6 +528,44 @@ func TestWriteService(t *testing.T) {
 				},
 				UpdatedIds: []string{
 					ftpcAssetTypeUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a FTAPersonDetails",
+			aggregatedConcept: getAggregatedConcept(t, "fta-person-details.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "FTAPersonDetails",
+						ConceptUUID:   ftaPersonDetailsUUID,
+						AggregateHash: "2583709379931978683",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					ftaPersonDetailsUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a FTAOrganisationDetails",
+			aggregatedConcept: getAggregatedConcept(t, "fta-organisation-details.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "FTAOrganisationDetails",
+						ConceptUUID:   ftaOrganisationDetailsUUID,
+						AggregateHash: "2583709379931978683",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					ftaOrganisationDetailsUUID,
 				},
 			},
 		},

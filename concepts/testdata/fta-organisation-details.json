@@ -1,0 +1,25 @@
+{
+    "aliases": [
+        "FTAOrganisationDetails Concept Node"
+    ],
+    "prefLabel": "FTAOrganisationDetails Concept Node",
+    "prefUUID": "77701984-3542-4f77-91aa-b5f7bfa43330",
+    "imageUrl": "https://www.ft.com/",
+    "name": "FTAOrganisationDetails name",
+    "websiteUrl": "https://www.ft.com/",
+    "enrichesUUID": "01da628d-a97b-3ad6-bc84-a4e9acfdfdb6",
+    "sourceRepresentations": [
+        {
+            "authority": "19d50190-8656-4e91-8d34-82e646ada9c9",
+            "authorityValue": "77701984-3542-4f77-91aa-b5f7bfa43330",
+            "prefLabel": "FTAOrganisationDetails Concept Node",
+            "type": "FTAOrganisationDetails",
+            "uuid": "77701984-3542-4f77-91aa-b5f7bfa43330",
+            "imageUrl": "https://www.ft.com/",
+            "name": "FTAOrganisationDetails name",
+            "websiteUrl": "https://www.ft.com/",
+            "enrichesUUID": "01da628d-a97b-3ad6-bc84-a4e9acfdfdb6"
+        }
+    ],
+    "type": "FTAOrganisationDetails"
+}
