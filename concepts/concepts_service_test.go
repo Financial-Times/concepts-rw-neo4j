@@ -68,6 +68,7 @@ const (
 	ftpcAssetTypeUUID                      = "c5440e5e-a472-4948-ab33-97e0089dd926"
 	ftaOrganisationDetailsUUID             = "77701984-3542-4f77-91aa-b5f7bfa43330"
 	ftaPersonDetailsUUID                   = "a671f5a9-b9a4-4836-a174-fc273166f0db"
+	organisationGenericUUID                = "176a59ae-e93b-4f6f-84f2-d6e8461015a1"
 
 	supersededByUUID = "1a96ee7a-a4af-3a56-852c-60420b0b8da6"
 
@@ -395,6 +396,25 @@ func TestWriteService(t *testing.T) {
 				},
 				UpdatedIds: []string{
 					basicConceptUUID,
+				},
+			},
+		},
+		{
+			testName:          "Creates All Values Present for a Generic Organisation Concept",
+			aggregatedConcept: getAggregatedConcept(t, "organisation-generic.json"),
+			updatedConcepts: ConceptChanges{
+				ChangedRecords: []Event{
+					{
+						ConceptType:   "Organisation",
+						ConceptUUID:   organisationGenericUUID,
+						AggregateHash: "11962703960608256906",
+						EventDetails: ConceptEvent{
+							Type: UpdatedEvent,
+						},
+					},
+				},
+				UpdatedIds: []string{
+					organisationGenericUUID,
 				},
 			},
 		},

@@ -1,0 +1,48 @@
+{
+  "prefUUID":"176a59ae-e93b-4f6f-84f2-d6e8461015a1",
+  "prefLabel":"JPMorgan Securities (Asia Pacific) Ltd.",
+  "type":"Organisation",
+  "aliases":[
+    "JPMorgan Securities (Asia Pacific) Ltd.",
+    "J.P. Morgan Securities (Asia Pacific) Limited",
+    "JPMorgan Securities (Asia Pacific) Ltd.",
+    "JPMorgan Securities Asia"
+  ],
+  "emailAddress": "hk.compliance@jpmorgan.com",
+  "sourceRepresentations":[
+    {
+      "uuid":"176a59ae-e93b-4f6f-84f2-d6e8461015a1",
+      "prefLabel":"JPMorgan Securities (Asia Pacific) Ltd.",
+      "type":"Organisation",
+      "authority":"Generic",
+      "authorityValue":"176a59ae-e93b-4f6f-84f2-d6e8461015a1",
+      "aliases":[
+        "JPMorgan Securities (Asia Pacific) Ltd.",
+        "J.P. Morgan Securities (Asia Pacific) Limited",
+        "JPMorgan Securities (Asia Pacific) Ltd.",
+        "JPMorgan Securities Asia"
+      ],
+      "emailAddress": "hk.compliance@jpmorgan.com",
+      "properName": "JPMorgan Securities (Asia Pacific) Ltd.",
+      "shortName": "JPMorgan Securities Asia",
+      "legalName": "J.P. Morgan Securities (Asia Pacific) Limited",
+      "tradeNames":[
+        "JPMorgan Securities (Asia Pacific) Ltd."
+      ],
+      "countryCode":"HK",
+      "countryOfIncorporation":"HK",
+      "yearFounded":1951,
+      "leiCode":"871JPXVZ0Z8I863B6V34"
+    }
+  ],
+  "legalName": "J.P. Morgan Securities (Asia Pacific) Limited",
+  "properName": "JPMorgan Securities (Asia Pacific) Ltd.",
+  "shortName": "JPMorgan Securities Asia",
+  "tradeNames":[
+    "JPMorgan Securities (Asia Pacific) Ltd."
+  ],
+  "countryCode":"HK",
+  "countryOfIncorporation":"HK",
+  "yearFounded":2002,
+  "leiCode":"871JPXVZ0Z8I863B6V34"
+}
